@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode } from 'lucide-react';
 import { Product } from '../../types';
-import { PRODUCTS } from '../../constants'; // Fallback mock data, usually fetch from API
+import { PRODUCTS } from '../../constants';
 
 interface PosItem extends Product {
     qty: number;
@@ -10,6 +11,8 @@ interface PosItem extends Product {
 const PosTerminal: React.FC = () => {
     const [cart, setCart] = useState<PosItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [lastSale, setLastSale] = useState<any>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const addToCart = (product: Product) => {
@@ -35,12 +38,86 @@ const PosTerminal: React.FC = () => {
         setCart(prev => prev.filter(p => p.id !== id));
     };
 
+    const handleCompleteSale = async () => {
+        setIsProcessing(true);
+        try {
+            const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            
+            // Call Backend API
+            const response = await fetch('/api/sales', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer demo-admin-token' // Mock Auth
+                },
+                body: JSON.stringify({
+                    items: cart.map(i => ({ 
+                        productId: i.id, 
+                        name: i.name, 
+                        quantity: i.qty, 
+                        price: i.price 
+                    })),
+                    totalAmount,
+                    paymentMethod: 'CASH'
+                })
+            });
+
+            const saleData = await response.json();
+            if (response.ok) {
+                setLastSale(saleData);
+                setCart([]);
+            } else {
+                alert('Sale Failed: ' + saleData.error);
+            }
+        } catch (error) {
+            alert('Network Error');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
     const filteredProducts = PRODUCTS.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         p.sku.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 5);
+
+    // SUCCESS / RECEIPT VIEW
+    if (lastSale) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+                <div className="bg-white p-8 rounded shadow-lg border border-gray-200 w-96 text-center">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle size={32} />
+                    </div>
+                    <h2 className="text-xl font-bold text-masuma-dark mb-1">Sale Completed</h2>
+                    <p className="text-gray-500 text-sm mb-6">Receipt #{lastSale.receiptNumber}</p>
+                    
+                    {/* KRA SECTION */}
+                    <div className="bg-gray-50 p-4 border border-gray-200 rounded mb-6 text-left">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase">KRA Control Code</span>
+                            <span className="text-xs font-mono font-bold">{lastSale.kraControlCode || 'PENDING'}</span>
+                        </div>
+                        <div className="flex justify-center py-2">
+                             <QrCode size={64} className="text-masuma-dark" />
+                        </div>
+                        <p className="text-[9px] text-center text-gray-400">Scan to verify on iTax</p>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button onClick={() => window.print()} className="flex-1 bg-gray-800 text-white py-2 rounded font-bold text-sm uppercase flex items-center justify-center gap-2">
+                            <Printer size={16} /> Print
+                        </button>
+                        <button onClick={() => setLastSale(null)} className="flex-1 bg-masuma-orange text-white py-2 rounded font-bold text-sm uppercase">
+                            New Sale
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-[calc(100vh-100px)] gap-6">
@@ -127,11 +204,11 @@ const PosTerminal: React.FC = () => {
                         </button>
                     </div>
                     <button 
-                        onClick={() => setCart([])}
-                        disabled={cart.length === 0}
+                        onClick={handleCompleteSale}
+                        disabled={cart.length === 0 || isProcessing}
                         className="w-full flex items-center justify-center gap-2 bg-masuma-orange text-white py-4 rounded font-bold hover:bg-orange-600 uppercase tracking-widest shadow-lg disabled:opacity-50"
                     >
-                        <Printer size={20} /> Complete Sale
+                        {isProcessing ? 'Processing KRA...' : <><Printer size={20} /> Complete Sale</>}
                     </button>
                 </div>
             </div>

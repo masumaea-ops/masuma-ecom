@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
   Smartphone, Users, FileText, Truck, Car, 
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -18,15 +19,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
-    { id: 'inventory', label: 'Inventory', icon: Package },
-    { id: 'sales', label: 'Sales History', icon: History },
-    { id: 'mpesa', label: 'M-Pesa Logs', icon: Smartphone },
-    { id: 'customers', label: 'Customers', icon: Users },
-    { id: 'quotes', label: 'Quotes & Invoices', icon: FileText },
-    { id: 'shipping', label: 'Shipping', icon: Truck },
-    { id: 'vin', label: 'VIN Picker', icon: Car },
-    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'products', label: 'Product Manager', icon: Package },
+    { id: 'orders', label: 'Orders', icon: FileText },
+    { id: 'shipping', label: 'Shipping & Logistics', icon: Truck },
+    { id: 'quotes', label: 'Quotations', icon: FileText },
     { id: 'b2b', label: 'B2B Portal', icon: Briefcase },
+    { id: 'inventory', label: 'Inventory', icon: Package },
+    { id: 'sales_history', label: 'Sales History', icon: History },
+    { id: 'mpesa', label: 'M-Pesa Logs', icon: Smartphone },
+    { id: 'customers', label: 'Customers (CRM)', icon: Users },
+    { id: 'reports', label: 'Reports', icon: FileBarChart },
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'audit', label: 'Audit Logs', icon: Shield },
+    { id: 'blog', label: 'Blog Studio', icon: Edit },
+    { id: 'cms', label: 'CMS Editor', icon: Globe },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -95,9 +101,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
                <Bell size={20} className="text-gray-500" />
                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
             </div>
-            <div className="w-8 h-8 bg-masuma-orange rounded-full flex items-center justify-center text-white font-bold text-xs">
+            <button 
+              onClick={() => onNavigate('profile')}
+              className="w-8 h-8 bg-masuma-orange rounded-full flex items-center justify-center text-white font-bold text-xs hover:scale-110 transition"
+              title="My Profile"
+            >
               A
-            </div>
+            </button>
           </div>
         </header>
 

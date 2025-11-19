@@ -66,9 +66,81 @@ export interface Branch {
   code: string;
 }
 
+export interface Order {
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    date: string;
+    total: number;
+    status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED';
+    paymentMethod: string;
+    items: { name: string; qty: number }[];
+}
+
+export interface Sale {
+    id: string;
+    receiptNumber: string;
+    date: string;
+    totalAmount: number;
+    paymentMethod: string;
+    cashierName: string;
+    customerName?: string;
+    kraControlCode?: string;
+    itemsCount: number;
+}
+
+export interface MpesaLog {
+    id: string;
+    checkoutRequestID: string;
+    phoneNumber: string;
+    amount: number;
+    status: 'PENDING' | 'COMPLETED' | 'FAILED';
+    mpesaReceiptNumber?: string;
+    resultDesc?: string;
+    date: string;
+}
+
+export interface Customer {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
+    kraPin?: string;
+    isWholesale: boolean;
+    totalSpend: number;
+    lastVisit: string;
+}
+
+export interface CmsConfig {
+    heroTitle: string;
+    heroSubtitle: string;
+    heroImage: string;
+    announcementText: string;
+    showAnnouncement: boolean;
+}
+
 export interface DashboardStats {
   totalSales: number;
   lowStockItems: number;
   todaysOrders: number;
   pendingQuotes: number;
+  monthlyRevenue: { name: string; value: number }[];
+  categorySales: { name: string; value: number }[];
+}
+
+export enum QuoteStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  ACCEPTED = 'ACCEPTED',
+  EXPIRED = 'EXPIRED'
+}
+
+export interface Quote {
+    id: string;
+    quoteNumber: string;
+    customerName: string;
+    date: string;
+    total: number;
+    status: QuoteStatus;
+    items: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[];
 }

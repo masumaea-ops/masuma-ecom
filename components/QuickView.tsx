@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { X, Check, AlertTriangle, Truck, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus } from 'lucide-react';
 import { Product } from '../types';
 import QuoteModal from './QuoteModal';
 
@@ -8,13 +8,30 @@ interface QuickViewProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, quantity?: number) => void;
 }
 
 const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCart }) => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
+  // Reset quantity when modal opens or product changes
+  useEffect(() => {
+    if (isOpen) {
+      setQuantity(1);
+    }
+  }, [isOpen, product]);
 
   if (!isOpen || !product) return null;
+
+  const handleQuantityChange = (delta: number) => {
+    setQuantity(prev => Math.max(1, prev + delta));
+  };
+
+  const handleAddToCart = () => {
+    addToCart(product, quantity);
+    onClose();
+  };
 
   return (
     <>
@@ -91,9 +108,28 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
               </div>
             </div>
 
+            {/* Quantity & Actions */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
+              {product.stock && (
+                <div className="flex items-center border border-gray-300 rounded-sm h-[46px]">
+                  <button 
+                    onClick={() => handleQuantityChange(-1)}
+                    className="px-3 h-full text-gray-500 hover:bg-gray-100 transition"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="w-10 text-center font-bold text-masuma-dark">{quantity}</span>
+                  <button 
+                    onClick={() => handleQuantityChange(1)}
+                    className="px-3 h-full text-gray-500 hover:bg-gray-100 transition"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
+
               <button
-                  onClick={() => { addToCart(product); onClose(); }}
+                  onClick={handleAddToCart}
                   disabled={!product.stock}
                   className={`flex-1 py-3 px-4 font-bold uppercase tracking-widest text-xs sm:text-sm transition flex items-center justify-center gap-2 ${
                       product.stock 

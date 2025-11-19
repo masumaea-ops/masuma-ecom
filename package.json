@@ -25,7 +25,8 @@
     "buffer": "^6.0.3",
     "axios": "^1.13.2",
     "typeorm": "^0.3.27",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "recharts": "^2.15.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

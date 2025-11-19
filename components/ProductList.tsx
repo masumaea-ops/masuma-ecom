@@ -2,11 +2,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Category, Product } from '../types';
 import { PRODUCTS } from '../constants';
-import { Search, Filter, AlertCircle, Eye, ShoppingBag } from 'lucide-react';
+import { Search, AlertCircle, Eye, ShoppingBag, Car } from 'lucide-react';
 import QuickView from './QuickView';
+import VinSearch from './VinSearch';
 
 interface ProductListProps {
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, quantity?: number) => void;
 }
 
 const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
@@ -14,6 +15,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [vinFilter, setVinFilter] = useState('');
 
   // Simulate loading for skeleton effect
   useEffect(() => {
@@ -26,6 +28,11 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
       const query = searchQuery.toLowerCase().trim();
       const matchesCategory = selectedCategory === Category.ALL || product.category === selectedCategory;
       
+      // VIN Filter Logic
+      // If a VIN filter is active, only show products that are compatible with the identified car
+      const matchesVin = !vinFilter || product.compatibility.some(c => c.toLowerCase().includes(vinFilter.toLowerCase()) || vinFilter.toLowerCase().includes(c.toLowerCase()));
+
+      if (!matchesVin) return false;
       if (!query) return matchesCategory;
 
       const matchesName = product.name.toLowerCase().includes(query);
@@ -38,7 +45,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
 
       return matchesCategory && (matchesName || matchesSku || matchesOem || matchesCompat);
     });
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, vinFilter]);
 
   const ProductSkeleton = () => (
     <div className="bg-white border border-gray-200 h-full flex flex-col animate-pulse">
@@ -68,6 +75,9 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
           Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
         </p>
       </div>
+
+      {/* VIN Search Module */}
+      <VinSearch onVehicleIdentified={setVinFilter} />
 
       {/* Controls */}
       <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md p-4 shadow-lg border-t-4 border-masuma-orange mb-8 -mx-4 sm:mx-0 sm:rounded-lg transition-all">
@@ -117,10 +127,10 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
           </div>
           <h3 className="text-2xl font-bold text-masuma-dark font-display">No parts found</h3>
           <p className="text-gray-500 max-w-md mx-auto mt-2 mb-8">
-            We couldn't find a match for "{searchQuery}". Try searching by the generic name like "Filter" or "Brake".
+            We couldn't find a match for "{searchQuery}" {vinFilter && `compatible with ${vinFilter}`}.
           </p>
           <button 
-            onClick={() => {setSearchQuery(''); setSelectedCategory(Category.ALL)}}
+            onClick={() => {setSearchQuery(''); setSelectedCategory(Category.ALL); setVinFilter('');}}
             className="px-8 py-3 bg-masuma-dark text-white font-bold uppercase tracking-widest text-sm hover:bg-masuma-orange transition shadow-lg"
           >
             Clear Filters

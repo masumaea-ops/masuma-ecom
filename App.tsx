@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -10,8 +11,24 @@ import Blog from './components/Blog';
 import DashboardLayout from './components/admin/DashboardLayout';
 import PosTerminal from './components/admin/PosTerminal';
 import InventoryManager from './components/admin/InventoryManager';
+import DashboardHome from './components/admin/DashboardHome';
+import ProductManager from './components/admin/ProductManager';
+import BlogManager from './components/admin/BlogManager';
+import CmsManager from './components/admin/CmsManager';
+import OrderManager from './components/admin/OrderManager';
+import SalesHistory from './components/admin/SalesHistory';
+import MpesaLogs from './components/admin/MpesaLogs';
+import CustomerManager from './components/admin/CustomerManager';
+import SettingsManager from './components/admin/SettingsManager';
+import QuoteManager from './components/admin/QuoteManager';
+import ReportsManager from './components/admin/ReportsManager';
+import UserManager from './components/admin/UserManager';
+import AuditLogs from './components/admin/AuditLogs';
+import B2BPortal from './components/admin/B2BPortal';
+import ShippingManager from './components/admin/ShippingManager';
+import Profile from './components/admin/Profile';
 import { CartItem, Product, ViewState } from './types';
-import { MapPin, CheckCircle, MessageCircle, ArrowUp, Star, Quote, LayoutDashboard, ShoppingCart, Package, Users, Lock } from 'lucide-react';
+import { MapPin, CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock } from 'lucide-react';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
@@ -45,17 +62,22 @@ function App() {
     setToast({ message, type });
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity }];
     });
-    showToast(`Added ${product.name} to cart`);
+    
+    const msg = quantity > 1 
+      ? `Added ${quantity} x ${product.name} to cart`
+      : `Added ${product.name} to cart`;
+      
+    showToast(msg);
   };
 
   const removeFromCart = (id: string) => {
@@ -118,35 +140,27 @@ function App() {
             onNavigate={setAdminModule} 
             onLogout={() => { setIsAuthenticated(false); setCurrentView('HOME'); }}
           >
-            {adminModule === 'dashboard' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[
-                        { label: 'Today Sales', value: 'KES 124k', icon: ShoppingCart, color: 'bg-blue-500' },
-                        { label: 'Low Stock Items', value: '12', icon: Package, color: 'bg-red-500' },
-                        { label: 'Active Users', value: '8', icon: Users, color: 'bg-green-500' },
-                        { label: 'Pending Quotes', value: '5', icon: MessageCircle, color: 'bg-purple-500' },
-                    ].map((stat, i) => (
-                        <div key={i} className="bg-white p-6 rounded shadow-sm border border-gray-200 flex items-center gap-4">
-                            <div className={`p-3 rounded-full text-white ${stat.color}`}>
-                                <stat.icon size={24} />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-masuma-dark">{stat.value}</div>
-                                <div className="text-xs text-gray-500 uppercase font-bold">{stat.label}</div>
-                            </div>
-                        </div>
-                    ))}
-                    <div className="col-span-full mt-8 p-12 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                        <LayoutDashboard size={48} className="mx-auto mb-4 opacity-20" />
-                        <h3 className="text-xl font-bold">Analytics Dashboard Coming Soon</h3>
-                        <p>Charts and graphs will be rendered here.</p>
-                    </div>
-                </div>
-            )}
+            {adminModule === 'dashboard' && <DashboardHome />}
             {adminModule === 'pos' && <PosTerminal />}
+            {adminModule === 'products' && <ProductManager />}
+            {adminModule === 'orders' && <OrderManager />}
             {adminModule === 'inventory' && <InventoryManager />}
+            {adminModule === 'sales_history' && <SalesHistory />}
+            {adminModule === 'mpesa' && <MpesaLogs />}
+            {adminModule === 'customers' && <CustomerManager />}
+            {adminModule === 'quotes' && <QuoteManager />}
+            {adminModule === 'reports' && <ReportsManager />}
+            {adminModule === 'users' && <UserManager />}
+            {adminModule === 'audit' && <AuditLogs />}
+            {adminModule === 'blog' && <BlogManager />}
+            {adminModule === 'cms' && <CmsManager />}
+            {adminModule === 'settings' && <SettingsManager />}
+            {adminModule === 'b2b' && <B2BPortal />}
+            {adminModule === 'shipping' && <ShippingManager />}
+            {adminModule === 'profile' && <Profile />}
+            
             {/* Placeholders for other modules */}
-            {['sales', 'mpesa', 'customers', 'quotes', 'shipping', 'vin', 'reports', 'b2b', 'settings'].includes(adminModule) && (
+            {!['dashboard', 'pos', 'products', 'orders', 'inventory', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
                  <div className="flex flex-col items-center justify-center h-96 text-gray-400">
                     <Package size={64} className="mb-4 opacity-20" />
                     <h2 className="text-2xl font-bold uppercase text-masuma-dark">Module Under Construction</h2>
@@ -238,11 +252,11 @@ function App() {
             <div className="animate-fade-in">
                 <div className="relative bg-masuma-dark py-24">
                     <div className="absolute inset-0 overflow-hidden"><img src="https://masuma.com/wp-content/uploads/2021/09/factory.jpg" className="w-full h-full object-cover opacity-20 mix-blend-luminosity" alt="Factory" /></div>
-                    <div className="max-w-4xl mx-auto px-4 text-center relative z-10"><h2 className="text-5xl font-bold text-white mb-6 font-display uppercase tracking-tight">Engineering Trust</h2><div className="h-1.5 w-24 bg-masuma-orange mx-auto mb-8"></div><p className="text-xl text-gray-300 leading-relaxed">Masuma Autoparts East Africa Limited is the bridge between Japanese precision and African resilience.</p></div>
+                    <div className="max-w-4xl mx-auto px-4 text-center relative z-10"><h2 className="text-5xl font-bold text-white mb-6 font-display uppercase tracking-tight"><div className="h-1.5 w-24 bg-masuma-orange mx-auto mb-8"></div>Engineering Trust</h2><p className="text-xl text-gray-300 leading-relaxed">Masuma Autoparts East Africa Limited is the bridge between Japanese precision and African resilience.</p></div>
                 </div>
                 <div className="max-w-4xl mx-auto px-4 py-20">
                     <div className="grid md:grid-cols-2 gap-12">
-                        <div className="prose prose-lg text-gray-600"><h3 className="text-2xl font-bold text-masuma-dark uppercase mb-4">Our Story</h3><p>Founded in Nairobi's Industrial Area, we fill the gap between expensive dealer parts and unreliable counterfeits.</p></div>
+                        <div className="prose prose-lg text-gray-600"><h3 className="text-2xl font-bold text-masuma-dark uppercase">Our Story</h3><p>Founded in Nairobi's Industrial Area, we fill the gap between expensive dealer parts and unreliable counterfeits.</p></div>
                         <div className="bg-gray-50 p-8 border-l-4 border-masuma-orange shadow-lg"><h3 className="text-xl font-bold mb-6 text-masuma-dark uppercase">The Masuma Promise</h3><ul className="space-y-4"><li className="flex gap-3"><CheckCircle className="text-masuma-orange shrink-0" /><span className="text-gray-700">Defect rate below 0.02%.</span></li><li className="flex gap-3"><CheckCircle className="text-masuma-orange shrink-0" /><span className="text-gray-700">Tested for high-dust environments.</span></li></ul></div>
                     </div>
                 </div>
@@ -264,13 +278,51 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-white">
-      <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
-      <main className="flex-grow">{renderView()}</main>
-      <Footer />
-      <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
-      <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {currentView === 'DASHBOARD' ? (
+          <DashboardLayout 
+            activeModule={adminModule} 
+            onNavigate={setAdminModule} 
+            onLogout={() => { setIsAuthenticated(false); setCurrentView('HOME'); }}
+          >
+            {adminModule === 'dashboard' && <DashboardHome />}
+            {adminModule === 'pos' && <PosTerminal />}
+            {adminModule === 'products' && <ProductManager />}
+            {adminModule === 'orders' && <OrderManager />}
+            {adminModule === 'inventory' && <InventoryManager />}
+            {adminModule === 'sales_history' && <SalesHistory />}
+            {adminModule === 'mpesa' && <MpesaLogs />}
+            {adminModule === 'customers' && <CustomerManager />}
+            {adminModule === 'quotes' && <QuoteManager />}
+            {adminModule === 'reports' && <ReportsManager />}
+            {adminModule === 'users' && <UserManager />}
+            {adminModule === 'audit' && <AuditLogs />}
+            {adminModule === 'blog' && <BlogManager />}
+            {adminModule === 'cms' && <CmsManager />}
+            {adminModule === 'settings' && <SettingsManager />}
+            {adminModule === 'b2b' && <B2BPortal />}
+            {adminModule === 'shipping' && <ShippingManager />}
+            {adminModule === 'profile' && <Profile />}
+            
+            {/* Placeholders for other modules */}
+            {!['dashboard', 'pos', 'products', 'orders', 'inventory', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
+                 <div className="flex flex-col items-center justify-center h-96 text-gray-400">
+                    <Package size={64} className="mb-4 opacity-20" />
+                    <h2 className="text-2xl font-bold uppercase text-masuma-dark">Module Under Construction</h2>
+                    <p>The {adminModule} module is currently being engineered.</p>
+                 </div>
+            )}
+          </DashboardLayout>
+      ) : (
+        <>
+          <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
+          <main className="flex-grow">{renderView()}</main>
+          <Footer />
+          <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
+          <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
+          <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+          {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        </>
+      )}
     </div>
   );
 }
