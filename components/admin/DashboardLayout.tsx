@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
   Smartphone, Users, FileText, Truck, Car, 
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
 
@@ -31,8 +31,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
     { id: 'pos', label: 'Point of Sale', icon: ShoppingCart, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'products', label: 'Product Manager', icon: Package, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'categories', label: 'Categories', icon: Tag, roles: ['ADMIN', 'MANAGER'] },
     { id: 'inventory', label: 'Inventory', icon: Package, roles: ['ADMIN', 'MANAGER'] },
-    { id: 'branches', label: 'Branches', icon: Building, roles: ['ADMIN'] }, // New
+    { id: 'branches', label: 'Branches', icon: Building, roles: ['ADMIN'] },
     { id: 'orders', label: 'Orders', icon: FileText, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'shipping', label: 'Shipping & Logistics', icon: Truck, roles: ['ADMIN', 'MANAGER'] },
     { id: 'quotes', label: 'Quotations', icon: FileText, roles: ['ADMIN', 'MANAGER'] },
@@ -118,7 +119,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
                    <Bell size={20} className="text-gray-500 hover:text-masuma-orange transition" />
                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                </button>
-               <NotificationsPopover isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+               <NotificationsPopover 
+                  isOpen={isNotifOpen} 
+                  onClose={() => setIsNotifOpen(false)} 
+                  onNavigate={onNavigate}
+               />
             </div>
             <button 
               onClick={() => onNavigate('profile')}

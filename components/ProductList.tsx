@@ -6,6 +6,7 @@ import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
+import Price from './Price';
 
 interface ProductListProps {
   addToCart: (product: Product, quantity?: number) => void;
@@ -246,8 +247,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                     <div className="flex items-center justify-between pt-2">
                         <div>
                             <span className="text-lg font-bold text-masuma-dark">
-                                <span className="text-xs font-normal mr-0.5">KES</span>
-                                {product.price.toLocaleString()}
+                                <Price amount={product.price} />
                             </span>
                         </div>
                         <button

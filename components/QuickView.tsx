@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus } from 'lucide-react';
 import { Product } from '../types';
 import QuoteModal from './QuoteModal';
+import Price from './Price';
 
 interface QuickViewProps {
   product: Product | null;
@@ -84,7 +85,7 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
             <div className="mb-6">
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Price</h3>
               <p className="text-3xl font-bold text-masuma-dark">
-                  <span className="text-lg align-top mr-1">KES</span>{product.price.toLocaleString()}
+                  <Price amount={product.price} />
               </p>
               <p className="text-xs text-gray-500 mt-1">Includes VAT. Delivery fees calculated at checkout.</p>
             </div>

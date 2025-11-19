@@ -39,7 +39,7 @@ const productSchema = z.object({
     wholesalePrice: z.number().optional(),
     description: z.string(),
     category: z.string(),
-    imageUrl: z.string().url().optional(),
+    imageUrl: z.string().url().optional().or(z.literal('')),
     oemNumbers: z.array(z.string()).optional(),
 });
 
@@ -60,6 +60,16 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(produ
         res.json(product);
     } catch (error: any) {
         res.status(500).json({ error: error.message || 'Failed to update product' });
+    }
+});
+
+// DELETE /api/products/:id (Admin Only)
+router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
+    try {
+        await ProductService.deleteProduct(req.params.id);
+        res.json({ message: 'Product deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to delete product' });
     }
 });
 

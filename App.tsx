@@ -28,10 +28,12 @@ import B2BPortal from './components/admin/B2BPortal';
 import ShippingManager from './components/admin/ShippingManager';
 import Profile from './components/admin/Profile';
 import BranchManager from './components/admin/BranchManager';
+import CategoryManager from './components/admin/CategoryManager';
 import NotFound from './components/NotFound';
 import { CartItem, Product, ViewState } from './types';
 import { CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock, Loader2, MapPin, Send } from 'lucide-react';
 import { apiClient } from './utils/apiClient';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
@@ -251,6 +253,7 @@ function App() {
           return null;
       }
       return (
+        <CurrencyProvider>
           <DashboardLayout 
             activeModule={adminModule} 
             onNavigate={setAdminModule} 
@@ -259,6 +262,7 @@ function App() {
             {adminModule === 'dashboard' && <DashboardHome />}
             {adminModule === 'pos' && <PosTerminal />}
             {adminModule === 'products' && <ProductManager />}
+            {adminModule === 'categories' && <CategoryManager />}
             {adminModule === 'orders' && <OrderManager />}
             {adminModule === 'inventory' && <InventoryManager />}
             {adminModule === 'branches' && <BranchManager />}
@@ -276,7 +280,7 @@ function App() {
             {adminModule === 'shipping' && <ShippingManager />}
             {adminModule === 'profile' && <Profile />}
             
-            {!['dashboard', 'pos', 'products', 'orders', 'inventory', 'branches', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
+            {!['dashboard', 'pos', 'products', 'categories', 'orders', 'inventory', 'branches', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
                  <div className="flex flex-col items-center justify-center h-96 text-gray-400">
                     <Package size={64} className="mb-4 opacity-20" />
                     <h2 className="text-2xl font-bold uppercase text-masuma-dark">Module Under Construction</h2>
@@ -284,6 +288,7 @@ function App() {
                  </div>
             )}
           </DashboardLayout>
+        </CurrencyProvider>
       );
   }
 
@@ -452,15 +457,17 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen font-sans bg-white">
-      <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
-      <main className="flex-grow">{renderView()}</main>
-      <Footer />
-      <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
-      <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    <CurrencyProvider>
+        <div className="flex flex-col min-h-screen font-sans bg-white">
+        <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
+        <main className="flex-grow">{renderView()}</main>
+        <Footer />
+        <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
+        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
+        <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        </div>
+    </CurrencyProvider>
   );
 }
 

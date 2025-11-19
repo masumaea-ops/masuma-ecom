@@ -1,8 +1,34 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, ArrowRight } from 'lucide-react';
+import { apiClient } from '../utils/apiClient';
 
 const Footer: React.FC = () => {
+  const [info, setInfo] = useState({
+      about: 'Masuma Autoparts East Africa Limited. The official distributor of certified Masuma components. Engineering you can trust for the African road.',
+      address: 'Godown 4, Enterprise Road, Industrial Area, Nairobi',
+      phone: '+254 700 123 456',
+      email: 'sales@masuma.co.ke'
+  });
+
+  useEffect(() => {
+      const fetchSettings = async () => {
+          try {
+              const res = await apiClient.get('/settings');
+              const s = res.data;
+              setInfo({
+                  about: s.CMS_FOOTER_ABOUT || info.about,
+                  address: s.CMS_CONTACT_ADDRESS || info.address,
+                  phone: s.CMS_CONTACT_PHONE || info.phone,
+                  email: s.CMS_CONTACT_EMAIL || info.email
+              });
+          } catch (e) {
+              // Fail silently to defaults
+          }
+      };
+      fetchSettings();
+  }, []);
+
   return (
     <footer className="bg-masuma-dark text-white pt-16 pb-8 border-t-4 border-masuma-orange">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,7 +41,7 @@ const Footer: React.FC = () => {
               <span className="text-[0.65rem] font-bold text-white tracking-widest uppercase leading-none">Autoparts East Africa Ltd</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Masuma Autoparts East Africa Limited. The official distributor of certified Masuma components. Engineering you can trust for the African road.
+              {info.about}
             </p>
             <div className="flex space-x-3">
                <a href="#" className="bg-white/10 p-2 rounded-sm hover:bg-masuma-orange transition"><Facebook size={18} /></a>
@@ -41,15 +67,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-masuma-orange flex-shrink-0 mt-0.5" />
-                <span>Godown 4, Enterprise Road<br/>Industrial Area, Nairobi</span>
+                <span>{info.address}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-masuma-orange flex-shrink-0" />
-                <span>+254 700 123 456</span>
+                <span>{info.phone}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-masuma-orange flex-shrink-0" />
-                <span>sales@masuma.co.ke</span>
+                <span>{info.email}</span>
               </li>
             </ul>
           </div>

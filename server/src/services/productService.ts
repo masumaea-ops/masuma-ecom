@@ -128,6 +128,16 @@ export class ProductService {
     await CacheService.invalidate(`product:detail:${id}`);
     return saved;
   }
+
+  static async deleteProduct(id: string) {
+    const product = await this.productRepo.findOneBy({ id });
+    if (!product) throw new Error('Product not found');
+
+    await this.productRepo.remove(product);
+    await CacheService.invalidate('products:*');
+    await CacheService.invalidate(`product:detail:${id}`);
+    return true;
+  }
   
   static async getAllProductIdsForSitemap() {
      return this.productRepo.find({

@@ -1,59 +1,79 @@
-# Masuma Autoparts Backend (TypeORM)
 
-This folder contains a production-grade backend architecture designed for high performance and SEO, featuring **M-Pesa Integration** and **TypeORM**.
+# Masuma ERP - Manual Installation Guide
 
-## Prerequisites
-1. **Node.js** (v18+)
-2. **MySQL Database** (Local or Cloud, e.g., AWS RDS)
-3. **Redis** (Local or Cloud, e.g., AWS ElastiCache)
-4. **Safaricom Daraja Account** (Sandbox or Production)
+This guide explains how to run the system on a standard server or local machine without Docker.
 
-## Setup Steps
+## 1. Prerequisites
+Ensure you have the following installed:
+- **Node.js** (v18 or higher)
+- **MySQL Server** (v8.0)
+- **Redis Server** (v6.0 or higher)
 
-1. **Install Dependencies**
-   ```bash
-   cd server
-   # Remove Prisma
-   npm uninstall @prisma/client prisma
-   
-   # Install TypeORM & Drivers
-   npm install express typeorm mysql2 reflect-metadata ioredis bullmq cors helmet compression zod axios
-   npm install --save-dev typescript @types/node @types/express ts-node
+## 2. Database Setup
+1. Open your MySQL terminal or Workbench.
+2. Create the database:
+   ```sql
+   CREATE DATABASE masuma_db;
    ```
 
-2. **Environment Variables**
-   Update `.env` in the `server` directory:
+## 3. Backend Setup
+Navigate to the `server` folder:
+
+1. **Install Dependencies**:
+   ```bash
+   cd server
+   npm install
+   ```
+
+2. **Configure Environment**:
+   Create a `.env` file in the `server` root (copy the structure below):
    ```env
-   # DB Config
+   PORT=3000
+   NODE_ENV=development
+   
+   # Database
    DB_HOST=localhost
    DB_PORT=3306
    DB_USER=root
-   DB_PASSWORD=password
+   DB_PASSWORD=your_mysql_password
    DB_NAME=masuma_db
    
-   REDIS_HOST="localhost"
-   REDIS_PORT="6379"
-   FRONTEND_URL="http://localhost:5173"
-
-   # M-Pesa Config
-   MPESA_ENV="sandbox" # or "production"
-   MPESA_CONSUMER_KEY="your_daraja_key"
-   MPESA_CONSUMER_SECRET="your_daraja_secret"
-   MPESA_PASSKEY="your_daraja_passkey"
-   MPESA_SHORTCODE="174379" # Sandbox Paybill
-   MPESA_CALLBACK_URL="https://your-ngrok-url.ngrok-free.app/api/mpesa/callback"
+   # Redis
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   
+   # Security
+   JWT_SECRET=your_secure_random_string_here
+   CORS_ORIGIN=*
+   
+   # M-Pesa (Use Sandbox creds for dev)
+   MPESA_CONSUMER_KEY=...
+   MPESA_CONSUMER_SECRET=...
+   MPESA_PASSKEY=...
+   MPESA_SHORTCODE=174379
+   MPESA_CALLBACK_URL=https://your-public-domain.com/api/mpesa/callback
    ```
 
-3. **Sync Database**
-   The app is configured to `synchronize: true` in development, which will auto-create tables.
-   For production, set `synchronize: false` in `src/config/database.ts` and use `typeorm-cli` for migrations.
-
-4. **Run Server**
+3. **Initialize Data**:
+   Run this script to create tables and the Admin user:
    ```bash
-   npx ts-node src/app.ts
+   npm run seed
+   ```
+   *Default Admin:* `admin@masuma.co.ke` / `password`
+
+4. **Start Server**:
+   ```bash
+   npm run dev
+   ```
+   The API will be live at `http://localhost:3000`.
+
+5. **Start Background Worker** (For Emails):
+   Open a new terminal:
+   ```bash
+   npm run worker
    ```
 
-5. **Run Workers**
-   ```bash
-   npx ts-node src/workers/emailWorker.ts
-   ```
+## 4. Frontend Setup
+1. Go to the project root.
+2. Ensure `utils/apiClient.ts` points to your backend URL (Default is `http://localhost:3000/api`).
+3. Serve the frontend (using Vite, Parcel, or your preferred bundler).

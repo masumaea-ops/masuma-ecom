@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Menu, X, Bot, Phone, MessageCircle, MapPin, User, ChevronDown } from 'lucide-react';
 import { ViewState } from '../types';
+import { useCurrency, CurrencyCode } from '../contexts/CurrencyContext';
+import { apiClient } from '../utils/apiClient';
 
 interface NavbarProps {
   cartCount: number;
@@ -13,27 +15,45 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleAi }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { currency, setCurrency } = useCurrency();
+  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
+  const [contactPhone, setContactPhone] = useState('+254 792 506590'); // Default
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    
+    // Fetch settings
+    const fetchSettings = async () => {
+        try {
+            const res = await apiClient.get('/settings');
+            if (res.data && res.data.CMS_HEADER_PHONE) {
+                setContactPhone(res.data.CMS_HEADER_PHONE);
+            }
+        } catch (e) {
+            // Ignore error, use default
+        }
+    };
+    fetchSettings();
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navItems: ViewState[] = ['HOME', 'CATALOG', 'BLOG', 'ABOUT', 'CONTACT'];
+  const currencies: CurrencyCode[] = ['KES', 'USD', 'UGX', 'TZS', 'RWF'];
 
   return (
     <>
       {/* TOP UTILITY BAR */}
-      <div className="bg-masuma-dark text-white text-[10px] md:text-xs font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors">
+      <div className="bg-masuma-dark text-white text-[10px] md:text-xs font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors relative z-[102]">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             {/* Left: Contact & Chat */}
             <div className="flex items-center space-x-6">
                <span className="flex items-center gap-2 opacity-80 hover:opacity-100 transition cursor-default">
                  <Phone size={12} className="text-masuma-orange" />
-                 Call us between 8 AM - 6 PM / <span className="text-white font-bold">+254 792 506590</span>
+                 Call us between 8 AM - 6 PM / <span className="text-white font-bold">{contactPhone}</span>
                </span>
                <button onClick={toggleAi} className="flex items-center gap-2 opacity-80 hover:opacity-100 transition hover:text-masuma-orange">
                  <MessageCircle size={12} className="text-masuma-orange" />
@@ -46,10 +66,28 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                <button onClick={() => setView('CONTACT')} className="flex items-center gap-2 px-4 opacity-80 hover:opacity-100 transition hover:text-masuma-orange">
                  <MapPin size={12} /> Click to discover Locations
                </button>
-               <div className="flex items-center gap-4 px-4">
-                  <button className="cursor-pointer hover:text-masuma-orange flex items-center gap-1 transition opacity-80 hover:opacity-100">
-                    KSh KES <ChevronDown size={10}/>
-                  </button>
+               <div className="flex items-center gap-4 px-4 relative z-[1001]">
+                  <div className="relative">
+                    <button 
+                        onClick={() => setIsCurrencyOpen(!isCurrencyOpen)}
+                        className="cursor-pointer hover:text-masuma-orange flex items-center gap-1 transition opacity-80 hover:opacity-100"
+                    >
+                        {currency} <ChevronDown size={10}/>
+                    </button>
+                    {isCurrencyOpen && (
+                        <div className="absolute top-8 right-0 bg-white text-masuma-dark shadow-2xl rounded-sm border border-gray-200 z-[1005] w-24 animate-slide-up">
+                            {currencies.map(c => (
+                                <button 
+                                    key={c}
+                                    onClick={() => { setCurrency(c); setIsCurrencyOpen(false); }}
+                                    className={`block w-full text-left px-3 py-2 text-xs hover:bg-gray-100 border-b border-gray-50 last:border-0 ${currency === c ? 'font-bold text-masuma-orange' : ''}`}
+                                >
+                                    {c}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                  </div>
                   <button className="cursor-pointer hover:text-masuma-orange flex items-center gap-1 transition opacity-80 hover:opacity-100">
                     En <ChevronDown size={10}/>
                   </button>
@@ -140,6 +178,12 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       {item}
                   </button>
               ))}
+              {/* Mobile Currency */}
+              <div className="px-4 py-4 border-b border-gray-100 flex gap-2">
+                  {currencies.map(c => (
+                      <button key={c} onClick={() => setCurrency(c)} className={`text-xs border px-2 py-1 rounded ${currency === c ? 'bg-masuma-orange text-white border-masuma-orange' : 'bg-white text-gray-600'}`}>{c}</button>
+                  ))}
+              </div>
               {/* Mobile Login */}
               <button 
                   onClick={() => { setView('LOGIN'); setIsMenuOpen(false); }} 

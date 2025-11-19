@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Eye, CheckCircle, Clock, Truck, Loader2, RefreshCw, XCircle, DollarSign } from 'lucide-react';
 import { Order } from '../../types';
 import { apiClient } from '../../utils/apiClient';
+import OrderDetailsModal from './OrderDetailsModal';
 
 const OrderManager: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -10,6 +11,7 @@ const OrderManager: React.FC = () => {
     const [filterStatus, setFilterStatus] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     const fetchOrders = async () => {
         setIsLoading(true);
@@ -18,10 +20,6 @@ const OrderManager: React.FC = () => {
             setOrders(res.data);
         } catch (error) {
             console.error("Fetch orders failed", error);
-            // Offline Mock
-            setOrders([
-                { id: '1', orderNumber: 'ORD-OFF-001', customerName: 'Offline Customer', date: new Date().toLocaleDateString(), total: 0, status: 'PENDING', paymentMethod: 'Manual', items: [] }
-            ]);
         } finally {
             setIsLoading(false);
         }
@@ -64,6 +62,13 @@ const OrderManager: React.FC = () => {
 
     return (
         <div>
+            <OrderDetailsModal 
+                order={selectedOrder} 
+                isOpen={!!selectedOrder} 
+                onClose={() => setSelectedOrder(null)} 
+                onUpdateStatus={updateStatus} 
+            />
+
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Order Management</h2>
@@ -126,7 +131,7 @@ const OrderManager: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
                                 {filteredOrders.map(order => (
-                                    <tr key={order.id} className="hover:bg-gray-50">
+                                    <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedOrder(order)}>
                                         <td className="px-6 py-4 font-mono font-bold text-masuma-dark">{order.orderNumber}</td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-sm text-gray-800">{order.customerName}</div>
@@ -136,7 +141,7 @@ const OrderManager: React.FC = () => {
                                         <td className="px-6 py-4 font-bold text-masuma-dark">{order.total.toLocaleString()}</td>
                                         <td className="px-6 py-4">{getStatusBadge(order.status)}</td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                                 {order.status === 'PENDING' && (
                                                     <>
                                                         <button 
@@ -147,17 +152,13 @@ const OrderManager: React.FC = () => {
                                                         >
                                                             <DollarSign size={16} />
                                                         </button>
-                                                        <button 
-                                                            onClick={() => updateStatus(order.id, 'FAILED')}
-                                                            disabled={processingId === order.id}
-                                                            className="p-1 text-red-400 hover:bg-red-50 rounded" 
-                                                            title="Cancel Order"
-                                                        >
-                                                            <XCircle size={16} />
-                                                        </button>
                                                     </>
                                                 )}
-                                                <button className="p-1 text-gray-400 hover:text-masuma-orange transition" title="View Details">
+                                                <button 
+                                                    onClick={() => setSelectedOrder(order)}
+                                                    className="p-1 text-gray-400 hover:text-masuma-orange transition" 
+                                                    title="View Details"
+                                                >
                                                     <Eye size={18} />
                                                 </button>
                                             </div>

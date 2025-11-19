@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Smartphone, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { CartItem } from '../types';
+import { apiClient } from '../utils/apiClient';
 
 interface MpesaModalProps {
   isOpen: boolean;
@@ -33,8 +34,8 @@ const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onS
     if (step === 'processing' && currentOrderId) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/orders/${currentOrderId}/status`);
-          const data = await res.json();
+          const res = await apiClient.get(`/orders/${currentOrderId}/status`);
+          const data = res.data;
           
           if (data.status === 'PAID') {
             setStep('success');
@@ -58,31 +59,23 @@ const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onS
     setStep('processing');
 
     try {
-      const res = await fetch('/api/mpesa/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerName: formData.name,
-          customerEmail: formData.email,
-          customerPhone: formData.phone,
-          items: cartItems.map(item => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price
-          }))
-        })
+      const res = await apiClient.post('/mpesa/pay', {
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        items: cartItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        }))
       });
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Payment failed');
-
-      setCurrentOrderId(data.orderId);
+      setCurrentOrderId(res.data.orderId);
       // Stay in 'processing' state to poll
 
     } catch (err: any) {
       setStep('error');
-      setErrorMessage(err.message);
+      setErrorMessage(err.response?.data?.error || err.message || 'Payment failed');
     }
   };
 

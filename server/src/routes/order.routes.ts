@@ -72,7 +72,7 @@ router.get('/', authenticate, async (req, res) => {
             .leftJoinAndSelect('items.product', 'product')
             .orderBy('order.createdAt', 'DESC');
 
-        if (status && status !== 'All Statuses') {
+        if (status && status !== 'All Statuses' && status !== 'All') {
             query.andWhere('order.status = :status', { status });
         }
 
@@ -82,16 +82,25 @@ router.get('/', authenticate, async (req, res) => {
 
         const orders = await query.take(50).getMany();
         
-        // Transform for frontend dashboard
+        // Transform for frontend dashboard with FULL DETAILS
         const formattedOrders = orders.map(o => ({
             id: o.id,
-            orderNumber: o.id.substring(0, 8).toUpperCase(), // Mock order number from UUID
+            orderNumber: o.id.substring(0, 8).toUpperCase(),
             customerName: o.customerName,
+            customerEmail: o.customerEmail,
+            customerPhone: o.customerPhone,
             date: new Date(o.createdAt).toLocaleDateString(),
             total: Number(o.totalAmount),
             status: o.status,
-            paymentMethod: 'Manual', // Default for now
-            items: o.items.map(i => ({ name: i.product?.name || 'Product', qty: i.quantity }))
+            paymentMethod: 'Manual',
+            items: o.items.map(i => ({ 
+                id: i.id,
+                name: i.product?.name || 'Unknown Product', 
+                sku: i.product?.sku || 'N/A',
+                qty: i.quantity,
+                price: Number(i.price),
+                image: i.product?.imageUrl
+            }))
         }));
 
         res.json(formattedOrders);
@@ -104,7 +113,7 @@ router.get('/', authenticate, async (req, res) => {
 // PATCH /api/orders/:id/status
 // Update status (e.g. for Shipping Manager)
 const updateStatusSchema = z.object({
-    status: z.enum(['PENDING', 'PAID', 'SHIPPED', 'DELIVERED']),
+    status: z.enum(['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'FAILED']),
     trackingInfo: z.string().optional()
 });
 

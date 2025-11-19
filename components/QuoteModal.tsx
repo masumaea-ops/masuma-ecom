@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { X, Send, CheckCircle, Loader2, MessageSquare } from 'lucide-react';
 import { Product } from '../types';
+import { apiClient } from '../utils/apiClient';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -25,28 +26,18 @@ const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, product }) => 
     setStatus('submitting');
 
     try {
-      const response = await fetch('/api/quotes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          productId: product.id,
-          productName: product.name
-        }),
+      await apiClient.post('/quotes', {
+        ...formData,
+        productId: product.id,
+        productName: product.name
       });
 
-      if (response.ok) {
-        setStatus('success');
-        setTimeout(() => {
-          onClose();
-          setStatus('idle');
-          setFormData({ name: '', email: '', phone: '', message: '' });
-        }, 3000);
-      } else {
-        setStatus('error');
-      }
+      setStatus('success');
+      setTimeout(() => {
+        onClose();
+        setStatus('idle');
+        setFormData({ name: '', email: '', phone: '', message: '' });
+      }, 3000);
     } catch (error) {
       console.error('Quote submission failed:', error);
       setStatus('error');

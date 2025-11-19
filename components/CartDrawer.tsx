@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { X, Trash2, CreditCard, Smartphone } from 'lucide-react';
 import { CartItem } from '../types';
 import MpesaModal from './MpesaModal';
+import Price from './Price';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -59,7 +61,9 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                     <h4 className="font-bold text-sm text-masuma-dark line-clamp-1">{item.name}</h4>
                     <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
                     <div className="flex justify-between items-center">
-                      <span className="text-masuma-orange font-bold text-sm">KES {item.price.toLocaleString()}</span>
+                      <span className="text-masuma-orange font-bold text-sm">
+                        <Price amount={item.price} />
+                      </span>
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-600">x{item.quantity}</span>
                         <button 
@@ -80,7 +84,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
           <div className="p-5 border-t border-gray-200 bg-white">
             <div className="flex justify-between items-center mb-4">
               <span className="text-gray-600 font-medium uppercase text-xs">Subtotal</span>
-              <span className="text-xl font-bold text-masuma-dark">KES {total.toLocaleString()}</span>
+              <span className="text-xl font-bold text-masuma-dark"><Price amount={total} /></span>
             </div>
             <p className="text-[10px] text-gray-500 mb-4 text-center">
               Secure payments powered by M-Pesa.

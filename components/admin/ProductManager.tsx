@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle } from 'lucide-react';
-import { Category, Product } from '../../types';
+import { Product } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
 const ProductManager: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,15 +28,30 @@ const ProductManager: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+      try {
+          const res = await apiClient.get('/categories');
+          setCategories(res.data);
+      } catch (error) {
+          console.error('Failed to fetch categories', error);
+          // Fallback
+          setCategories([{ id: '1', name: 'Filters' }, { id: '2', name: 'Brakes' }]);
+      }
+  };
+
   useEffect(() => {
     const debounce = setTimeout(() => fetchProducts(), 500);
     return () => clearTimeout(debounce);
   }, [searchTerm]);
 
+  useEffect(() => {
+      fetchCategories();
+  }, []);
+
   const handleAddNew = () => {
     setFormData({
         name: '', sku: '', price: 0, wholesalePrice: 0, 
-        description: '', category: Category.FILTERS, image: '', oemNumbers: []
+        description: '', category: categories[0]?.name || 'Filters' as any, image: '', oemNumbers: []
     });
     setOemString('');
     setIsEditorOpen(true);
@@ -47,7 +63,24 @@ const ProductManager: React.FC = () => {
     setIsEditorOpen(true);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+    
+    try {
+        await apiClient.delete(`/products/${id}`);
+        fetchProducts(); // Refresh list
+        alert('Product deleted successfully.');
+    } catch (error: any) {
+        alert(error.response?.data?.error || 'Failed to delete product.');
+    }
+  };
+
   const handleSave = async () => {
+    if (!formData.name || !formData.sku || !formData.price) {
+        alert('Please fill in all required fields (Name, SKU, Price).');
+        return;
+    }
+
     setIsSaving(true);
     try {
         const payload = {
@@ -57,7 +90,7 @@ const ProductManager: React.FC = () => {
             // Ensure numbers
             price: Number(formData.price),
             wholesalePrice: Number(formData.wholesalePrice),
-            imageUrl: formData.image // Mapping UI 'image' to backend 'imageUrl' happens here if needed, but we use 'image' in frontend type
+            imageUrl: formData.image // Mapping UI 'image' to backend 'imageUrl' happens here
         };
 
         if (formData.id) {
@@ -68,8 +101,8 @@ const ProductManager: React.FC = () => {
 
         setIsEditorOpen(false);
         fetchProducts(); // Refresh list
-    } catch (error) {
-        alert('Failed to save product. Check console.');
+    } catch (error: any) {
+        alert(error.response?.data?.error || 'Failed to save product. Check inputs.');
         console.error(error);
     } finally {
         setIsSaving(false);
@@ -159,7 +192,7 @@ const ProductManager: React.FC = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => handleEdit(product)} className="p-2 hover:bg-gray-100 rounded text-gray-500 hover:text-masuma-orange"><Edit2 size={16} /></button>
-                      <button className="p-2 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={16} /></button>
+                      <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -186,43 +219,45 @@ const ProductManager: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
               <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-gray-600">Product Name</label>
+                <label className="text-xs font-bold uppercase text-gray-600">Product Name *</label>
                 <input 
                     type="text" 
                     value={formData.name || ''} 
                     onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none"
+                    placeholder="e.g. Oil Filter"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-600">SKU (Part No)</label>
+                  <label className="text-xs font-bold uppercase text-gray-600">SKU (Part No) *</label>
                   <input 
                     type="text" 
                     value={formData.sku || ''}
                     onChange={e => setFormData({...formData, sku: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" 
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono"
+                    placeholder="e.g. MFC-112" 
                    />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-gray-600">Category</label>
                   <select 
-                    value={formData.category || Category.FILTERS}
-                    onChange={e => setFormData({...formData, category: e.target.value as Category})}
+                    value={formData.category || ''}
+                    onChange={e => setFormData({...formData, category: e.target.value as any})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-white"
                   >
-                    {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
-                   <label className="text-xs font-bold uppercase text-gray-600">Price (KES)</label>
+                   <label className="text-xs font-bold uppercase text-gray-600">Price (KES) *</label>
                    <input 
                     type="number" 
-                    value={formData.price || 0}
+                    value={formData.price || ''}
                     onChange={e => setFormData({...formData, price: Number(e.target.value)})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
                    />
@@ -231,7 +266,7 @@ const ProductManager: React.FC = () => {
                    <label className="text-xs font-bold uppercase text-gray-600">Wholesale Price</label>
                    <input 
                     type="number" 
-                    value={formData.wholesalePrice || 0}
+                    value={formData.wholesalePrice || ''}
                     onChange={e => setFormData({...formData, wholesalePrice: Number(e.target.value)})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
                    />
@@ -246,9 +281,15 @@ const ProductManager: React.FC = () => {
                     value={formData.image || ''}
                     onChange={e => setFormData({...formData, image: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm text-gray-500" 
+                    placeholder="https://example.com/image.jpg"
                    />
                    <button className="p-3 bg-gray-200 rounded hover:bg-gray-300"><ImageIcon size={20} /></button>
                 </div>
+                {formData.image && (
+                   <div className="mt-2 h-24 w-24 bg-gray-100 border border-gray-200 rounded overflow-hidden">
+                       <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                   </div>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -257,6 +298,7 @@ const ProductManager: React.FC = () => {
                     value={oemString}
                     onChange={e => setOemString(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-24 font-mono text-sm"
+                    placeholder="90915-10001, 90915-YZZE1"
                  ></textarea>
               </div>
 

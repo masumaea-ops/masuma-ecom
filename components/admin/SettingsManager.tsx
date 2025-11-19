@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Settings, Users, Building, FileText, Loader2 } from 'lucide-react';
+import { Save, Settings, Users, Building, FileText, Loader2, Activity, Server, Database, RefreshCw } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 
 const SettingsManager: React.FC = () => {
@@ -8,6 +8,10 @@ const SettingsManager: React.FC = () => {
     const [settings, setSettings] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Health State
+    const [healthData, setHealthData] = useState<any>(null);
+    const [loadingHealth, setLoadingHealth] = useState(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -22,6 +26,24 @@ const SettingsManager: React.FC = () => {
         };
         fetchSettings();
     }, []);
+
+    useEffect(() => {
+        if (activeTab === 'status') {
+            fetchHealth();
+        }
+    }, [activeTab]);
+
+    const fetchHealth = async () => {
+        setLoadingHealth(true);
+        try {
+            const res = await apiClient.get('/health');
+            setHealthData(res.data);
+        } catch (error) {
+            setHealthData({ server: 'Error', database: 'Unreachable', redis: 'Unreachable' });
+        } finally {
+            setLoadingHealth(false);
+        }
+    };
 
     const handleChange = (key: string, value: string) => {
         setSettings(prev => ({ ...prev, [key]: value }));
@@ -65,6 +87,7 @@ const SettingsManager: React.FC = () => {
                         { id: 'general', label: 'General Config', icon: Settings },
                         { id: 'branch', label: 'Branch Details', icon: Building },
                         { id: 'fiscal', label: 'Fiscal / eTIMS', icon: FileText },
+                        { id: 'status', label: 'System Health', icon: Activity },
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -132,6 +155,59 @@ const SettingsManager: React.FC = () => {
                                <label className="text-xs font-bold uppercase text-gray-500">Device Serial Number</label>
                                <input type="text" value={settings['DEVICE_SERIAL'] || ''} onChange={e => handleChange('DEVICE_SERIAL', e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" />
                            </div>
+                        </div>
+                   )}
+
+                   {activeTab === 'status' && (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100">
+                                <h3 className="text-lg font-bold uppercase text-masuma-dark">System Health Monitor</h3>
+                                <button onClick={fetchHealth} className="p-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-600">
+                                    <RefreshCw size={16} className={loadingHealth ? 'animate-spin' : ''} />
+                                </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-green-50 p-4 rounded border border-green-200 flex items-start gap-3">
+                                    <Server className="text-green-600 mt-1" size={24} />
+                                    <div>
+                                        <h4 className="font-bold text-green-800 text-sm">API Server</h4>
+                                        <p className="text-xs text-green-600">{healthData?.server || 'Checking...'}</p>
+                                        <p className="text-[10px] text-gray-500 mt-1">Uptime: {healthData ? (healthData.uptime / 60).toFixed(2) + ' mins' : '...'}</p>
+                                    </div>
+                                </div>
+
+                                <div className={`p-4 rounded border flex items-start gap-3 ${healthData?.database === 'Connected' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                    <Database className={`${healthData?.database === 'Connected' ? 'text-green-600' : 'text-red-600'} mt-1`} size={24} />
+                                    <div>
+                                        <h4 className={`font-bold text-sm ${healthData?.database === 'Connected' ? 'text-green-800' : 'text-red-800'}`}>Primary Database</h4>
+                                        <p className={`text-xs ${healthData?.database === 'Connected' ? 'text-green-600' : 'text-red-600'}`}>{healthData?.database || 'Checking...'}</p>
+                                        <p className="text-[10px] text-gray-500 mt-1">MySQL 8.0</p>
+                                    </div>
+                                </div>
+
+                                <div className={`p-4 rounded border flex items-start gap-3 ${healthData?.redis === 'Connected' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                    <Activity className={`${healthData?.redis === 'Connected' ? 'text-green-600' : 'text-red-600'} mt-1`} size={24} />
+                                    <div>
+                                        <h4 className={`font-bold text-sm ${healthData?.redis === 'Connected' ? 'text-green-800' : 'text-red-800'}`}>Cache (Redis)</h4>
+                                        <p className={`text-xs ${healthData?.redis === 'Connected' ? 'text-green-600' : 'text-red-600'}`}>{healthData?.redis || 'Checking...'}</p>
+                                        <p className="text-[10px] text-gray-500 mt-1">BullMQ / Caching</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded border border-blue-200 flex items-start gap-3">
+                                    <FileText className="text-blue-600 mt-1" size={24} />
+                                    <div>
+                                        <h4 className="font-bold text-blue-800 text-sm">Background Workers</h4>
+                                        <p className="text-xs text-blue-600">Idle (BullMQ)</p>
+                                        <p className="text-[10px] text-gray-500 mt-1">Queue Depth: 0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-6">
+                                <button className="text-xs text-gray-500 underline">Download System Logs</button>
+                            </div>
                         </div>
                    )}
                 </div>

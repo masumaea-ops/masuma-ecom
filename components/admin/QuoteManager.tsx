@@ -1,23 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, CheckCircle, XCircle, MoreHorizontal, ArrowRight, DollarSign, RefreshCw, Loader2, Send } from 'lucide-react';
-import { QuoteStatus } from '../../types';
+import { Search, FileText, CheckCircle, XCircle, MoreHorizontal, ArrowRight, DollarSign, RefreshCw, Loader2, Send, Eye } from 'lucide-react';
+import { Quote, QuoteStatus } from '../../types';
 import { apiClient } from '../../utils/apiClient';
-
-interface Quote {
-    id: string;
-    quoteNumber: string;
-    customerName: string;
-    date: string;
-    total: number;
-    status: QuoteStatus;
-    itemsCount: number;
-}
+import QuoteDetailsModal from './QuoteDetailsModal';
 
 const QuoteManager: React.FC = () => {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
 
     const fetchQuotes = async () => {
         setIsLoading(true);
@@ -26,10 +17,6 @@ const QuoteManager: React.FC = () => {
             setQuotes(res.data);
         } catch (error) {
             console.error(error);
-            // Fallback mock data
-            setQuotes([
-                { id: '1', quoteNumber: 'QT-MOCK-01', customerName: 'Mock Customer', date: '2023-10-26', total: 0, status: QuoteStatus.DRAFT, itemsCount: 1 }
-            ]);
         } finally {
             setIsLoading(false);
         }
@@ -38,19 +25,6 @@ const QuoteManager: React.FC = () => {
     useEffect(() => {
         fetchQuotes();
     }, []);
-
-    const handleUpdateStatus = async (id: string, status: QuoteStatus) => {
-        if (!confirm(`Change status to ${status}?`)) return;
-        setUpdatingId(id);
-        try {
-            await apiClient.patch(`/quotes/${id}`, { status });
-            fetchQuotes();
-        } catch (error) {
-            alert('Failed to update status');
-        } finally {
-            setUpdatingId(null);
-        }
-    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -64,6 +38,13 @@ const QuoteManager: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col">
+            <QuoteDetailsModal 
+                quote={selectedQuote} 
+                isOpen={!!selectedQuote} 
+                onClose={() => setSelectedQuote(null)} 
+                onUpdate={fetchQuotes} 
+            />
+
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Quotations</h2>
@@ -113,35 +94,23 @@ const QuoteManager: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-sm">
                             {quotes.map(quote => (
-                                <tr key={quote.id} className="hover:bg-gray-50">
+                                <tr key={quote.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedQuote(quote)}>
                                     <td className="px-6 py-4 font-mono font-bold text-masuma-dark">{quote.quoteNumber}</td>
-                                    <td className="px-6 py-4 font-bold text-gray-700">{quote.customerName}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="font-bold text-gray-700">{quote.customerName}</div>
+                                        <div className="text-xs text-gray-500">{quote.itemsCount} items</div>
+                                    </td>
                                     <td className="px-6 py-4 text-gray-500">{quote.date}</td>
                                     <td className="px-6 py-4 font-bold">KES {quote.total.toLocaleString()}</td>
                                     <td className="px-6 py-4">{getStatusBadge(quote.status)}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {quote.status === QuoteStatus.DRAFT && (
-                                                <button 
-                                                    onClick={() => handleUpdateStatus(quote.id, QuoteStatus.SENT)}
-                                                    disabled={updatingId === quote.id}
-                                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded" 
-                                                    title="Mark as Sent"
-                                                >
-                                                    <Send size={16} />
-                                                </button>
-                                            )}
-                                            {quote.status === QuoteStatus.SENT && (
-                                                <button 
-                                                    onClick={() => handleUpdateStatus(quote.id, QuoteStatus.ACCEPTED)}
-                                                    disabled={updatingId === quote.id}
-                                                    className="p-1 text-green-600 hover:bg-green-50 rounded" 
-                                                    title="Mark Accepted / Convert"
-                                                >
-                                                    <DollarSign size={16} />
-                                                </button>
-                                            )}
-                                            <button className="p-1 text-gray-400 hover:text-masuma-orange"><ArrowRight size={16} /></button>
+                                        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                                onClick={() => setSelectedQuote(quote)}
+                                                className="p-1 text-gray-400 hover:text-masuma-orange"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

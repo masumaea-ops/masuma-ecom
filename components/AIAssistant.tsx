@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles, Bot } from 'lucide-react';
 import { sendMessageToGemini } from '../services/geminiService';
@@ -58,22 +59,33 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end md:items-end md:p-6 bg-black/60 md:bg-transparent">
-      <div className="bg-white w-full h-full md:w-96 md:h-[600px] md:rounded-lg shadow-2xl flex flex-col overflow-hidden border border-gray-200 font-sans">
+    <div className="fixed inset-0 z-[1000] pointer-events-none flex flex-col md:flex-row items-end justify-end">
+      {/* Backdrop (Click to Close) - Pointer events re-enabled */}
+      <div 
+          className="absolute inset-0 bg-black/50 pointer-events-auto md:bg-transparent" 
+          onClick={onClose}
+      ></div>
+
+      {/* Chat Window */}
+      {/* On Mobile: top-[120px] pushes it below the header. On Desktop: Standard bottom-right */}
+      <div className="pointer-events-auto absolute md:relative top-[120px] bottom-0 left-0 right-0 md:top-auto md:bottom-6 md:right-6 md:left-auto w-full md:w-96 md:h-[600px] bg-white md:rounded-lg shadow-2xl flex flex-col overflow-hidden border border-gray-200 font-sans animate-slide-up z-[1001]">
         
         {/* Header */}
-        <div className="bg-masuma-dark p-4 flex justify-between items-center text-white border-b-4 border-masuma-orange">
+        <div className="bg-masuma-dark p-4 flex justify-between items-center text-white border-b-4 border-masuma-orange shadow-md">
           <div className="flex items-center gap-3">
-            <div className="bg-masuma-orange p-2 rounded-full">
+            <div className="bg-masuma-orange p-2 rounded-full shadow-inner">
               <Bot size={20} className="text-white" />
             </div>
             <div>
               <h3 className="font-bold text-sm uppercase tracking-wider">Masuma Expert AI</h3>
-              <p className="text-xs text-gray-400">Automated Assistant</p>
+              <p className="text-[10px] text-gray-400">Live Assistant</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition">
-            <X size={24} />
+          <button 
+            onClick={onClose} 
+            className="flex items-center gap-1 text-gray-400 hover:text-white transition text-xs font-bold uppercase bg-white/10 px-2 py-1 rounded hover:bg-masuma-orange"
+          >
+            Close <X size={16} />
           </button>
         </div>
 
@@ -99,7 +111,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
             <div className="flex justify-start">
               <div className="bg-white text-masuma-dark p-3 rounded-t-lg rounded-br-lg shadow-sm border border-gray-200 flex items-center gap-2">
                 <Sparkles size={16} className="animate-pulse text-masuma-orange" />
-                <span className="text-xs font-medium">Checking compatibility...</span>
+                <span className="text-xs font-medium">Thinking...</span>
               </div>
             </div>
           )}
@@ -114,21 +126,19 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about parts, prices, or advice..."
+              placeholder="Ask about parts..."
               className="w-full pl-4 pr-12 py-3 bg-gray-100 border border-transparent rounded-none focus:ring-1 focus:ring-masuma-orange focus:bg-white transition outline-none text-sm text-masuma-dark placeholder:text-gray-400"
               disabled={isLoading}
+              autoFocus
             />
             <button 
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="absolute right-2 p-2 bg-masuma-dark text-white hover:bg-masuma-orange disabled:opacity-50 disabled:hover:bg-masuma-dark transition"
+              className="absolute right-2 p-2 bg-masuma-dark text-white hover:bg-masuma-orange disabled:opacity-50 disabled:hover:bg-masuma-dark transition rounded-sm"
             >
               <Send size={16} />
             </button>
           </div>
-          <p className="text-[10px] text-center text-gray-400 mt-2">
-            AI assistance provided for informational purposes. Verify with a mechanic.
-          </p>
         </div>
 
       </div>

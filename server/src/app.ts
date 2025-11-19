@@ -5,9 +5,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { Queue } from 'bullmq';
 import { redis } from './config/redis';
 import { AppDataSource } from './config/database';
+import { config } from './config/env'; // Validated Config
+import { errorHandler } from './middleware/errorHandler'; // Global Error Handler
 import { ProductService } from './services/productService';
 
 // Routers
@@ -26,9 +27,13 @@ import settingsRoutes from './routes/settings.routes';
 import quoteRoutes from './routes/quote.routes';
 import reportRoutes from './routes/report.routes'; 
 import contactRoutes from './routes/contact.routes'; 
-import branchRoutes from './routes/branch.routes'; // New
+import branchRoutes from './routes/branch.routes'; 
+import notificationRoutes from './routes/notification.routes'; 
+import categoryRoutes from './routes/category.routes';
+import healthRoutes from './routes/health.routes';
+import exchangeRoutes from './routes/exchange.routes'; // Added
 
-// Services & Legacy handlers
+// Services & Specific
 import { MpesaService } from './services/mpesaService';
 import { z } from 'zod';
 import { Order, OrderStatus } from './entities/Order';
@@ -40,16 +45,17 @@ const app = express();
 // Initialize Database
 AppDataSource.initialize()
   .then(() => {
-    console.log('Data Source has been initialized!');
+    console.log(`✅ Database connected: ${config.DB_NAME} on ${config.DB_HOST}`);
   })
   .catch((err) => {
-    console.error('Error during Data Source initialization:', err);
+    console.error('❌ Database connection failed:', err);
+    (process as any).exit(1);
   });
 
 // --- Security & Performance Middleware ---
 app.use(helmet()); 
 app.use(compression()); 
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+app.use(cors({ origin: config.CORS_ORIGIN }));
 app.use(express.json());
 
 const limiter = rateLimit({
@@ -74,11 +80,13 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/contact', contactRoutes); 
-app.use('/api/branches', branchRoutes); // New
+app.use('/api/branches', branchRoutes); 
+app.use('/api/notifications', notificationRoutes); 
+app.use('/api/categories', categoryRoutes);
+app.use('/api/health', healthRoutes);
+app.use('/api/exchange-rates', exchangeRoutes); // Added
 
 // --- Legacy / Specific Routes (M-Pesa) ---
-
-// M-Pesa (Public)
 const mpesaOrderSchema = z.object({
   customerName: z.string().min(2),
   customerEmail: z.string().email(),
@@ -165,7 +173,32 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
 });
+
+// Global Error Handler (Must be last)
+app.use(errorHandler);
+
+const PORT = config.PORT;
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+// Graceful Shutdown
+const shutdown = async () => {
+    console.log('🛑 Shutting down server...');
+    server.close(async () => {
+        if (AppDataSource.isInitialized) {
+            await AppDataSource.destroy();
+            console.log('Database connection closed.');
+        }
+        redis.disconnect();
+        console.log('Redis connection closed.');
+        (process as any).exit(0);
+    });
+};
+
+(process as any).on('SIGTERM', shutdown);
+(process as any).on('SIGINT', shutdown);
