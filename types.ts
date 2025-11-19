@@ -1,5 +1,4 @@
 
-
 export enum Category {
   ALL = 'All',
   FILTERS = 'Filters',
@@ -24,6 +23,8 @@ export interface Product {
   description: string;
   compatibility: string[]; // e.g., ["Toyota Vitz", "Corolla"]
   image: string;
+  images?: string[];
+  videoUrl?: string;
   stock: boolean; // Frontend derived flag
 }
 
@@ -113,10 +114,21 @@ export interface Customer {
     lastVisit: string;
 }
 
+export interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  mediaType?: 'image' | 'video' | 'youtube';
+  videoUrl?: string;
+  ctaText: string;
+  ctaLink: ViewState;
+}
+
 export interface CmsConfig {
-    heroTitle: string;
-    heroSubtitle: string;
-    heroImage: string;
+    heroTitle: string; // Legacy
+    heroSubtitle: string; // Legacy
+    heroImage: string; // Legacy
     announcementText: string;
     showAnnouncement: boolean;
 }

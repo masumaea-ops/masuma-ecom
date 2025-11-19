@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle, UploadCloud } from 'lucide-react';
+import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle, UploadCloud, Video } from 'lucide-react';
 import { Product } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -18,6 +18,7 @@ const ProductManager: React.FC = () => {
   const [oemString, setOemString] = useState(''); // Handle comma separated input
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null); // New Ref for video
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -78,29 +79,38 @@ const ProductManager: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'video') => {
       const file = e.target.files?.[0];
       if (!file) return;
 
       setIsUploading(true);
       const uploadData = new FormData();
-      uploadData.append('image', file);
+      uploadData.append('image', file); // Key is 'image' for multer, even if video file
 
       try {
           const res = await apiClient.post('/upload', uploadData, {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
           
-          // Update Image URL
-          setFormData(prev => ({
-              ...prev,
-              image: res.data.url,
-              images: [...(prev.images || []), res.data.url]
-          }));
+          if (field === 'image') {
+              setFormData(prev => ({
+                  ...prev,
+                  image: res.data.url,
+                  images: [...(prev.images || []), res.data.url]
+              }));
+          } else {
+              setFormData(prev => ({
+                  ...prev,
+                  videoUrl: res.data.url
+              }));
+          }
       } catch (error) {
           alert('Upload failed');
       } finally {
           setIsUploading(false);
+          // Reset inputs
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          if (videoInputRef.current) videoInputRef.current.value = '';
       }
   };
 
@@ -318,7 +328,7 @@ const ProductManager: React.FC = () => {
                      ref={fileInputRef} 
                      className="hidden" 
                      accept="image/*" 
-                     onChange={handleFileUpload}
+                     onChange={(e) => handleFileUpload(e, 'image')}
                    />
                    <input 
                     type="text" 
@@ -358,14 +368,30 @@ const ProductManager: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                 <label className="text-xs font-bold uppercase text-gray-600">Video URL (YouTube)</label>
-                 <input 
-                    type="text" 
-                    value={formData.videoUrl || ''}
-                    onChange={e => setFormData({...formData, videoUrl: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm"
-                    placeholder="https://youtube.com/watch?v=..."
-                 />
+                 <label className="text-xs font-bold uppercase text-gray-600">Video URL (YouTube or Upload)</label>
+                 <div className="flex gap-2">
+                     <input 
+                        type="file" 
+                        ref={videoInputRef} 
+                        className="hidden" 
+                        accept="video/*" 
+                        onChange={(e) => handleFileUpload(e, 'video')}
+                     />
+                     <input 
+                        type="text" 
+                        value={formData.videoUrl || ''}
+                        onChange={e => setFormData({...formData, videoUrl: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm"
+                        placeholder="https://youtube.com/watch?v=... or Upload"
+                     />
+                     <button 
+                        onClick={() => videoInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="p-3 bg-gray-100 rounded hover:bg-masuma-orange hover:text-white transition flex items-center gap-2 font-bold text-xs uppercase"
+                     >
+                         <Video size={16} />
+                     </button>
+                 </div>
               </div>
 
               <div className="space-y-1">

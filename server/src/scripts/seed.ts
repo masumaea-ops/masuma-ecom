@@ -9,6 +9,7 @@ import { ProductStock } from '../entities/ProductStock';
 import { OemNumber } from '../entities/OemNumber';
 import { Vehicle } from '../entities/Vehicle';
 import { BlogPost } from '../entities/BlogPost';
+import { SystemSetting } from '../entities/SystemSetting';
 import { Security } from '../utils/security';
 
 // Mock Data Source
@@ -82,6 +83,33 @@ const BLOG_DATA = [
         category: 'Technical',
         readTime: '5 min read',
         relatedProductCategory: 'Brakes'
+    }
+];
+
+const HERO_SLIDES_DATA = [
+    {
+        id: 'slide-1',
+        title: 'JAPANESE\nPRECISION.\nKENYAN GRIT.',
+        subtitle: "Upgrade your ride with parts engineered to survive Nairobi's toughest roads. From suspension to filtration, choose the brand trusted by mechanics worldwide.",
+        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
+        ctaText: 'Browse Catalog',
+        ctaLink: 'CATALOG'
+    },
+    {
+        id: 'slide-2',
+        title: 'CERAMIC BRAKING\nPOWER.',
+        subtitle: 'Stop faster and quieter with Masuma Ceramic Brake Pads. Engineered for high heat resistance and low dust generation.',
+        image: 'https://masuma.com/wp-content/uploads/2021/09/MS-2444_1.jpg',
+        ctaText: 'Shop Brakes',
+        ctaLink: 'CATALOG'
+    },
+    {
+        id: 'slide-3',
+        title: 'REINFORCED\nSUSPENSION.',
+        subtitle: 'Bushings and joints designed for rough terrain. Restore your vehicle handling and comfort today.',
+        image: 'https://masuma.com/wp-content/uploads/2021/09/ML-3320_1.jpg',
+        ctaText: 'View Suspension',
+        ctaLink: 'CATALOG'
     }
 ];
 
@@ -188,6 +216,17 @@ const seed = async () => {
             await blogRepo.save(post);
             console.log(`Created blog post: ${bData.title}`);
         }
+    }
+
+    // 5. Seed Hero Slides
+    const settingsRepo = AppDataSource.getRepository(SystemSetting);
+    const existingSlides = await settingsRepo.findOneBy({ key: 'CMS_HERO_SLIDES' });
+    if (!existingSlides) {
+        const setting = new SystemSetting();
+        setting.key = 'CMS_HERO_SLIDES';
+        setting.value = JSON.stringify(HERO_SLIDES_DATA);
+        await settingsRepo.save(setting);
+        console.log('Created Default Hero Slides');
     }
 
     console.log('Seeding complete.');
