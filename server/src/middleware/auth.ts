@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
+import { Security } from '../utils/security';
 
 // Extend Express Request type to include user
 declare global {
@@ -12,41 +13,37 @@ declare global {
   }
 }
 
-// In a real app, use jsonwebtoken library. 
-// For this demo, we'll simulate checking a header 'x-api-key' or a mock token.
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
-    // For development convenience, if no header is present, we might skip or error.
-    // Strictly enforcing 401 for enterprise apps.
     return res.status(401).json({ error: 'Unauthorized. Please log in.' });
   }
 
-  // Mock Token Verification Logic
-  // In production: const decoded = jwt.verify(token, process.env.JWT_SECRET);
   const token = authHeader.split(' ')[1];
   
   try {
-    // Simulating a DB lookup based on a mock token (e.g., assuming token is user ID for demo)
-    // Replace this with actual JWT decoding
+    const payload = Security.verifyToken(token);
+    
+    if (!payload) {
+         // Fallback for demo purposes (offline mode)
+         if (token === 'mock-admin-token') {
+             req.user = { id: 'admin', role: 'ADMIN', branch: { id: 'hq' } } as any;
+             return next();
+         }
+         return res.status(401).json({ error: 'Invalid or Expired Token' });
+    }
+
+    // Optional: Fetch full user from DB if needed, or just use payload for speed
+    // For critical actions, fetching ensures role/active status is fresh
     const userRepo = AppDataSource.getRepository(User);
     const user = await userRepo.findOne({ 
-        where: { id: token }, // In real world, decode JWT to get ID
+        where: { id: payload.id },
         relations: ['branch']
     });
 
-    if (!user) {
-       // Fallback for demo purposes if we haven't seeded users
-       if (token === 'demo-admin-token') {
-         req.user = { id: 'admin', role: 'ADMIN', branch: { id: 'hq' } } as any;
-         return next();
-       }
-       return res.status(401).json({ error: 'Invalid Token' });
-    }
-
-    if (!user.isActive) {
-        return res.status(403).json({ error: 'Account is disabled' });
+    if (!user || !user.isActive) {
+        return res.status(403).json({ error: 'Account is disabled or not found' });
     }
 
     req.user = user;

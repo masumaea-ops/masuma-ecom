@@ -3,6 +3,7 @@ import { AppDataSource } from '../config/database';
 import { ProductStock } from '../entities/ProductStock';
 import { Product } from '../entities/Product';
 import { Branch } from '../entities/Branch';
+import { AuditService } from './auditService';
 
 export class InventoryService {
   private static stockRepo = AppDataSource.getRepository(ProductStock);
@@ -10,6 +11,7 @@ export class InventoryService {
   static async getStockForBranch(branchId: string, lowStockOnly: boolean = false) {
     const query = this.stockRepo.createQueryBuilder('stock')
       .leftJoinAndSelect('stock.product', 'product')
+      .leftJoinAndSelect('stock.branch', 'branch')
       .where('stock.branchId = :branchId', { branchId });
 
     if (lowStockOnly) {
@@ -42,5 +44,63 @@ export class InventoryService {
     }
 
     return this.stockRepo.save(stockEntry);
+  }
+
+  static async transferStock(productId: string, fromBranchId: string, toBranchId: string, quantity: number, userId: string) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const stockRepo = queryRunner.manager.getRepository(ProductStock);
+
+      // 1. Get Source Stock
+      const sourceStock = await stockRepo.findOne({
+        where: { product: { id: productId }, branch: { id: fromBranchId } },
+        lock: { mode: 'pessimistic_write' }
+      });
+
+      if (!sourceStock || sourceStock.quantity < quantity) {
+        throw new Error('Insufficient stock at source branch');
+      }
+
+      // 2. Get/Create Destination Stock
+      let destStock = await stockRepo.findOne({
+        where: { product: { id: productId }, branch: { id: toBranchId } },
+        lock: { mode: 'pessimistic_write' }
+      });
+
+      if (!destStock) {
+        destStock = new ProductStock();
+        destStock.product = { id: productId } as any;
+        destStock.branch = { id: toBranchId } as any;
+        destStock.quantity = 0;
+      }
+
+      // 3. Perform Transfer
+      sourceStock.quantity -= quantity;
+      destStock.quantity += quantity;
+
+      await stockRepo.save(sourceStock);
+      await stockRepo.save(destStock);
+
+      await queryRunner.commitTransaction();
+
+      // 4. Audit Log (Async)
+      AuditService.log(
+        'STOCK_TRANSFER', 
+        productId, 
+        `Transferred ${quantity} units from Branch ${fromBranchId} to ${toBranchId}`, 
+        { id: userId } as any
+      );
+
+      return { source: sourceStock, dest: destStock };
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

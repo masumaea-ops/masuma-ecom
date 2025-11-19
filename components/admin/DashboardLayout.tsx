@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
   Smartphone, Users, FileText, Truck, Car, 
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building
 } from 'lucide-react';
+import NotificationsPopover from './NotificationsPopover';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,26 +16,39 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModule, onNavigate, onLogout }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [user, setUser] = useState<any>({ name: 'User', role: 'CASHIER', branch: { name: 'Loading...' } });
 
+  useEffect(() => {
+      const storedUser = localStorage.getItem('masuma_user');
+      if (storedUser) {
+          setUser(JSON.parse(storedUser));
+      }
+  }, []);
+
+  // Define Menu Items with Role Permissions
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
-    { id: 'products', label: 'Product Manager', icon: Package },
-    { id: 'orders', label: 'Orders', icon: FileText },
-    { id: 'shipping', label: 'Shipping & Logistics', icon: Truck },
-    { id: 'quotes', label: 'Quotations', icon: FileText },
-    { id: 'b2b', label: 'B2B Portal', icon: Briefcase },
-    { id: 'inventory', label: 'Inventory', icon: Package },
-    { id: 'sales_history', label: 'Sales History', icon: History },
-    { id: 'mpesa', label: 'M-Pesa Logs', icon: Smartphone },
-    { id: 'customers', label: 'Customers (CRM)', icon: Users },
-    { id: 'reports', label: 'Reports', icon: FileBarChart },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'audit', label: 'Audit Logs', icon: Shield },
-    { id: 'blog', label: 'Blog Studio', icon: Edit },
-    { id: 'cms', label: 'CMS Editor', icon: Globe },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'pos', label: 'Point of Sale', icon: ShoppingCart, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'products', label: 'Product Manager', icon: Package, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'inventory', label: 'Inventory', icon: Package, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'branches', label: 'Branches', icon: Building, roles: ['ADMIN'] }, // New
+    { id: 'orders', label: 'Orders', icon: FileText, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'shipping', label: 'Shipping & Logistics', icon: Truck, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'quotes', label: 'Quotations', icon: FileText, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'b2b', label: 'B2B Portal', icon: Briefcase, roles: ['ADMIN', 'MANAGER', 'B2B_USER'] },
+    { id: 'sales_history', label: 'Sales History', icon: History, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'mpesa', label: 'M-Pesa Logs', icon: Smartphone, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'customers', label: 'Customers (CRM)', icon: Users, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'reports', label: 'Reports', icon: FileBarChart, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
+    { id: 'audit', label: 'Audit Logs', icon: Shield, roles: ['ADMIN'] },
+    { id: 'blog', label: 'Blog Studio', icon: Edit, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'cms', label: 'CMS Editor', icon: Globe, roles: ['ADMIN'] },
+    { id: 'settings', label: 'Settings', icon: Settings, roles: ['ADMIN'] },
   ];
+
+  const filteredMenu = menuItems.filter(item => item.roles.includes(user.role));
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -54,7 +68,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
         </div>
 
         <div className="flex-1 overflow-y-auto py-4 space-y-1 scrollbar-hide">
-          {menuItems.map((item) => (
+          {filteredMenu.map((item) => (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
@@ -87,26 +101,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6">
+        <header className="h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6 relative z-40">
           <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-500 hover:text-masuma-orange">
             <Menu size={24} />
           </button>
 
           <div className="flex items-center space-x-6">
             <div className="text-right hidden md:block">
-              <p className="text-xs font-bold text-masuma-dark uppercase">Branch: Nairobi Industrial</p>
-              <p className="text-[10px] text-gray-500">User: Admin</p>
+              <p className="text-xs font-bold text-masuma-dark uppercase">
+                 {user.branch?.name || 'Headquarters'}
+              </p>
+              <p className="text-[10px] text-gray-500">User: {user.name} ({user.role})</p>
             </div>
-            <div className="relative cursor-pointer">
-               <Bell size={20} className="text-gray-500" />
-               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+            <div className="relative">
+               <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="relative cursor-pointer focus:outline-none">
+                   <Bell size={20} className="text-gray-500 hover:text-masuma-orange transition" />
+                   <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+               </button>
+               <NotificationsPopover isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
             </div>
             <button 
               onClick={() => onNavigate('profile')}
-              className="w-8 h-8 bg-masuma-orange rounded-full flex items-center justify-center text-white font-bold text-xs hover:scale-110 transition"
+              className="w-8 h-8 bg-masuma-orange rounded-full flex items-center justify-center text-white font-bold text-xs hover:scale-110 transition shadow-md uppercase"
               title="My Profile"
             >
-              A
+              {user.name ? user.name.charAt(0) : 'U'}
             </button>
           </div>
         </header>

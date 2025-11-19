@@ -1,3 +1,4 @@
+
 import { DataSource } from 'typeorm';
 import { Product } from '../entities/Product';
 import { Category } from '../entities/Category';
@@ -12,6 +13,9 @@ import { Customer } from '../entities/Customer';
 import { ProductStock } from '../entities/ProductStock';
 import { Quote } from '../entities/Quote';
 import { Sale } from '../entities/Sale';
+import { BlogPost } from '../entities/BlogPost';
+import { AuditLog } from '../entities/AuditLog';
+import { SystemSetting } from '../entities/SystemSetting';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -35,7 +39,10 @@ export const AppDataSource = new DataSource({
     Customer,
     ProductStock,
     Quote,
-    Sale
+    Sale,
+    BlogPost,
+    AuditLog,
+    SystemSetting
   ],
   subscribers: [],
   migrations: [],

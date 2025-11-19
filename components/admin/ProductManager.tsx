@@ -1,28 +1,80 @@
 
-import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreVertical, Edit2, Trash2, X, Save, Image as ImageIcon } from 'lucide-react';
-import { PRODUCTS } from '../../constants';
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle } from 'lucide-react';
 import { Category, Product } from '../../types';
+import { apiClient } from '../../utils/apiClient';
 
 const ProductManager: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Editor State
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState<Partial<Product>>({});
+  const [oemString, setOemString] = useState(''); // Handle comma separated input
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setIsEditorOpen(true);
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+        const res = await apiClient.get(`/products?q=${searchTerm}`);
+        setProducts(res.data);
+    } catch (error) {
+        console.error('Failed to fetch products', error);
+    } finally {
+        setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    const debounce = setTimeout(() => fetchProducts(), 500);
+    return () => clearTimeout(debounce);
+  }, [searchTerm]);
 
   const handleAddNew = () => {
-    setEditingProduct(null);
+    setFormData({
+        name: '', sku: '', price: 0, wholesalePrice: 0, 
+        description: '', category: Category.FILTERS, image: '', oemNumbers: []
+    });
+    setOemString('');
     setIsEditorOpen(true);
   };
 
-  const filtered = PRODUCTS.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleEdit = (product: Product) => {
+    setFormData(product);
+    setOemString(product.oemNumbers.join(', '));
+    setIsEditorOpen(true);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+        const payload = {
+            ...formData,
+            // Parse OEM string back to array
+            oemNumbers: oemString.split(',').map(s => s.trim()).filter(s => s.length > 0),
+            // Ensure numbers
+            price: Number(formData.price),
+            wholesalePrice: Number(formData.wholesalePrice),
+            imageUrl: formData.image // Mapping UI 'image' to backend 'imageUrl' happens here if needed, but we use 'image' in frontend type
+        };
+
+        if (formData.id) {
+            await apiClient.put(`/products/${formData.id}`, payload);
+        } else {
+            await apiClient.post('/products', payload);
+        }
+
+        setIsEditorOpen(false);
+        fetchProducts(); // Refresh list
+    } catch (error) {
+        alert('Failed to save product. Check console.');
+        console.error(error);
+    } finally {
+        setIsSaving(false);
+    }
+  };
 
   return (
     <div className="relative h-full">
@@ -62,6 +114,11 @@ const ProductManager: React.FC = () => {
       {/* Data Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
+          {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                  <Loader2 className="animate-spin text-masuma-orange" size={32} />
+              </div>
+          ) : (
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs tracking-wider border-b border-gray-200">
               <tr>
@@ -74,7 +131,7 @@ const ProductManager: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((product) => (
+              {products.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
@@ -107,8 +164,12 @@ const ProductManager: React.FC = () => {
                   </td>
                 </tr>
               ))}
+              {products.length === 0 && (
+                  <tr><td colSpan={6} className="text-center py-8 text-gray-500">No products found.</td></tr>
+              )}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 
@@ -119,25 +180,39 @@ const ProductManager: React.FC = () => {
           <div className="relative w-full md:w-[600px] bg-white h-full shadow-2xl flex flex-col animate-slide-right">
             
             <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-masuma-dark text-white">
-              <h3 className="font-bold text-lg uppercase tracking-wider">{editingProduct ? 'Edit Product' : 'New Product'}</h3>
+              <h3 className="font-bold text-lg uppercase tracking-wider">{formData.id ? 'Edit Product' : 'New Product'}</h3>
               <button onClick={() => setIsEditorOpen(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase text-gray-600">Product Name</label>
-                <input type="text" defaultValue={editingProduct?.name} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
+                <input 
+                    type="text" 
+                    value={formData.name || ''} 
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-gray-600">SKU (Part No)</label>
-                  <input type="text" defaultValue={editingProduct?.sku} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" />
+                  <input 
+                    type="text" 
+                    value={formData.sku || ''}
+                    onChange={e => setFormData({...formData, sku: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" 
+                   />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-gray-600">Category</label>
-                  <select className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-white">
-                    {Object.values(Category).map(c => <option key={c}>{c}</option>)}
+                  <select 
+                    value={formData.category || Category.FILTERS}
+                    onChange={e => setFormData({...formData, category: e.target.value as Category})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-white"
+                  >
+                    {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
@@ -145,37 +220,65 @@ const ProductManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                    <label className="text-xs font-bold uppercase text-gray-600">Price (KES)</label>
-                   <input type="number" defaultValue={editingProduct?.price} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
+                   <input 
+                    type="number" 
+                    value={formData.price || 0}
+                    onChange={e => setFormData({...formData, price: Number(e.target.value)})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
+                   />
                  </div>
                  <div className="space-y-1">
                    <label className="text-xs font-bold uppercase text-gray-600">Wholesale Price</label>
-                   <input type="number" defaultValue={editingProduct?.wholesalePrice} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
+                   <input 
+                    type="number" 
+                    value={formData.wholesalePrice || 0}
+                    onChange={e => setFormData({...formData, wholesalePrice: Number(e.target.value)})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
+                   />
                  </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase text-gray-600">Image URL</label>
                 <div className="flex gap-2">
-                   <input type="text" defaultValue={editingProduct?.image} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm text-gray-500" />
+                   <input 
+                    type="text" 
+                    value={formData.image || ''}
+                    onChange={e => setFormData({...formData, image: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm text-gray-500" 
+                   />
                    <button className="p-3 bg-gray-200 rounded hover:bg-gray-300"><ImageIcon size={20} /></button>
                 </div>
               </div>
 
               <div className="space-y-1">
                  <label className="text-xs font-bold uppercase text-gray-600">OEM Numbers (Comma Separated)</label>
-                 <textarea defaultValue={editingProduct?.oemNumbers.join(', ')} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-24 font-mono text-sm"></textarea>
+                 <textarea 
+                    value={oemString}
+                    onChange={e => setOemString(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-24 font-mono text-sm"
+                 ></textarea>
               </div>
 
               <div className="space-y-1">
                  <label className="text-xs font-bold uppercase text-gray-600">Description</label>
-                 <textarea defaultValue={editingProduct?.description} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-32"></textarea>
+                 <textarea 
+                    value={formData.description || ''}
+                    onChange={e => setFormData({...formData, description: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-32"
+                 ></textarea>
               </div>
             </div>
 
             <div className="p-6 border-t border-gray-200 bg-white flex justify-end gap-3">
               <button onClick={() => setIsEditorOpen(false)} className="px-6 py-3 border border-gray-300 rounded font-bold text-gray-600 uppercase text-sm hover:bg-gray-50">Cancel</button>
-              <button className="px-6 py-3 bg-masuma-dark text-white rounded font-bold uppercase text-sm hover:bg-masuma-orange flex items-center gap-2">
-                <Save size={18} /> Save Changes
+              <button 
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-6 py-3 bg-masuma-dark text-white rounded font-bold uppercase text-sm hover:bg-masuma-orange flex items-center gap-2 disabled:opacity-70"
+              >
+                {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} 
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
 

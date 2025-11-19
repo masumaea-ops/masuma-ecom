@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
-import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
 import { BlogPost, Product } from '../types';
-import { BLOG_POSTS, PRODUCTS } from '../constants';
+import { PRODUCTS, BLOG_POSTS as STATIC_BLOG_POSTS } from '../constants';
+import { apiClient } from '../utils/apiClient';
 
 interface BlogProps {
   addToCart: (product: Product) => void;
@@ -10,9 +11,31 @@ interface BlogProps {
 
 const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+      const fetchPosts = async () => {
+          try {
+              const res = await apiClient.get('/blog');
+              if (res.data && res.data.length > 0) {
+                setPosts(res.data);
+              } else {
+                setPosts(STATIC_BLOG_POSTS); // Fallback if empty
+              }
+          } catch (error) {
+              console.warn('Blog API offline, using static content');
+              setPosts(STATIC_BLOG_POSTS);
+          } finally {
+              setIsLoading(false);
+          }
+      };
+      fetchPosts();
+  }, []);
 
   // Helper to find related products
   const getRelatedProducts = (category: string) => {
+    // In a real app, fetch from API based on category
     return PRODUCTS.filter(p => p.category === category && p.stock).slice(0, 4);
   };
 
@@ -78,7 +101,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                    </p>
                    
                    <div className="space-y-4">
-                      {relatedProducts.map(product => (
+                      {relatedProducts.length > 0 ? relatedProducts.map(product => (
                          <div key={product.id} className="bg-white p-3 flex gap-3 shadow-sm hover:shadow-md transition border border-gray-100 group">
                             <div className="w-16 h-16 bg-gray-100 shrink-0 overflow-hidden">
                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
@@ -94,7 +117,9 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                                </button>
                             </div>
                          </div>
-                      ))}
+                      )) : (
+                          <p className="text-xs text-gray-400 italic">No specific products linked.</p>
+                      )}
                    </div>
                 </div>
              </div>
@@ -121,8 +146,13 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-16">
+         {isLoading ? (
+             <div className="flex justify-center items-center h-64">
+                 <Loader2 className="animate-spin text-masuma-orange" size={48} />
+             </div>
+         ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {BLOG_POSTS.map((post) => (
+            {posts.map((post) => (
                <div 
                   key={post.id} 
                   className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
@@ -160,6 +190,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                </div>
             ))}
          </div>
+         )}
       </div>
     </div>
   );

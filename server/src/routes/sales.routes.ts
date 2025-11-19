@@ -28,7 +28,7 @@ router.post('/', authenticate, validate(createSaleSchema), async (req, res) => {
     try {
         const saleData = {
             ...req.body,
-            branchId: req.user!.branch?.id || 'default-branch-id', // Fallback for logic
+            branchId: req.user!.branch?.id || 'default-branch-id',
             cashierId: req.user!.id
         };
 
@@ -41,19 +41,38 @@ router.post('/', authenticate, validate(createSaleSchema), async (req, res) => {
 });
 
 // GET /api/sales
-// Sales History with Pagination
+// Sales History with Pagination and Date Filtering
 router.get('/', authenticate, async (req, res) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
         const skip = (page - 1) * limit;
+        const search = req.query.search as string;
+        const date = req.query.date as string;
 
-        const [sales, total] = await AppDataSource.getRepository(Sale).findAndCount({
-            order: { createdAt: 'DESC' },
-            take: limit,
-            skip: skip,
-            relations: ['cashier', 'customer']
-        });
+        const query = AppDataSource.getRepository(Sale).createQueryBuilder('sale')
+            .leftJoinAndSelect('sale.cashier', 'cashier')
+            .leftJoinAndSelect('sale.customer', 'customer')
+            .orderBy('sale.createdAt', 'DESC')
+            .take(limit)
+            .skip(skip);
+
+        // Search Logic
+        if (search) {
+            query.andWhere('(sale.receiptNumber LIKE :search OR customer.name LIKE :search)', { search: `%${search}%` });
+        }
+
+        // Date Logic (Exact Date match for simplicity in UI, or Range if extended)
+        if (date) {
+             const startOfDay = new Date(date);
+             startOfDay.setHours(0,0,0,0);
+             const endOfDay = new Date(date);
+             endOfDay.setHours(23,59,59,999);
+             
+             query.andWhere('sale.createdAt BETWEEN :start AND :end', { start: startOfDay, end: endOfDay });
+        }
+
+        const [sales, total] = await query.getManyAndCount();
 
         res.json({
             data: sales,
@@ -65,6 +84,7 @@ router.get('/', authenticate, async (req, res) => {
             }
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch sales history' });
     }
 });

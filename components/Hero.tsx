@@ -1,17 +1,57 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, ShieldCheck, TrendingUp, Wrench } from 'lucide-react';
 import { ViewState } from '../types';
+import { apiClient } from '../utils/apiClient';
 
 interface HeroProps {
     setView: (view: ViewState) => void;
 }
 
 const Hero: React.FC<HeroProps> = ({ setView }) => {
+  const [content, setContent] = useState({
+    title: 'JAPANESE\nPRECISION.\nKENYAN GRIT.',
+    subtitle: 'Upgrade your ride with parts engineered to survive Nairobi\'s toughest roads. From suspension to filtration, choose the brand trusted by mechanics worldwide.',
+    image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
+    announcement: '',
+    announcementColor: '#E0621B'
+  });
+
+  useEffect(() => {
+      const fetchSettings = async () => {
+          try {
+              const res = await apiClient.get('/settings');
+              const s = res.data;
+              
+              if (s.CMS_HERO_TITLE) {
+                  setContent({
+                      title: s.CMS_HERO_TITLE.replace(/\\n/g, '\n'),
+                      subtitle: s.CMS_HERO_SUBTITLE,
+                      image: s.CMS_HERO_IMAGE,
+                      announcement: s.CMS_ANNOUNCEMENT_ENABLED === 'true' ? s.CMS_ANNOUNCEMENT_TEXT : '',
+                      announcementColor: s.CMS_ANNOUNCEMENT_COLOR || '#E0621B'
+                  });
+              }
+          } catch (error) {
+              // Silently fail to defaults
+          }
+      };
+      fetchSettings();
+  }, []);
+
   return (
+    <>
+    {content.announcement && (
+        <div style={{ backgroundColor: content.announcementColor }} className="text-white text-center text-xs font-bold py-2 uppercase tracking-wider">
+            {content.announcement}
+        </div>
+    )}
     <div className="relative bg-masuma-dark overflow-hidden">
-      {/* Background Overlay with Parallax-like effect */}
-      <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center mix-blend-luminosity"></div>
+      {/* Background Overlay */}
+      <div 
+        className="absolute inset-0 opacity-40 bg-cover bg-center mix-blend-luminosity transition-all duration-1000"
+        style={{ backgroundImage: `url('${content.image}')` }}
+      ></div>
       <div className="absolute inset-0 bg-gradient-to-r from-masuma-dark via-masuma-dark/90 to-transparent"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative py-24 md:py-40">
@@ -20,14 +60,14 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
             <span className="w-2 h-2 bg-masuma-orange rounded-full animate-pulse"></span>
             Official Distributor for East Africa
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold text-white leading-[0.9] mb-8 font-display">
-            JAPANESE<br />
-            PRECISION.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-400">KENYAN GRIT.</span>
-          </h1>
+          <h1 
+            className="text-5xl md:text-7xl font-bold text-white leading-[0.9] mb-8 font-display whitespace-pre-line"
+            dangerouslySetInnerHTML={{ 
+                __html: content.title.replace(/KENYAN GRIT\./, '<span class="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-400">KENYAN GRIT.</span>') 
+            }}
+          />
           <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl font-light leading-relaxed">
-            Upgrade your ride with parts engineered to survive Nairobi's toughest roads. 
-            From suspension to filtration, choose the brand trusted by mechanics worldwide.
+            {content.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-5">
             <button 
@@ -67,6 +107,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

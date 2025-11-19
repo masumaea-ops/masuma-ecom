@@ -1,8 +1,54 @@
 
-import React from 'react';
-import { FileBarChart, Download, Calendar, TrendingUp, Package, DollarSign, PieChart } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileBarChart, Download, Calendar, TrendingUp, Package, DollarSign, PieChart, Loader2 } from 'lucide-react';
+import { apiClient } from '../../utils/apiClient';
 
 const ReportsManager: React.FC = () => {
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const downloadReport = async (reportType: string) => {
+        setIsDownloading(true);
+        try {
+            const token = localStorage.getItem('masuma_auth_token');
+            let endpoint = '';
+
+            if (reportType === 'Sales_Summary') {
+                endpoint = `${apiClient.defaults.baseURL}/reports/sales?startDate=2023-01-01`; // Example date range
+            } else if (reportType === 'Inventory_Valuation') {
+                endpoint = `${apiClient.defaults.baseURL}/reports/inventory`;
+            } else {
+                alert('This report type is currently being engineered.');
+                setIsDownloading(false);
+                return;
+            }
+
+            // Trigger browser download directly using fetch to handle auth headers
+            const response = await fetch(endpoint, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${reportType}_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            alert('Failed to generate report. Please try again.');
+            console.error(error);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     const reports = [
         { title: 'Sales Summary', desc: 'Daily, weekly, and monthly sales revenue breakdown.', icon: TrendingUp, color: 'bg-blue-500' },
         { title: 'Inventory Valuation', desc: 'Current stock value based on cost vs retail price.', icon: Package, color: 'bg-purple-500' },
@@ -41,8 +87,13 @@ const ReportsManager: React.FC = () => {
                             </div>
                         </div>
 
-                        <button className="w-full py-2 border-2 border-gray-100 text-gray-600 font-bold uppercase text-xs rounded hover:border-masuma-dark hover:text-masuma-dark transition flex items-center justify-center gap-2">
-                            <Download size={16} /> Download PDF
+                        <button 
+                            onClick={() => downloadReport(report.title.replace(/\s/g, '_'))}
+                            disabled={isDownloading}
+                            className="w-full py-2 border-2 border-gray-100 text-gray-600 font-bold uppercase text-xs rounded hover:border-masuma-dark hover:text-masuma-dark transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} 
+                            Export CSV
                         </button>
                     </div>
                 ))}

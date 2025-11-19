@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
-import { Search, FileText, CheckCircle, XCircle, MoreHorizontal, ArrowRight, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, FileText, CheckCircle, XCircle, MoreHorizontal, ArrowRight, DollarSign, RefreshCw, Loader2, Send } from 'lucide-react';
 import { QuoteStatus } from '../../types';
+import { apiClient } from '../../utils/apiClient';
 
-interface MockQuote {
+interface Quote {
     id: string;
     quoteNumber: string;
     customerName: string;
@@ -14,12 +15,42 @@ interface MockQuote {
 }
 
 const QuoteManager: React.FC = () => {
-    const [quotes] = useState<MockQuote[]>([
-        { id: '1', quoteNumber: 'QT-23-001', customerName: 'AutoExpress Ltd', date: '2023-10-26', total: 45000, status: 'DRAFT' as any, itemsCount: 5 },
-        { id: '2', quoteNumber: 'QT-23-002', customerName: 'John Kamau', date: '2023-10-25', total: 8500, status: 'SENT' as any, itemsCount: 2 },
-        { id: '3', quoteNumber: 'QT-23-003', customerName: 'Simba Corp', date: '2023-10-24', total: 120000, status: 'ACCEPTED' as any, itemsCount: 12 },
-        { id: '4', quoteNumber: 'QT-23-004', customerName: 'Jane Doe', date: '2023-10-20', total: 2500, status: 'EXPIRED' as any, itemsCount: 1 },
-    ]);
+    const [quotes, setQuotes] = useState<Quote[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+    const fetchQuotes = async () => {
+        setIsLoading(true);
+        try {
+            const res = await apiClient.get('/quotes');
+            setQuotes(res.data);
+        } catch (error) {
+            console.error(error);
+            // Fallback mock data
+            setQuotes([
+                { id: '1', quoteNumber: 'QT-MOCK-01', customerName: 'Mock Customer', date: '2023-10-26', total: 0, status: QuoteStatus.DRAFT, itemsCount: 1 }
+            ]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchQuotes();
+    }, []);
+
+    const handleUpdateStatus = async (id: string, status: QuoteStatus) => {
+        if (!confirm(`Change status to ${status}?`)) return;
+        setUpdatingId(id);
+        try {
+            await apiClient.patch(`/quotes/${id}`, { status });
+            fetchQuotes();
+        } catch (error) {
+            alert('Failed to update status');
+        } finally {
+            setUpdatingId(null);
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -38,9 +69,14 @@ const QuoteManager: React.FC = () => {
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Quotations</h2>
                     <p className="text-sm text-gray-500">Manage sales quotes and proforma invoices.</p>
                 </div>
-                <button className="bg-masuma-dark text-white px-4 py-2 rounded font-bold text-sm uppercase flex items-center gap-2 hover:bg-masuma-orange transition">
-                    <FileText size={16} /> Create New Quote
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={fetchQuotes} className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600">
+                        <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                    </button>
+                    <button className="bg-masuma-dark text-white px-4 py-2 rounded font-bold text-sm uppercase flex items-center gap-2 hover:bg-masuma-orange transition">
+                        <FileText size={16} /> Create New Quote
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
@@ -59,6 +95,11 @@ const QuoteManager: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-auto">
+                    {isLoading && quotes.length === 0 ? (
+                        <div className="flex justify-center items-center h-64">
+                             <Loader2 className="animate-spin text-masuma-orange" size={32} />
+                        </div>
+                    ) : (
                     <table className="w-full text-left">
                         <thead className="bg-white text-gray-500 uppercase font-bold text-xs border-b border-gray-200">
                             <tr>
@@ -77,22 +118,40 @@ const QuoteManager: React.FC = () => {
                                     <td className="px-6 py-4 font-bold text-gray-700">{quote.customerName}</td>
                                     <td className="px-6 py-4 text-gray-500">{quote.date}</td>
                                     <td className="px-6 py-4 font-bold">KES {quote.total.toLocaleString()}</td>
-                                    <td className="px-6 py-4">{getStatusBadge(quote.status as any)}</td>
+                                    <td className="px-6 py-4">{getStatusBadge(quote.status)}</td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            {quote.status === 'DRAFT' as any && (
-                                                <button className="p-1 text-green-600 hover:bg-green-50 rounded" title="Convert to Invoice">
+                                            {quote.status === QuoteStatus.DRAFT && (
+                                                <button 
+                                                    onClick={() => handleUpdateStatus(quote.id, QuoteStatus.SENT)}
+                                                    disabled={updatingId === quote.id}
+                                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded" 
+                                                    title="Mark as Sent"
+                                                >
+                                                    <Send size={16} />
+                                                </button>
+                                            )}
+                                            {quote.status === QuoteStatus.SENT && (
+                                                <button 
+                                                    onClick={() => handleUpdateStatus(quote.id, QuoteStatus.ACCEPTED)}
+                                                    disabled={updatingId === quote.id}
+                                                    className="p-1 text-green-600 hover:bg-green-50 rounded" 
+                                                    title="Mark Accepted / Convert"
+                                                >
                                                     <DollarSign size={16} />
                                                 </button>
                                             )}
                                             <button className="p-1 text-gray-400 hover:text-masuma-orange"><ArrowRight size={16} /></button>
-                                            <button className="p-1 text-gray-400 hover:text-masuma-dark"><MoreHorizontal size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
                             ))}
+                            {quotes.length === 0 && (
+                                <tr><td colSpan={6} className="text-center py-8 text-gray-500">No quotes found.</td></tr>
+                            )}
                         </tbody>
                     </table>
+                    )}
                 </div>
             </div>
         </div>

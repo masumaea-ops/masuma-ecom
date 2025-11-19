@@ -1,11 +1,14 @@
 
 import React, { useState } from 'react';
-import { Package, ShoppingCart, Upload, FileText, Plus, Trash2, Download } from 'lucide-react';
+import { Package, ShoppingCart, Upload, FileText, Plus, Trash2, Download, Loader2, CheckCircle } from 'lucide-react';
 import { PRODUCTS } from '../../constants';
+import { apiClient } from '../../utils/apiClient';
 
 const B2BPortal: React.FC = () => {
     const [orderItems, setOrderItems] = useState<{sku: string, qty: number}[]>([{ sku: '', qty: 1 }]);
-    
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+
     const handleAddItem = () => {
         setOrderItems([...orderItems, { sku: '', qty: 1 }]);
     };
@@ -23,18 +26,60 @@ const B2BPortal: React.FC = () => {
         setOrderItems(newItems);
     };
 
-    // Mock Calculations
     const calculateTotal = () => {
         let total = 0;
         orderItems.forEach(item => {
             const product = PRODUCTS.find(p => p.sku === item.sku);
             if (product) {
-                // Apply 15% Wholesale Discount mock
-                const price = product.price * 0.85;
+                const price = product.price * 0.85; // Wholesale price
                 total += price * item.qty;
             }
         });
         return total;
+    };
+
+    const handlePlaceOrder = async () => {
+        // Validate items
+        const validItems = orderItems.filter(i => i.sku && i.qty > 0);
+        if (validItems.length === 0) return alert("Please add at least one valid item.");
+
+        // Map SKUs to Product IDs (In a real app, this lookup would happen against the live DB)
+        // For now we map against constant PRODUCTS to find IDs
+        const payloadItems = validItems.map(item => {
+            const product = PRODUCTS.find(p => p.sku === item.sku);
+            if (!product) return null;
+            return {
+                productId: product.id,
+                quantity: item.qty,
+                price: product.price * 0.85 // Lock in the price
+            };
+        }).filter(Boolean);
+
+        if (payloadItems.length === 0) return alert("No valid products found for entered SKUs.");
+
+        setIsSubmitting(true);
+        try {
+            const userStr = localStorage.getItem('masuma_user');
+            const user = userStr ? JSON.parse(userStr) : { name: 'Admin User', email: 'admin@masuma.co.ke' };
+
+            await apiClient.post('/orders', {
+                customerName: user.name || 'Wholesale Partner',
+                customerEmail: user.email,
+                customerPhone: '0700000000', // Placeholder or prompt user
+                items: payloadItems,
+                paymentMethod: 'B2B_CREDIT'
+            });
+
+            setSuccessMessage('Order placed successfully!');
+            setOrderItems([{ sku: '', qty: 1 }]);
+            setTimeout(() => setSuccessMessage(''), 5000);
+
+        } catch (error) {
+            console.error(error);
+            alert('Failed to place order. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -53,6 +98,12 @@ const B2BPortal: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            {successMessage && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 flex items-center gap-2">
+                    <CheckCircle size={20} /> {successMessage}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
                 {/* Order Form */}
@@ -152,8 +203,13 @@ const B2BPortal: React.FC = () => {
                         </div>
                         <p className="text-xs text-gray-500 mb-6 text-right">Inclusive of VAT</p>
                         
-                        <button className="w-full bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold py-4 uppercase tracking-widest rounded transition flex items-center justify-center gap-2">
-                            <ShoppingCart size={20} /> Place Bulk Order
+                        <button 
+                            onClick={handlePlaceOrder}
+                            disabled={isSubmitting}
+                            className="w-full bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold py-4 uppercase tracking-widest rounded transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <ShoppingCart size={20} />}
+                            {isSubmitting ? 'Processing...' : 'Place Bulk Order'}
                         </button>
                     </div>
                 </div>

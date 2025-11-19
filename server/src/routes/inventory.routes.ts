@@ -40,4 +40,27 @@ router.patch('/:productId', authenticate, authorize(['ADMIN', 'MANAGER']), valid
     }
 });
 
+// POST /api/inventory/transfer
+const transferStockSchema = z.object({
+    productId: z.string(),
+    fromBranchId: z.string(),
+    toBranchId: z.string(),
+    quantity: z.number().min(1)
+});
+
+router.post('/transfer', authenticate, authorize(['ADMIN', 'MANAGER']), validate(transferStockSchema), async (req, res) => {
+    try {
+        const { productId, fromBranchId, toBranchId, quantity } = req.body;
+        
+        if (fromBranchId === toBranchId) {
+            return res.status(400).json({ error: 'Cannot transfer to the same branch' });
+        }
+
+        await InventoryService.transferStock(productId, fromBranchId, toBranchId, quantity, req.user!.id);
+        res.json({ message: 'Transfer successful' });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || 'Transfer failed' });
+    }
+});
+
 export default router;

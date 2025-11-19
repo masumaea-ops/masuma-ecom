@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode } from 'lucide-react';
-import { Product } from '../../types';
+import React, { useState, useRef } from 'react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X } from 'lucide-react';
+import { Product, Customer } from '../../types';
 import { PRODUCTS } from '../../constants';
+import { apiClient } from '../../utils/apiClient';
 
 interface PosItem extends Product {
     qty: number;
+    appliedPrice: number; // Price after customer discount
 }
 
 const PosTerminal: React.FC = () => {
@@ -13,15 +15,26 @@ const PosTerminal: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [lastSale, setLastSale] = useState<any>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [customer, setCustomer] = useState<Customer | null>(null);
+    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+    const [foundCustomers, setFoundCustomers] = useState<Customer[]>([]);
+    
     const searchInputRef = useRef<HTMLInputElement>(null);
 
+    // --- Cart Logic ---
     const addToCart = (product: Product) => {
         setCart(prev => {
             const exists = prev.find(p => p.id === product.id);
             if (exists) {
                 return prev.map(p => p.id === product.id ? { ...p, qty: p.qty + 1 } : p);
             }
-            return [...prev, { ...product, qty: 1 }];
+            // Apply Wholesale Price if customer is B2B
+            const price = (customer?.isWholesale && product.wholesalePrice) 
+                          ? product.wholesalePrice 
+                          : product.price;
+
+            return [...prev, { ...product, qty: 1, appliedPrice: price }];
         });
         setSearchTerm('');
         searchInputRef.current?.focus();
@@ -38,45 +51,65 @@ const PosTerminal: React.FC = () => {
         setCart(prev => prev.filter(p => p.id !== id));
     };
 
+    // --- Customer Search Logic ---
+    const handleSearchCustomer = async (term: string) => {
+        setCustomerSearchTerm(term);
+        if (term.length > 2) {
+            try {
+                const res = await apiClient.get(`/customers?search=${term}`);
+                setFoundCustomers(res.data);
+            } catch (err) {
+                console.error(err);
+                // Mock Data Fallback
+                setFoundCustomers([
+                    { id: '1', name: 'AutoExpress Ltd', phone: '0722000000', isWholesale: true, totalSpend: 0, lastVisit: '' },
+                    { id: '2', name: 'Walk-in Customer', phone: '0700000000', isWholesale: false, totalSpend: 0, lastVisit: '' }
+                ]);
+            }
+        }
+    };
+
+    const selectCustomer = (c: Customer) => {
+        setCustomer(c);
+        setIsCustomerSearchOpen(false);
+        
+        // Recalculate prices in cart based on new customer status
+        setCart(prev => prev.map(item => ({
+            ...item,
+            appliedPrice: (c.isWholesale && item.wholesalePrice) ? item.wholesalePrice : item.price
+        })));
+    };
+
+    // --- Checkout Logic ---
     const handleCompleteSale = async () => {
         setIsProcessing(true);
         try {
-            const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const totalAmount = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
             
-            // Call Backend API
-            const response = await fetch('/api/sales', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer demo-admin-token' // Mock Auth
-                },
-                body: JSON.stringify({
-                    items: cart.map(i => ({ 
-                        productId: i.id, 
-                        name: i.name, 
-                        quantity: i.qty, 
-                        price: i.price 
-                    })),
-                    totalAmount,
-                    paymentMethod: 'CASH'
-                })
-            });
+            const payload = {
+                items: cart.map(i => ({ 
+                    productId: i.id, 
+                    name: i.name, 
+                    quantity: i.qty, 
+                    price: i.appliedPrice 
+                })),
+                totalAmount,
+                paymentMethod: 'CASH',
+                customerId: customer?.id
+            };
 
-            const saleData = await response.json();
-            if (response.ok) {
-                setLastSale(saleData);
-                setCart([]);
-            } else {
-                alert('Sale Failed: ' + saleData.error);
-            }
+            const response = await apiClient.post('/sales', payload);
+            setLastSale(response.data);
+            setCart([]);
+            setCustomer(null); // Reset for next sale
         } catch (error) {
-            alert('Network Error');
+            alert('Sale Failed: Network Error');
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const total = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
 
     const filteredProducts = PRODUCTS.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -86,7 +119,7 @@ const PosTerminal: React.FC = () => {
     // SUCCESS / RECEIPT VIEW
     if (lastSale) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+            <div className="flex items-center justify-center h-[calc(100vh-100px)] animate-scale-up">
                 <div className="bg-white p-8 rounded shadow-lg border border-gray-200 w-96 text-center">
                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} />
@@ -120,11 +153,11 @@ const PosTerminal: React.FC = () => {
     }
 
     return (
-        <div className="flex h-[calc(100vh-100px)] gap-6">
+        <div className="flex h-[calc(100vh-100px)] gap-6 font-sans">
             {/* Left: Product Selection */}
             <div className="flex-1 flex flex-col bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200">
-                    <div className="relative">
+                <div className="p-4 border-b border-gray-200 flex gap-4">
+                    <div className="relative flex-1">
                         <input 
                             ref={searchInputRef}
                             type="text" 
@@ -163,15 +196,63 @@ const PosTerminal: React.FC = () => {
             </div>
 
             {/* Right: Cart & Checkout */}
-            <div className="w-96 flex flex-col bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+            <div className="w-96 flex flex-col bg-white rounded shadow-sm border border-gray-200 overflow-hidden relative">
                 <div className="p-4 bg-masuma-dark text-white border-b border-gray-800 flex justify-between items-center">
                     <h3 className="font-bold uppercase tracking-wider">Current Sale</h3>
                     <span className="bg-masuma-orange px-2 py-1 text-xs rounded font-bold">{cart.length} Items</span>
                 </div>
 
+                {/* Customer Selector */}
+                <div className="p-3 border-b border-gray-200 bg-gray-50">
+                    {!customer ? (
+                        <button 
+                            onClick={() => setIsCustomerSearchOpen(true)}
+                            className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-500 text-xs font-bold uppercase hover:border-masuma-orange hover:text-masuma-orange transition flex items-center justify-center gap-2"
+                        >
+                            <User size={16} /> Select Customer
+                        </button>
+                    ) : (
+                        <div className="flex justify-between items-center bg-white border border-gray-200 p-2 rounded">
+                             <div className="flex flex-col">
+                                 <span className="text-xs font-bold text-masuma-dark">{customer.name}</span>
+                                 {customer.isWholesale && <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded w-fit font-bold uppercase">Wholesale</span>}
+                             </div>
+                             <button onClick={() => { setCustomer(null); setIsCustomerSearchOpen(false); }} className="text-gray-400 hover:text-red-500"><X size={16} /></button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Customer Search Dropdown */}
+                {isCustomerSearchOpen && !customer && (
+                    <div className="absolute top-[116px] left-0 w-full bg-white shadow-xl border-b border-gray-200 z-10 p-2 animate-slide-up">
+                        <input 
+                            type="text" 
+                            autoFocus
+                            placeholder="Search Customer..."
+                            className="w-full p-2 border border-gray-300 rounded text-sm mb-2"
+                            value={customerSearchTerm}
+                            onChange={(e) => handleSearchCustomer(e.target.value)}
+                        />
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                            {foundCustomers.map(c => (
+                                <div 
+                                    key={c.id} 
+                                    onClick={() => selectCustomer(c)}
+                                    className="p-2 hover:bg-gray-100 cursor-pointer rounded text-sm flex justify-between"
+                                >
+                                    <span>{c.name}</span>
+                                    {c.isWholesale && <span className="text-purple-600 text-xs font-bold">B2B</span>}
+                                </div>
+                            ))}
+                            {foundCustomers.length === 0 && <p className="text-xs text-gray-400 text-center p-2">No results</p>}
+                        </div>
+                        <button onClick={() => setIsCustomerSearchOpen(false)} className="w-full text-center text-xs text-red-500 mt-2 py-1 hover:bg-red-50">Close</button>
+                    </div>
+                )}
+
                 <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">
-                    {cart.map(item => (
-                        <div key={item.id} className="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center">
+                    {cart.map((item, idx) => (
+                        <div key={idx} className="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center">
                             <div className="flex-1">
                                 <div className="text-xs font-bold text-gray-800">{item.name}</div>
                                 <div className="text-[10px] text-gray-500">{item.sku}</div>
@@ -182,7 +263,8 @@ const PosTerminal: React.FC = () => {
                                 <button onClick={() => updateQty(item.id, 1)} className="p-1 bg-gray-100 hover:bg-gray-200 rounded"><Plus size={12} /></button>
                             </div>
                             <div className="text-right">
-                                <div className="text-sm font-bold text-masuma-dark">{(item.price * item.qty).toLocaleString()}</div>
+                                <div className="text-sm font-bold text-masuma-dark">{(item.appliedPrice * item.qty).toLocaleString()}</div>
+                                {item.appliedPrice < (item.price || 0) && <div className="text-[9px] text-green-600 line-through decoration-gray-400">KES {(item.price || 0).toLocaleString()}</div>}
                                 <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600 mt-1"><Trash2 size={12} /></button>
                             </div>
                         </div>

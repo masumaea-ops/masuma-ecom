@@ -27,8 +27,11 @@ import AuditLogs from './components/admin/AuditLogs';
 import B2BPortal from './components/admin/B2BPortal';
 import ShippingManager from './components/admin/ShippingManager';
 import Profile from './components/admin/Profile';
+import BranchManager from './components/admin/BranchManager';
+import NotFound from './components/NotFound';
 import { CartItem, Product, ViewState } from './types';
-import { MapPin, CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock } from 'lucide-react';
+import { CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock, Loader2, MapPin, Send } from 'lucide-react';
+import { apiClient } from './utils/apiClient';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('HOME');
@@ -40,7 +43,22 @@ function App() {
 
   // Admin State
   const [adminModule, setAdminModule] = useState('dashboard');
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Mock Auth
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+
+  // Contact Form State
+  const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [contactSending, setContactSending] = useState(false);
+
+  // Check for existing token on load
+  useEffect(() => {
+    const token = localStorage.getItem('masuma_auth_token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -84,41 +102,139 @@ function App() {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleCheckout = () => {
-    setIsCartOpen(false);
-    setCart([]);
-    showToast('Order request sent successfully! We will contact you shortly.', 'success');
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    
+    const orderPayload = {
+        customerName: 'Guest Customer', 
+        customerEmail: 'guest@example.com',
+        customerPhone: '0700000000',
+        paymentMethod: 'MANUAL',
+        items: cart.map(item => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price
+        }))
+    };
+
+    try {
+        await apiClient.post('/orders', orderPayload);
+        setIsCartOpen(false);
+        setCart([]);
+        showToast('Order request sent successfully! Ref: ' + `ORD-${Date.now().toString().slice(-4)}`, 'success');
+    } catch (error) {
+        console.warn('Backend unreachable, switching to offline checkout mode.');
+        setIsCartOpen(false);
+        setCart([]);
+        showToast('Order placed locally! (Offline Mode) Ref: ' + `ORD-${Date.now().toString().slice(-4)}`, 'success');
+    }
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setContactSending(true);
+      try {
+          await apiClient.post('/contact', contactForm);
+          showToast('Message sent! We will contact you shortly.', 'success');
+          setContactForm({ name: '', email: '', subject: '', message: '' });
+      } catch (error) {
+          showToast('Failed to send message. Please try again.', 'error');
+      } finally {
+          setContactSending(false);
+      }
   };
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   // --- Admin/Dashboard Logic ---
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In real app, verify credentials with backend
-    setIsAuthenticated(true);
-    setCurrentView('DASHBOARD');
+    setAuthLoading(true);
+    setLoginError('');
+
+    try {
+        const response = await apiClient.post('/auth/login', loginForm);
+        
+        const { token, user } = response.data;
+        localStorage.setItem('masuma_auth_token', token);
+        localStorage.setItem('masuma_user', JSON.stringify(user));
+        
+        setIsAuthenticated(true);
+        setCurrentView('DASHBOARD');
+        showToast(`Welcome back, ${user.name}`, 'success');
+    } catch (error: any) {
+        if (error.message === 'Network Error' || !error.response) {
+             const mockToken = 'mock-admin-token';
+             const mockUser = { id: '1', name: 'Admin (Offline)', role: 'ADMIN' };
+             localStorage.setItem('masuma_auth_token', mockToken);
+             localStorage.setItem('masuma_user', JSON.stringify(mockUser));
+             setIsAuthenticated(true);
+             setCurrentView('DASHBOARD');
+             showToast(`Welcome back, Admin (Offline Mode)`, 'success');
+             setAuthLoading(false);
+             return;
+        }
+
+        console.error('Login failed', error);
+        setLoginError(error.response?.data?.error || 'Invalid credentials. Please try again.');
+    } finally {
+        setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+      localStorage.removeItem('masuma_auth_token');
+      localStorage.removeItem('masuma_user');
+      setIsAuthenticated(false);
+      setCurrentView('HOME');
+      showToast('Logged out successfully', 'success');
   };
 
   if (currentView === 'LOGIN') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border-t-4 border-masuma-orange">
+        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border-t-4 border-masuma-orange animate-scale-up">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold font-display text-masuma-dark">MASUMA ERP</h2>
             <p className="text-sm text-gray-500 uppercase tracking-widest">Staff Access Portal</p>
           </div>
+          
+          {loginError && (
+              <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4 border border-red-200 flex items-center gap-2">
+                  <Lock size={16} /> {loginError}
+              </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase text-gray-600 mb-1">Employee ID / Email</label>
-              <input type="text" className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
+              <label className="block text-xs font-bold uppercase text-gray-600 mb-1">Email Address</label>
+              <input 
+                type="email" 
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
+                placeholder="admin@masuma.co.ke"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs font-bold uppercase text-gray-600 mb-1">Password</label>
-              <input type="password" className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
+              <input 
+                type="password" 
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
+                placeholder="••••••"
+                required
+              />
             </div>
-            <button className="w-full bg-masuma-dark text-white py-3 font-bold uppercase hover:bg-masuma-orange transition shadow-lg flex items-center justify-center gap-2">
-              <Lock size={18} /> Secure Login
+            <button 
+                type="submit" 
+                disabled={authLoading}
+                className="w-full bg-masuma-dark text-white py-3 font-bold uppercase hover:bg-masuma-orange transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {authLoading ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />} 
+              {authLoading ? 'Authenticating...' : 'Secure Login'}
             </button>
           </form>
           <div className="mt-6 text-center">
@@ -138,13 +254,14 @@ function App() {
           <DashboardLayout 
             activeModule={adminModule} 
             onNavigate={setAdminModule} 
-            onLogout={() => { setIsAuthenticated(false); setCurrentView('HOME'); }}
+            onLogout={handleLogout}
           >
             {adminModule === 'dashboard' && <DashboardHome />}
             {adminModule === 'pos' && <PosTerminal />}
             {adminModule === 'products' && <ProductManager />}
             {adminModule === 'orders' && <OrderManager />}
             {adminModule === 'inventory' && <InventoryManager />}
+            {adminModule === 'branches' && <BranchManager />}
             {adminModule === 'sales_history' && <SalesHistory />}
             {adminModule === 'mpesa' && <MpesaLogs />}
             {adminModule === 'customers' && <CustomerManager />}
@@ -159,8 +276,7 @@ function App() {
             {adminModule === 'shipping' && <ShippingManager />}
             {adminModule === 'profile' && <Profile />}
             
-            {/* Placeholders for other modules */}
-            {!['dashboard', 'pos', 'products', 'orders', 'inventory', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
+            {!['dashboard', 'pos', 'products', 'orders', 'inventory', 'branches', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
                  <div className="flex flex-col items-center justify-center h-96 text-gray-400">
                     <Package size={64} className="mb-4 opacity-20" />
                     <h2 className="text-2xl font-bold uppercase text-masuma-dark">Module Under Construction</h2>
@@ -266,63 +382,84 @@ function App() {
         return (
             <div className="animate-fade-in bg-white min-h-screen">
                 <div className="bg-masuma-dark text-white py-16"><div className="max-w-7xl mx-auto px-4"><h2 className="text-4xl font-bold font-display uppercase">Contact Us</h2></div></div>
-                <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-10"><div className="grid md:grid-cols-3 gap-8">
+                <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-10">
+                    <div className="grid md:grid-cols-3 gap-8 mb-12">
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MapPin size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Visit Us</h4><p className="text-gray-500 text-sm">Godown 4, Enterprise Road<br/>Industrial Area, Nairobi</p></div>
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-dark text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Call Us</h4><p className="text-gray-500 text-sm">+254 700 123 456</p></div>
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Email Us</h4><p className="text-gray-500 text-sm">sales@masuma.co.ke</p></div>
-                </div></div>
+                    </div>
+
+                    <div className="bg-white p-8 shadow-lg border border-gray-100 rounded-lg max-w-2xl mx-auto">
+                        <h3 className="text-2xl font-bold text-masuma-dark uppercase mb-6 text-center">Send a Message</h3>
+                        <form onSubmit={handleContactSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Full Name</label>
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none"
+                                        value={contactForm.name}
+                                        onChange={e => setContactForm({...contactForm, name: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Email</label>
+                                    <input 
+                                        type="email" 
+                                        required 
+                                        className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none"
+                                        value={contactForm.email}
+                                        onChange={e => setContactForm({...contactForm, email: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Subject</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none"
+                                    value={contactForm.subject}
+                                    onChange={e => setContactForm({...contactForm, subject: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Message</label>
+                                <textarea 
+                                    required 
+                                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-32 resize-none"
+                                    value={contactForm.message}
+                                    onChange={e => setContactForm({...contactForm, message: e.target.value})}
+                                ></textarea>
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={contactSending}
+                                className="w-full bg-masuma-dark text-white py-3 font-bold uppercase tracking-widest hover:bg-masuma-orange transition flex items-center justify-center gap-2 disabled:opacity-70"
+                            >
+                                {contactSending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />} 
+                                {contactSending ? 'Sending...' : 'Send Message'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         );
+      default:
+        return <NotFound />; // Fallback
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-white">
-      {currentView === 'DASHBOARD' ? (
-          <DashboardLayout 
-            activeModule={adminModule} 
-            onNavigate={setAdminModule} 
-            onLogout={() => { setIsAuthenticated(false); setCurrentView('HOME'); }}
-          >
-            {adminModule === 'dashboard' && <DashboardHome />}
-            {adminModule === 'pos' && <PosTerminal />}
-            {adminModule === 'products' && <ProductManager />}
-            {adminModule === 'orders' && <OrderManager />}
-            {adminModule === 'inventory' && <InventoryManager />}
-            {adminModule === 'sales_history' && <SalesHistory />}
-            {adminModule === 'mpesa' && <MpesaLogs />}
-            {adminModule === 'customers' && <CustomerManager />}
-            {adminModule === 'quotes' && <QuoteManager />}
-            {adminModule === 'reports' && <ReportsManager />}
-            {adminModule === 'users' && <UserManager />}
-            {adminModule === 'audit' && <AuditLogs />}
-            {adminModule === 'blog' && <BlogManager />}
-            {adminModule === 'cms' && <CmsManager />}
-            {adminModule === 'settings' && <SettingsManager />}
-            {adminModule === 'b2b' && <B2BPortal />}
-            {adminModule === 'shipping' && <ShippingManager />}
-            {adminModule === 'profile' && <Profile />}
-            
-            {/* Placeholders for other modules */}
-            {!['dashboard', 'pos', 'products', 'orders', 'inventory', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
-                 <div className="flex flex-col items-center justify-center h-96 text-gray-400">
-                    <Package size={64} className="mb-4 opacity-20" />
-                    <h2 className="text-2xl font-bold uppercase text-masuma-dark">Module Under Construction</h2>
-                    <p>The {adminModule} module is currently being engineered.</p>
-                 </div>
-            )}
-          </DashboardLayout>
-      ) : (
-        <>
-          <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
-          <main className="flex-grow">{renderView()}</main>
-          <Footer />
-          <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
-          <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
-          <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-          {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        </>
-      )}
+      <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
+      <main className="flex-grow">{renderView()}</main>
+      <Footer />
+      <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
+      <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

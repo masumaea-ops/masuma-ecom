@@ -17,9 +17,18 @@ import inventoryRoutes from './routes/inventory.routes';
 import salesRoutes from './routes/sales.routes';
 import customerRoutes from './routes/customer.routes';
 import statsRoutes from './routes/stats.routes';
-import orderRoutes from './routes/order.routes'; // New
+import orderRoutes from './routes/order.routes';
+import mpesaRoutes from './routes/mpesa.routes';
+import blogRoutes from './routes/blog.routes';
+import userRoutes from './routes/user.routes'; 
+import auditRoutes from './routes/audit.routes'; 
+import settingsRoutes from './routes/settings.routes'; 
+import quoteRoutes from './routes/quote.routes';
+import reportRoutes from './routes/report.routes'; 
+import contactRoutes from './routes/contact.routes'; 
+import branchRoutes from './routes/branch.routes'; // New
 
-// Services & Legacy handlers (to be refactored later or kept for Mpesa specific logic)
+// Services & Legacy handlers
 import { MpesaService } from './services/mpesaService';
 import { z } from 'zod';
 import { Order, OrderStatus } from './entities/Order';
@@ -37,8 +46,6 @@ AppDataSource.initialize()
     console.error('Error during Data Source initialization:', err);
   });
 
-const emailQueue = new Queue('email-queue', { connection: redis });
-
 // --- Security & Performance Middleware ---
 app.use(helmet()); 
 app.use(compression()); 
@@ -47,7 +54,7 @@ app.use(express.json());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 300, // Increased for ERP usage
+  max: 300, 
 });
 app.use('/api', limiter);
 
@@ -58,24 +65,18 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/admin/stats', statsRoutes);
-app.use('/api/orders', orderRoutes); // New Order Management Routes
+app.use('/api/orders', orderRoutes);
+app.use('/api/mpesa', mpesaRoutes);
+app.use('/api/blog', blogRoutes);
+app.use('/api/users', userRoutes); 
+app.use('/api/audit-logs', auditRoutes); 
+app.use('/api/settings', settingsRoutes); 
+app.use('/api/quotes', quoteRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/contact', contactRoutes); 
+app.use('/api/branches', branchRoutes); // New
 
-// --- Legacy / Specific Routes (M-Pesa, Quotes) ---
-
-// Quote Request
-const quoteSchema = z.object({
-    name: z.string().min(2),
-    email: z.string().email(),
-    phone: z.string().min(10),
-    message: z.string().optional(),
-    productId: z.string(),
-    productName: z.string()
-});
-
-app.post('/api/quotes', validate(quoteSchema), async (req, res) => {
-    await emailQueue.add('send-email', { type: 'QUOTE_REQUEST', data: req.body });
-    res.status(201).json({ message: 'Quote request received' });
-});
+// --- Legacy / Specific Routes (M-Pesa) ---
 
 // M-Pesa (Public)
 const mpesaOrderSchema = z.object({
@@ -84,7 +85,7 @@ const mpesaOrderSchema = z.object({
   customerPhone: z.string().min(10),
   items: z.array(z.object({ 
     productId: z.string(), 
-    quantity: z.number().min(1),
+    quantity: z.number().min(1), 
     price: z.number()
   }))
 });

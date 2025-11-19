@@ -26,7 +26,9 @@
     "axios": "^1.13.2",
     "typeorm": "^0.3.27",
     "reflect-metadata": "^0.2.2",
-    "recharts": "^2.15.0"
+    "recharts": "^2.15.0",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

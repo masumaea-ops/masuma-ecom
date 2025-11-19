@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { ProductService } from '../services/productService';
 import { validate } from '../middleware/validate';
+import { authenticate, authorize } from '../middleware/auth';
 import { z } from 'zod';
 
 const router = Router();
@@ -14,6 +15,7 @@ router.get('/', async (req, res) => {
         const products = await ProductService.getAllProducts(query, category);
         res.json(products);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch products' });
     }
 });
@@ -29,18 +31,36 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/products (Admin Only - Stub)
-const createProductSchema = z.object({
-    name: z.string(),
-    sku: z.string(),
-    price: z.number(),
+// Schema for Creating/Updating Product
+const productSchema = z.object({
+    name: z.string().min(3),
+    sku: z.string().min(3),
+    price: z.number().positive(),
+    wholesalePrice: z.number().optional(),
     description: z.string(),
-    categoryId: z.string()
+    category: z.string(),
+    imageUrl: z.string().url().optional(),
+    oemNumbers: z.array(z.string()).optional(),
 });
 
-router.post('/', validate(createProductSchema), async (req, res) => {
-    // Implementation for creating product
-    res.status(501).json({ message: 'Not implemented yet' });
+// POST /api/products (Admin Only)
+router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(productSchema), async (req, res) => {
+    try {
+        const product = await ProductService.createProduct(req.body);
+        res.status(201).json(product);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to create product' });
+    }
+});
+
+// PUT /api/products/:id (Admin Only)
+router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(productSchema.partial()), async (req, res) => {
+    try {
+        const product = await ProductService.updateProduct(req.params.id, req.body);
+        res.json(product);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to update product' });
+    }
 });
 
 export default router;

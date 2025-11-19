@@ -1,9 +1,13 @@
+
 import { AppDataSource } from '../config/database';
 import { Product } from '../entities/Product';
+import { Category } from '../entities/Category';
+import { OemNumber } from '../entities/OemNumber';
 import { CacheService } from '../lib/cache';
 
 export class ProductService {
   private static productRepo = AppDataSource.getRepository(Product);
+  private static categoryRepo = AppDataSource.getRepository(Category);
   
   static async getAllProducts(query: string = '', categoryName: string = 'All') {
     const cacheKey = `products:list:${query}:${categoryName}`;
@@ -13,6 +17,7 @@ export class ProductService {
         .leftJoinAndSelect('product.category', 'category')
         .leftJoinAndSelect('product.oemNumbers', 'oem')
         .leftJoinAndSelect('product.vehicles', 'vehicle')
+        .leftJoinAndSelect('product.stock', 'stock')
         .take(50);
 
       // Category Filter
@@ -38,13 +43,15 @@ export class ProductService {
         sku: p.sku,
         category: p.category?.name || 'Uncategorized',
         price: Number(p.price),
+        wholesalePrice: Number(p.wholesalePrice || 0),
         description: p.description,
         image: p.imageUrl || '',
-        stock: p.stockLevel > 0,
+        // Simple stock check: if any branch has stock > 0
+        stock: p.stock?.some(s => s.quantity > 0) || false, 
         oemNumbers: p.oemNumbers?.map(o => o.code) || [],
         compatibility: p.vehicles?.map(v => `${v.make} ${v.model}`) || []
       }));
-    }, 300);
+    }, 30); // Short cache for active edits
   }
 
   static async getProductById(id: string) {
@@ -56,12 +63,75 @@ export class ProductService {
       });
     }, 3600);
   }
+
+  static async createProduct(data: any) {
+    const category = await this.categoryRepo.findOneBy({ name: data.category });
+    if (!category) throw new Error(`Category ${data.category} not found`);
+
+    const product = new Product();
+    product.name = data.name;
+    product.sku = data.sku;
+    product.price = data.price;
+    product.wholesalePrice = data.wholesalePrice;
+    product.description = data.description;
+    product.imageUrl = data.imageUrl;
+    product.category = category;
+
+    // Handle OEM Numbers
+    if (data.oemNumbers && Array.isArray(data.oemNumbers)) {
+      product.oemNumbers = data.oemNumbers.map((code: string) => {
+        const oem = new OemNumber();
+        oem.code = code;
+        return oem;
+      });
+    }
+
+    const saved = await this.productRepo.save(product);
+    await CacheService.invalidate('products:*'); // Clear cache
+    return saved;
+  }
+
+  static async updateProduct(id: string, data: any) {
+    const product = await this.productRepo.findOne({
+      where: { id },
+      relations: ['oemNumbers']
+    });
+
+    if (!product) throw new Error('Product not found');
+
+    if (data.category) {
+       const category = await this.categoryRepo.findOneBy({ name: data.category });
+       if (category) product.category = category;
+    }
+
+    product.name = data.name || product.name;
+    product.sku = data.sku || product.sku;
+    product.price = data.price || product.price;
+    product.wholesalePrice = data.wholesalePrice || product.wholesalePrice;
+    product.description = data.description || product.description;
+    product.imageUrl = data.imageUrl || product.imageUrl;
+
+    // Update OEMs if provided (Replaces all)
+    if (data.oemNumbers && Array.isArray(data.oemNumbers)) {
+        // Clear existing (TypeORM cascade usually handles this but careful)
+        await AppDataSource.getRepository(OemNumber).delete({ product: { id: product.id } });
+        
+        product.oemNumbers = data.oemNumbers.map((code: string) => {
+          const oem = new OemNumber();
+          oem.code = code;
+          return oem;
+        });
+    }
+
+    const saved = await this.productRepo.save(product);
+    await CacheService.invalidate('products:*');
+    await CacheService.invalidate(`product:detail:${id}`);
+    return saved;
+  }
   
   static async getAllProductIdsForSitemap() {
      return this.productRepo.find({
        select: { id: true }
-       // Note: TypeORM doesn't automatically select updateAt unless specified if it's not in the select object, 
-       // but find() without relations is fast.
      });
   }
 }

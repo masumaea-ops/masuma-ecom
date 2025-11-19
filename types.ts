@@ -1,4 +1,5 @@
 
+
 export enum Category {
   ALL = 'All',
   FILTERS = 'Filters',
@@ -87,6 +88,7 @@ export interface Sale {
     customerName?: string;
     kraControlCode?: string;
     itemsCount: number;
+    itemsSnapshot?: any[];
 }
 
 export interface MpesaLog {

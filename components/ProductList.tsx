@@ -1,10 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Category, Product } from '../types';
-import { PRODUCTS } from '../constants';
-import { Search, AlertCircle, Eye, ShoppingBag, Car } from 'lucide-react';
+import { PRODUCTS as STATIC_PRODUCTS } from '../constants';
+import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
+import { apiClient } from '../utils/apiClient';
 
 interface ProductListProps {
   addToCart: (product: Product, quantity?: number) => void;
@@ -15,37 +16,78 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
   const [vinFilter, setVinFilter] = useState('');
+  const [usingFallback, setUsingFallback] = useState(false);
 
-  // Simulate loading for skeleton effect
+  // Fetch Products with Server-Side Search
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
+    const fetchProducts = async () => {
+        setIsLoading(true);
+        try {
+            // Construct query params
+            const params = new URLSearchParams();
+            if (searchQuery) params.append('q', searchQuery);
+            if (selectedCategory !== Category.ALL) params.append('category', selectedCategory);
+            
+            const response = await apiClient.get(`/products?${params.toString()}`);
+            
+            if (response.data && Array.isArray(response.data)) {
+                setProducts(response.data);
+                setUsingFallback(false);
+            } else {
+                throw new Error('Invalid data');
+            }
+        } catch (error) {
+            // Quietly switch to fallback if server fails
+            console.warn('Backend API unreachable. Switching to offline catalog.');
+            setProducts(STATIC_PRODUCTS);
+            setUsingFallback(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Debounce the API call for search
+    const timer = setTimeout(() => {
+        fetchProducts();
+    }, 500);
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [searchQuery, selectedCategory]); // Re-run when search or category changes
 
-  const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter(product => {
-      const query = searchQuery.toLowerCase().trim();
-      const matchesCategory = selectedCategory === Category.ALL || product.category === selectedCategory;
-      
-      // VIN Filter Logic
-      // If a VIN filter is active, only show products that are compatible with the identified car
-      const matchesVin = !vinFilter || product.compatibility.some(c => c.toLowerCase().includes(vinFilter.toLowerCase()) || vinFilter.toLowerCase().includes(c.toLowerCase()));
+  // Client-side fallback filtering (only used if usingFallback is true OR for VIN filtering on top of results)
+  const displayProducts = useMemo(() => {
+    let filtered = products;
 
-      if (!matchesVin) return false;
-      if (!query) return matchesCategory;
+    if (usingFallback) {
+        filtered = products.filter(product => {
+            const query = searchQuery.toLowerCase().trim();
+            const matchesCategory = selectedCategory === Category.ALL || product.category === selectedCategory;
+            
+            if (!query) return matchesCategory;
 
-      const matchesName = product.name.toLowerCase().includes(query);
-      const matchesSku = product.sku.toLowerCase().includes(query);
-      const matchesOem = product.oemNumbers.some(oem => 
-        oem.toLowerCase().replace(/[-\s]/g, '').includes(query.replace(/[-\s]/g, '')) || 
-        oem.toLowerCase().includes(query)
-      );
-      const matchesCompat = product.compatibility.some(c => c.toLowerCase().includes(query));
+            const matchesName = product.name.toLowerCase().includes(query);
+            const matchesSku = product.sku.toLowerCase().includes(query);
+            const matchesOem = product.oemNumbers.some(oem => 
+                oem.toLowerCase().replace(/[-\s]/g, '').includes(query.replace(/[-\s]/g, '')) || 
+                oem.toLowerCase().includes(query)
+            );
+            const matchesCompat = product.compatibility.some(c => c.toLowerCase().includes(query));
 
-      return matchesCategory && (matchesName || matchesSku || matchesOem || matchesCompat);
-    });
-  }, [selectedCategory, searchQuery, vinFilter]);
+            return matchesCategory && (matchesName || matchesSku || matchesOem || matchesCompat);
+        });
+    }
+
+    // VIN Filtering is always client-side for now (decodes to a car model string)
+    if (vinFilter) {
+        filtered = filtered.filter(product => 
+            product.compatibility.some(c => c.toLowerCase().includes(vinFilter.toLowerCase()) || vinFilter.toLowerCase().includes(c.toLowerCase()))
+        );
+    }
+
+    return filtered;
+  }, [selectedCategory, searchQuery, vinFilter, products, usingFallback]);
 
   const ProductSkeleton = () => (
     <div className="bg-white border border-gray-200 h-full flex flex-col animate-pulse">
@@ -68,12 +110,19 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         addToCart={addToCart}
       />
 
-      <div className="mb-10 text-center md:text-left">
-        <h2 className="text-3xl md:text-4xl font-bold text-masuma-dark mb-2 font-display uppercase tracking-tight">Parts Catalog</h2>
-        <div className="h-1.5 w-24 bg-masuma-orange mb-4 mx-auto md:mx-0"></div>
-        <p className="text-gray-600 max-w-2xl">
-          Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
-        </p>
+      <div className="mb-10 text-center md:text-left flex flex-col md:flex-row justify-between items-end">
+        <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-masuma-dark mb-2 font-display uppercase tracking-tight">Parts Catalog</h2>
+            <div className="h-1.5 w-24 bg-masuma-orange mb-4 mx-auto md:mx-0"></div>
+            <p className="text-gray-600 max-w-2xl">
+            Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
+            </p>
+        </div>
+        {usingFallback && (
+            <div className="text-xs text-orange-600 bg-orange-50 px-3 py-1 rounded border border-orange-200 flex items-center gap-2 mt-4 md:mt-0 animate-fade-in">
+                <AlertCircle size={12} /> Offline Mode: Showing Local Catalog
+            </div>
+        )}
       </div>
 
       {/* VIN Search Module */}
@@ -120,7 +169,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
            {[1,2,3,4,5,6,7,8].map(i => <ProductSkeleton key={i} />)}
         </div>
-      ) : filteredProducts.length === 0 ? (
+      ) : displayProducts.length === 0 ? (
         <div className="text-center py-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg">
           <div className="inline-flex p-6 bg-white rounded-full shadow-sm mb-6">
             <AlertCircle className="text-masuma-orange" size={48} />
@@ -138,7 +187,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredProducts.map((product) => (
+          {displayProducts.map((product) => (
             <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
               
               {/* Image Area */}
@@ -179,7 +228,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
               <div className="p-6 flex-1 flex flex-col">
                 <div className="mb-4">
                   <div className="flex justify-between items-start mb-1">
-                      <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors">
+                      <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-12">
                         {product.name}
                       </h3>
                   </div>
@@ -187,7 +236,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                 </div>
 
                 <div className="mt-auto space-y-4">
-                    <div className="p-3 bg-gray-50 rounded-sm border border-gray-100">
+                    <div className="p-3 bg-gray-50 rounded-sm border border-gray-100 h-14">
                         <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Fits:</p>
                         <p className="text-xs text-gray-700 line-clamp-1" title={product.compatibility.join(', ')}>
                             {product.compatibility.join(', ')}
