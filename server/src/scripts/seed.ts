@@ -8,6 +8,7 @@ import { Product } from '../entities/Product';
 import { ProductStock } from '../entities/ProductStock';
 import { OemNumber } from '../entities/OemNumber';
 import { Vehicle } from '../entities/Vehicle';
+import { BlogPost } from '../entities/BlogPost';
 import { Security } from '../utils/security';
 
 // Mock Data Source
@@ -35,7 +36,53 @@ const PRODUCTS_DATA = [
     price: 2200,
     oems: ['17801-30040'],
     fits: [{ make: 'Toyota', model: 'Prado' }]
+  },
+  {
+    name: 'Stabilizer Link',
+    sku: 'ML-3320',
+    category: 'Suspension',
+    price: 1800,
+    oems: ['48820-42020'],
+    fits: [{ make: 'Toyota', model: 'RAV4' }]
+  },
+  {
+    name: 'Iridium Spark Plug',
+    sku: 'S-102',
+    category: 'Engine & Ignition',
+    price: 1200,
+    oems: ['90919-01210'],
+    fits: [{ make: 'Toyota', model: 'Camry' }, { make: 'Lexus', model: 'RX' }]
   }
+];
+
+const BLOG_DATA = [
+    {
+        title: 'Why Suspension Parts Fail Faster in Nairobi',
+        excerpt: 'The combination of potholes, speed bumps, and dust creates a harsh environment for bushings and shocks. Learn how Masuma reinforced parts extend lifespan.',
+        content: '<p>Driving in Nairobi is a test of endurance for any vehicle. The constant vibration from uneven surfaces causes standard rubber bushings to crack prematurely.</p><p>Masuma suspension parts use a high-density rubber compound specifically engineered for these conditions, offering 30% longer life than standard aftermarket alternatives.</p>',
+        image: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=800&q=80',
+        category: 'Maintenance',
+        readTime: '4 min read',
+        relatedProductCategory: 'Suspension'
+    },
+    {
+        title: 'Spotting Fake Oil Filters: A Guide',
+        excerpt: 'Counterfeit filters are flooding Kirinyaga Road. Here is how to identify a genuine Masuma filter and save your engine from catastrophe.',
+        content: '<p>A fake oil filter might look identical on the outside, but inside, the filtration media is often just cardboard. This leads to sludge buildup and eventual engine failure.</p><p>Genuine Masuma filters feature a hologram seal and a specific batch number printed on the canister. Always buy from authorized distributors.</p>',
+        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=800&q=80',
+        category: 'Advisory',
+        readTime: '3 min read',
+        relatedProductCategory: 'Filters'
+    },
+    {
+        title: 'Brake Pad Bedding-In Procedure',
+        excerpt: 'Just installed new pads? Do not slam on the brakes yet. Follow this procedure to ensure optimal stopping power and silence.',
+        content: '<p>Bedding-in transfers a layer of friction material to the rotor. Accelerate to 60kph, then brake moderately to 10kph. Repeat 10 times without coming to a complete stop.</p><p>This prevents squeaking and ensures your Masuma ceramic pads perform at their peak immediately.</p>',
+        image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80',
+        category: 'Technical',
+        readTime: '5 min read',
+        relatedProductCategory: 'Brakes'
+    }
 ];
 
 const seed = async () => {
@@ -129,6 +176,17 @@ const seed = async () => {
             await stockRepo.save(stock);
             
             console.log(`Created product: ${product.sku}`);
+        }
+    }
+
+    // 4. Create Blog Posts
+    const blogRepo = AppDataSource.getRepository(BlogPost);
+    for (const bData of BLOG_DATA) {
+        const exists = await blogRepo.findOneBy({ title: bData.title });
+        if (!exists) {
+            const post = blogRepo.create(bData);
+            await blogRepo.save(post);
+            console.log(`Created blog post: ${bData.title}`);
         }
     }
 

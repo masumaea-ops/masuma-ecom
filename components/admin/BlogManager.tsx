@@ -17,8 +17,13 @@ const BlogManager: React.FC = () => {
     const fetchPosts = async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.get('/blog');
-            setPosts(res.data);
+            // For admin view, request a larger limit to see more posts at once without complex pagination UI for now
+            const res = await apiClient.get('/blog?limit=100');
+            if (res.data && res.data.data) {
+                setPosts(res.data.data);
+            } else {
+                setPosts([]);
+            }
         } catch (error) {
             console.error('Failed to fetch posts', error);
         } finally {
@@ -100,7 +105,9 @@ const BlogManager: React.FC = () => {
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Content Studio</h2>
+                <div>
+                    <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Content Studio</h2>
+                </div>
                 <button 
                     onClick={handleAddNew}
                     className="bg-masuma-orange text-white px-6 py-3 rounded font-bold uppercase tracking-widest text-sm hover:bg-orange-600 transition shadow-lg flex items-center gap-2"

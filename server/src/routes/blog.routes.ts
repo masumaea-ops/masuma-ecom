@@ -23,18 +23,31 @@ const blogSchema = z.object({
 // GET /api/blog (Public)
 router.get('/', async (req, res) => {
     try {
-        const posts = await blogRepo.find({
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 6; // Default 6 posts per page
+        const skip = (page - 1) * limit;
+
+        const [posts, total] = await blogRepo.findAndCount({
             where: { isPublished: true },
-            order: { createdAt: 'DESC' }
+            order: { createdAt: 'DESC' },
+            take: limit,
+            skip: skip
         });
         
-        // Map to match frontend type if needed, usually direct map works
         const formatted = posts.map(p => ({
             ...p,
             date: p.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         }));
 
-        res.json(formatted);
+        res.json({
+            data: formatted,
+            meta: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch posts' });
     }

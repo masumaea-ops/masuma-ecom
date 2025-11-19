@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 
@@ -13,20 +13,36 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0, pages: 1 });
 
   useEffect(() => {
-      const fetchPosts = async () => {
-          try {
-              const res = await apiClient.get('/blog');
-              setPosts(res.data);
-          } catch (error) {
-              console.error('Failed to fetch blog posts');
-          } finally {
-              setIsLoading(false);
-          }
-      };
-      fetchPosts();
+      fetchPosts(1);
   }, []);
+
+  const fetchPosts = async (page: number) => {
+      setIsLoading(true);
+      try {
+          const res = await apiClient.get(`/blog?page=${page}&limit=${pagination.limit}`);
+          if (res.data && res.data.data) {
+              setPosts(res.data.data);
+              setPagination(res.data.meta);
+          } else if (Array.isArray(res.data)) {
+              // Fallback for legacy API structure (just in case)
+              setPosts(res.data);
+          }
+      } catch (error) {
+          console.error('Failed to fetch blog posts');
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  const handlePageChange = (newPage: number) => {
+      if (newPage >= 1 && newPage <= pagination.pages) {
+          fetchPosts(newPage);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+  };
 
   // Fetch related products when viewing a post
   useEffect(() => {
@@ -34,7 +50,9 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
           const fetchRelated = async () => {
               try {
                   const res = await apiClient.get(`/products?category=${selectedPost.relatedProductCategory}`);
-                  setRelatedProducts(res.data.slice(0, 4));
+                  // Handle potential paginated response for products
+                  const productsData = res.data.data || res.data; 
+                  setRelatedProducts(Array.isArray(productsData) ? productsData.slice(0, 4) : []);
               } catch (e) {
                   setRelatedProducts([]);
               }
@@ -152,45 +170,68 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                  <Loader2 className="animate-spin text-masuma-orange" size={48} />
              </div>
          ) : (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post) => (
-               <div 
-                  key={post.id} 
-                  className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
-                  onClick={() => setSelectedPost(post)}
-               >
-                  <div className="relative h-56 overflow-hidden">
-                     <div className="absolute top-4 left-4 z-10">
-                        <span className="bg-masuma-orange text-white text-[10px] font-bold uppercase px-2 py-1 shadow-md">
-                           {post.category}
-                        </span>
-                     </div>
-                     <img 
-                        src={post.image} 
-                        alt={post.title} 
-                        className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-out"
-                     />
-                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition"></div>
-                  </div>
-                  
-                  <div className="p-6 flex-1 flex flex-col">
-                     <div className="flex items-center gap-4 text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">
-                        <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
-                        <span className="flex items-center gap-1"><Clock size={12} /> {post.readTime}</span>
-                     </div>
-                     <h3 className="text-xl font-bold text-masuma-dark font-display mb-3 leading-tight group-hover:text-masuma-orange transition-colors">
-                        {post.title}
-                     </h3>
-                     <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-1 leading-relaxed">
-                        {post.excerpt}
-                     </p>
-                     <div className="flex items-center text-masuma-dark font-bold uppercase text-xs tracking-widest group-hover:text-masuma-orange transition mt-auto">
-                        Read Article <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-2 transition" />
-                     </div>
-                  </div>
-               </div>
-            ))}
-         </div>
+         <>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {posts.map((post) => (
+                   <div 
+                      key={post.id} 
+                      className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
+                      onClick={() => setSelectedPost(post)}
+                   >
+                      <div className="relative h-56 overflow-hidden">
+                         <div className="absolute top-4 left-4 z-10">
+                            <span className="bg-masuma-orange text-white text-[10px] font-bold uppercase px-2 py-1 shadow-md">
+                               {post.category}
+                            </span>
+                         </div>
+                         <img 
+                            src={post.image} 
+                            alt={post.title} 
+                            className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-out"
+                         />
+                         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition"></div>
+                      </div>
+                      
+                      <div className="p-6 flex-1 flex flex-col">
+                         <div className="flex items-center gap-4 text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">
+                            <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
+                            <span className="flex items-center gap-1"><Clock size={12} /> {post.readTime}</span>
+                         </div>
+                         <h3 className="text-xl font-bold text-masuma-dark font-display mb-3 leading-tight group-hover:text-masuma-orange transition-colors">
+                            {post.title}
+                         </h3>
+                         <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-1 leading-relaxed">
+                            {post.excerpt}
+                         </p>
+                         <div className="flex items-center text-masuma-dark font-bold uppercase text-xs tracking-widest group-hover:text-masuma-orange transition mt-auto">
+                            Read Article <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-2 transition" />
+                         </div>
+                      </div>
+                   </div>
+                ))}
+             </div>
+             
+             {/* Pagination Controls */}
+             <div className="mt-12 flex justify-center items-center gap-4">
+                <button 
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">
+                    Page {pagination.page} of {pagination.pages}
+                </span>
+                <button 
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.pages}
+                    className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                    <ChevronRight size={20} />
+                </button>
+             </div>
+         </>
          )}
       </div>
     </div>
