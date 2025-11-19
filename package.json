@@ -1,0 +1,32 @@
+{
+  "name": "masuma-autoparts-east-africa",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "lucide-react": "^0.554.0",
+    "@google/genai": "^1.30.0",
+    "helmet": "^8.1.0",
+    "express-rate-limit": "^8.2.1",
+    "@prisma/client": "^7.0.0",
+    "express": "^5.1.0",
+    "ioredis": "^5.8.2",
+    "cors": "^2.8.5",
+    "compression": "^1.8.1",
+    "zod": "^4.1.12",
+    "bullmq": "^5.63.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

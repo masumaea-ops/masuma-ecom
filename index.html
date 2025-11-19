@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masuma Autoparts East Africa Limited</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              masuma: {
+                orange: '#E0621B',
+                dark: '#1A1A1A',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              display: ['Oswald', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'slide-up': 'slideUp 0.4s ease-out',
+              'slide-right': 'slideRight 0.6s ease-out',
+              'scale-up': 'scaleUp 0.3s ease-out',
+              'pulse-once': 'pulseOnce 0.5s ease-in-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              slideRight: {
+                '0%': { transform: 'translateX(-20px)', opacity: '0' },
+                '100%': { transform: 'translateX(0)', opacity: '1' },
+              },
+              scaleUp: {
+                '0%': { transform: 'scale(0.95)', opacity: '0' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+              pulseOnce: {
+                '0%, 100%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.2)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      h1, h2, h3, h4, h5, h6 { font-family: 'Oswald', sans-serif; }
+      
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "helmet": "https://aistudiocdn.com/helmet@^8.1.0",
+    "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.2.1",
+    "@prisma/client": "https://aistudiocdn.com/@prisma/client@^7.0.0",
+    "express": "https://aistudiocdn.com/express@^5.1.0",
+    "ioredis": "https://aistudiocdn.com/ioredis@^5.8.2",
+    "cors": "https://aistudiocdn.com/cors@^2.8.5",
+    "compression": "https://aistudiocdn.com/compression@^1.8.1",
+    "zod": "https://aistudiocdn.com/zod@^4.1.12",
+    "bullmq": "https://aistudiocdn.com/bullmq@^5.63.2"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-50 text-masuma-dark antialiased selection:bg-masuma-orange selection:text-white">
+    <div id="root"></div>
+  </body>
+</html>
