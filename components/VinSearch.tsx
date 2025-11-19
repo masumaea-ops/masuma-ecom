@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Search, Car, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { apiClient } from '../utils/apiClient';
 
 interface VinSearchProps {
   onVehicleIdentified: (vehicleName: string) => void;
@@ -11,33 +12,21 @@ const VinSearch: React.FC<VinSearchProps> = ({ onVehicleIdentified }) => {
   const [status, setStatus] = useState<'idle' | 'searching' | 'found' | 'error'>('idle');
   const [identifiedCar, setIdentifiedCar] = useState('');
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (vin.length < 5) return;
 
     setStatus('searching');
-    
-    // Mock VIN Decoding Logic
-    setTimeout(() => {
-      const v = vin.toUpperCase();
-      let car = '';
-      
-      if (v.startsWith('JTN')) car = 'Toyota Land Cruiser Prado';
-      else if (v.startsWith('JT1')) car = 'Toyota Corolla';
-      else if (v.startsWith('MRH')) car = 'Honda Fit';
-      else if (v.startsWith('JMZ')) car = 'Mazda Demio';
-      else if (v.startsWith('JF1')) car = 'Subaru Forester';
-      else if (v.startsWith('VN1')) car = 'Nissan Note';
-      else car = 'Generic Toyota Model'; // Fallback for demo
-
-      if (car) {
+    try {
+        const res = await apiClient.get(`/vehicles/decode/${vin}`);
+        const car = res.data.model;
         setIdentifiedCar(car);
         setStatus('found');
         onVehicleIdentified(car);
-      } else {
+    } catch (error) {
         setStatus('error');
-      }
-    }, 1500);
+        onVehicleIdentified('');
+    }
   };
 
   const clearSearch = () => {

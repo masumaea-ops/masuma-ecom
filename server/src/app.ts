@@ -4,10 +4,12 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { redis } from './config/redis';
 import { AppDataSource } from './config/database';
-import { config } from './config/env'; // Validated Config
-import { errorHandler } from './middleware/errorHandler'; // Global Error Handler
+import { config } from './config/env'; 
+import { errorHandler } from './middleware/errorHandler'; 
 import { ProductService } from './services/productService';
 
 // Routers
@@ -30,7 +32,9 @@ import branchRoutes from './routes/branch.routes';
 import notificationRoutes from './routes/notification.routes'; 
 import categoryRoutes from './routes/category.routes';
 import healthRoutes from './routes/health.routes';
-import exchangeRoutes from './routes/exchange.routes'; // Added
+import exchangeRoutes from './routes/exchange.routes';
+import vehicleRoutes from './routes/vehicle.routes';
+import uploadRoutes from './routes/upload.routes'; // Added
 
 // Services & Specific
 import { MpesaService } from './services/mpesaService';
@@ -38,6 +42,9 @@ import { z } from 'zod';
 import { Order, OrderStatus } from './entities/Order';
 import { OrderItem } from './entities/OrderItem';
 import { validate } from './middleware/validate';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -52,10 +59,16 @@ AppDataSource.initialize()
   });
 
 // --- Security & Performance Middleware ---
-app.use(helmet()); 
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Allow images to be loaded from other domains
+})); 
 app.use(compression()); 
 app.use(cors({ origin: config.CORS_ORIGIN }));
 app.use(express.json());
+
+// --- Static Files ---
+// Serve the 'uploads' directory publicly
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -83,7 +96,9 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/notifications', notificationRoutes); 
 app.use('/api/categories', categoryRoutes);
 app.use('/api/health', healthRoutes);
-app.use('/api/exchange-rates', exchangeRoutes); // Added
+app.use('/api/exchange-rates', exchangeRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/upload', uploadRoutes); // Added
 
 // --- Legacy / Specific Routes (M-Pesa) ---
 const mpesaOrderSchema = z.object({

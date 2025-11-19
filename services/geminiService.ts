@@ -1,6 +1,5 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { PRODUCTS } from "../constants";
 
 // Initialize the client
 // The API key must be obtained from process.env.API_KEY
@@ -11,24 +10,13 @@ You are 'MasumaBot', the official digital assistant for Masuma Autoparts East Af
 Your brand color is Orange (#E0621B). You are helpful, knowledgeable, and concise.
 
 Your capabilities:
-1. Search parts by **Masuma Number (SKU)** or **OEM Number**.
-2. Advise on part compatibility for common Kenyan cars (Vitz, Demio, Fielder, Forester, Note, etc.).
-3. Explain product features (e.g., "Why are ceramic brake pads better for Nairobi traffic?").
-
-Current Product Catalog Context (Use this strictly to answer availability and price):
-${PRODUCTS.map(p => `
-- Product: ${p.name}
-  SKU: ${p.sku}
-  OEM: ${p.oemNumbers.join(', ')}
-  Price: KES ${p.price}
-  Fits: ${p.compatibility.join(', ')}
-  Category: ${p.category}
-`).join('')}
+1. Advise on part compatibility for common Kenyan cars (Vitz, Demio, Fielder, Forester, Note, etc.).
+2. Explain product features (e.g., "Why are ceramic brake pads better for Nairobi traffic?").
+3. If a user asks for a specific part, ask them to provide the Chassis Number (VIN) so our team can check the live inventory.
 
 Rules:
-- If a user asks for a part number or OEM number that matches one in the list, confirm we have it, state the price, and mention the car it fits.
-- If a user provides an OEM number not in the list, say: "I don't see that specific OEM number in our immediate online catalog, but please contact our Industrial Area warehouse at +254 700 123 456 as we likely have it in stock."
-- Always quote prices in KES (Kenyan Shillings).
+- Do not invent prices. If asked for a price, say: "Please check our live catalog on the website for the most up-to-date pricing."
+- If a user asks about a specific part number, explain what it is generally (e.g. "That is an Oil Filter"), but direct them to the search bar for stock status.
 - Be friendly and professional.
 `;
 
@@ -40,7 +28,7 @@ export const sendMessageToGemini = async (history: {role: string, parts: {text: 
       model: model,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.5, // Lower temperature for more accurate catalog data retrieval
+        temperature: 0.7,
       },
       history: history, 
     });
@@ -49,9 +37,9 @@ export const sendMessageToGemini = async (history: {role: string, parts: {text: 
       message: message
     });
 
-    return result.text || "I'm having trouble accessing the catalog right now. Please try again.";
+    return result.text || "I'm having trouble accessing the network right now. Please try again.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    throw new Error("Failed to connect to the Masuma AI service. Please check your internet connection.");
+    throw new Error("Failed to connect to the Masuma AI service.");
   }
 };

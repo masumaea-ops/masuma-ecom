@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle, UploadCloud } from 'lucide-react';
 import { Product } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -13,8 +13,11 @@ const ProductManager: React.FC = () => {
   
   // Editor State
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<Partial<Product>>({});
   const [oemString, setOemString] = useState(''); // Handle comma separated input
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -51,7 +54,7 @@ const ProductManager: React.FC = () => {
   const handleAddNew = () => {
     setFormData({
         name: '', sku: '', price: 0, wholesalePrice: 0, 
-        description: '', category: categories[0]?.name || 'Filters' as any, image: '', oemNumbers: []
+        description: '', category: categories[0]?.name || 'Filters' as any, image: '', images: [], oemNumbers: []
     });
     setOemString('');
     setIsEditorOpen(true);
@@ -73,6 +76,32 @@ const ProductManager: React.FC = () => {
     } catch (error: any) {
         alert(error.response?.data?.error || 'Failed to delete product.');
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploading(true);
+      const uploadData = new FormData();
+      uploadData.append('image', file);
+
+      try {
+          const res = await apiClient.post('/upload', uploadData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          // Update Image URL
+          setFormData(prev => ({
+              ...prev,
+              image: res.data.url,
+              images: [...(prev.images || []), res.data.url]
+          }));
+      } catch (error) {
+          alert('Upload failed');
+      } finally {
+          setIsUploading(false);
+      }
   };
 
   const handleSave = async () => {
@@ -107,6 +136,12 @@ const ProductManager: React.FC = () => {
     } finally {
         setIsSaving(false);
     }
+  };
+
+  const removeImage = (index: number) => {
+      const newImages = [...(formData.images || [])];
+      newImages.splice(index, 1);
+      setFormData({...formData, images: newImages, image: newImages[0] || ''});
   };
 
   return (
@@ -274,22 +309,63 @@ const ProductManager: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-gray-600">Image URL</label>
-                <div className="flex gap-2">
+                <label className="text-xs font-bold uppercase text-gray-600">Product Images</label>
+                
+                {/* Upload Controls */}
+                <div className="flex gap-2 mb-3">
+                   <input 
+                     type="file" 
+                     ref={fileInputRef} 
+                     className="hidden" 
+                     accept="image/*" 
+                     onChange={handleFileUpload}
+                   />
                    <input 
                     type="text" 
                     value={formData.image || ''}
                     onChange={e => setFormData({...formData, image: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm text-gray-500" 
-                    placeholder="https://example.com/image.jpg"
+                    className="flex-1 p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm text-gray-500" 
+                    placeholder="Paste URL or Upload..."
                    />
-                   <button className="p-3 bg-gray-200 rounded hover:bg-gray-300"><ImageIcon size={20} /></button>
+                   <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="p-3 bg-gray-100 rounded hover:bg-masuma-orange hover:text-white transition flex items-center gap-2 font-bold text-xs uppercase"
+                   >
+                       {isUploading ? <Loader2 size={16} className="animate-spin"/> : <UploadCloud size={16} />}
+                       Upload
+                   </button>
                 </div>
-                {formData.image && (
-                   <div className="mt-2 h-24 w-24 bg-gray-100 border border-gray-200 rounded overflow-hidden">
-                       <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
-                   </div>
-                )}
+
+                {/* Gallery Preview */}
+                <div className="grid grid-cols-4 gap-2">
+                    {(formData.images && formData.images.length > 0) ? formData.images.map((img, idx) => (
+                        <div key={idx} className="relative h-20 bg-gray-100 rounded border border-gray-200 overflow-hidden group">
+                            <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                            <button 
+                                onClick={() => removeImage(idx)}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                            >
+                                <X size={10} />
+                            </button>
+                        </div>
+                    )) : formData.image ? (
+                        <div className="h-24 w-24 bg-gray-100 border border-gray-200 rounded overflow-hidden">
+                            <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                    ) : null}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                 <label className="text-xs font-bold uppercase text-gray-600">Video URL (YouTube)</label>
+                 <input 
+                    type="text" 
+                    value={formData.videoUrl || ''}
+                    onChange={e => setFormData({...formData, videoUrl: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm"
+                    placeholder="https://youtube.com/watch?v=..."
+                 />
               </div>
 
               <div className="space-y-1">

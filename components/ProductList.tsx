@@ -1,8 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Category, Product } from '../types';
-import { PRODUCTS as STATIC_PRODUCTS } from '../constants';
-import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane } from 'lucide-react';
+import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane, Loader2 } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
@@ -20,7 +19,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [vinFilter, setVinFilter] = useState('');
-  const [usingFallback, setUsingFallback] = useState(false);
+  const [error, setError] = useState(false);
   
   const [isSourcingOpen, setIsSourcingOpen] = useState(false);
 
@@ -28,6 +27,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   useEffect(() => {
     const fetchProducts = async () => {
         setIsLoading(true);
+        setError(false);
         try {
             // Construct query params
             const params = new URLSearchParams();
@@ -38,15 +38,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             
             if (response.data && Array.isArray(response.data)) {
                 setProducts(response.data);
-                setUsingFallback(false);
             } else {
-                throw new Error('Invalid data');
+                setProducts([]);
             }
         } catch (error) {
-            // Quietly switch to fallback if server fails
-            console.warn('Backend API unreachable. Switching to offline catalog.');
-            setProducts(STATIC_PRODUCTS);
-            setUsingFallback(true);
+            console.error('API Error', error);
+            setError(true);
         } finally {
             setIsLoading(false);
         }
@@ -58,32 +55,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCategory]); // Re-run when search or category changes
+  }, [searchQuery, selectedCategory]); 
 
-  // Client-side fallback filtering (only used if usingFallback is true OR for VIN filtering on top of results)
+  // Client-side VIN Filtering (on top of server results for now)
   const displayProducts = useMemo(() => {
     let filtered = products;
 
-    if (usingFallback) {
-        filtered = products.filter(product => {
-            const query = searchQuery.toLowerCase().trim();
-            const matchesCategory = selectedCategory === Category.ALL || product.category === selectedCategory;
-            
-            if (!query) return matchesCategory;
-
-            const matchesName = product.name.toLowerCase().includes(query);
-            const matchesSku = product.sku.toLowerCase().includes(query);
-            const matchesOem = product.oemNumbers.some(oem => 
-                oem.toLowerCase().replace(/[-\s]/g, '').includes(query.replace(/[-\s]/g, '')) || 
-                oem.toLowerCase().includes(query)
-            );
-            const matchesCompat = product.compatibility.some(c => c.toLowerCase().includes(query));
-
-            return matchesCategory && (matchesName || matchesSku || matchesOem || matchesCompat);
-        });
-    }
-
-    // VIN Filtering is always client-side for now (decodes to a car model string)
     if (vinFilter) {
         filtered = filtered.filter(product => 
             product.compatibility.some(c => c.toLowerCase().includes(vinFilter.toLowerCase()) || vinFilter.toLowerCase().includes(c.toLowerCase()))
@@ -91,7 +68,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
     }
 
     return filtered;
-  }, [selectedCategory, searchQuery, vinFilter, products, usingFallback]);
+  }, [vinFilter, products]);
 
   const ProductSkeleton = () => (
     <div className="bg-white border border-gray-200 h-full flex flex-col animate-pulse">
@@ -123,11 +100,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
             </p>
         </div>
-        {usingFallback && (
-            <div className="text-xs text-orange-600 bg-orange-50 px-3 py-1 rounded border border-orange-200 flex items-center gap-2 mt-4 md:mt-0 animate-fade-in">
-                <AlertCircle size={12} /> Offline Mode: Showing Local Catalog
-            </div>
-        )}
       </div>
 
       {/* VIN Search Module */}
@@ -169,15 +141,25 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         </div>
       </div>
 
+      {/* Error State */}
+      {error && (
+           <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="p-6 bg-red-50 rounded-full mb-4 text-red-500"><AlertCircle size={48} /></div>
+                <h3 className="text-xl font-bold text-masuma-dark">Connection Error</h3>
+                <p className="text-gray-500 mb-6">Could not connect to the product database.</p>
+                <button onClick={() => window.location.reload()} className="px-6 py-2 bg-masuma-dark text-white rounded font-bold uppercase text-sm">Retry</button>
+           </div>
+      )}
+
       {/* Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
            {[1,2,3,4,5,6,7,8].map(i => <ProductSkeleton key={i} />)}
         </div>
-      ) : displayProducts.length === 0 ? (
+      ) : !error && displayProducts.length === 0 ? (
         <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center">
           <div className="inline-flex p-6 bg-white rounded-full shadow-sm mb-6">
-            <AlertCircle className="text-masuma-orange" size={48} />
+            <Search className="text-masuma-orange" size={48} />
           </div>
           <h3 className="text-2xl font-bold text-masuma-dark font-display">Part Not Found</h3>
           <p className="text-gray-500 max-w-md mx-auto mt-2 mb-8">
@@ -201,15 +183,15 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
               </button>
           </div>
         </div>
-      ) : (
+      ) : !error && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {displayProducts.map((product) => (
-            <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
+            <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
               
               {/* Image Area */}
               <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
                 <img 
-                  src={product.image} 
+                  src={(product as any).images?.[0] || product.image} 
                   alt={product.name} 
                   className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-700 ease-out"
                   onError={(e) => {
@@ -268,9 +250,9 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                         <button
                             onClick={() => addToCart(product)}
                             disabled={!product.stock}
-                            className={`p-3 rounded-full transition-colors duration-300 ${
+                            className={`p-3 rounded-full transition-all duration-300 ${
                                 product.stock 
-                                ? 'bg-masuma-dark text-white hover:bg-masuma-orange shadow-md hover:shadow-lg' 
+                                ? 'bg-masuma-dark text-white group-hover:bg-masuma-orange group-hover:scale-110 shadow-md hover:shadow-lg' 
                                 : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                             }`}
                             title="Add to Cart"

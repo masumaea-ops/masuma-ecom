@@ -1,24 +1,22 @@
+
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import { AppDataSource } from '../config/database';
 import { MpesaTransaction } from '../entities/MpesaTransaction';
 import { Order, OrderStatus } from '../entities/Order';
-
-// Environment Variables
-const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY!;
-const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET!;
-const MPESA_PASSKEY = process.env.MPESA_PASSKEY!;
-const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE!; 
-const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL!;
-const MPESA_ENV = process.env.MPESA_ENV || 'sandbox';
-
-const BASE_URL = MPESA_ENV === 'production' 
-  ? 'https://api.safaricom.co.ke' 
-  : 'https://sandbox.safaricom.co.ke';
+import { SystemSetting } from '../entities/SystemSetting';
 
 export class MpesaService {
   private static transactionRepo = AppDataSource.getRepository(MpesaTransaction);
   private static orderRepo = AppDataSource.getRepository(Order);
+  private static settingsRepo = AppDataSource.getRepository(SystemSetting);
+
+  // Helper to get setting with fallback to env
+  private static async getSetting(key: string, envKey?: string): Promise<string> {
+    const setting = await this.settingsRepo.findOneBy({ key });
+    if (setting && setting.value) return setting.value;
+    return (envKey && process.env[envKey]) ? process.env[envKey]! : '';
+  }
 
   private static formatPhoneNumber(phone: string): string {
     let p = phone.replace(/\s/g, '').replace(/\+/g, '');
@@ -29,9 +27,18 @@ export class MpesaService {
   }
 
   private static async getAccessToken(): Promise<string> {
-    const auth = Buffer.from(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`).toString('base64');
+    const consumerKey = await this.getSetting('MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_KEY');
+    const consumerSecret = await this.getSetting('MPESA_CONSUMER_SECRET', 'MPESA_CONSUMER_SECRET');
+    const env = process.env.MPESA_ENV || 'sandbox';
+    const baseUrl = env === 'production' ? 'https://api.safaricom.co.ke' : 'https://sandbox.safaricom.co.ke';
+
+    if (!consumerKey || !consumerSecret) {
+        throw new Error('M-Pesa credentials not configured');
+    }
+
+    const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
     try {
-      const response = await axios.get(`${BASE_URL}/oauth/v1/generate?grant_type=client_credentials`, {
+      const response = await axios.get(`${baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
         headers: { Authorization: `Basic ${auth}` }
       });
       return response.data.access_token;
@@ -45,24 +52,31 @@ export class MpesaService {
     const token = await this.getAccessToken();
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
-    const password = Buffer.from(`${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`).toString('base64');
+    
+    const shortcode = await this.getSetting('MPESA_SHORTCODE', 'MPESA_SHORTCODE');
+    const passkey = await this.getSetting('MPESA_PASSKEY', 'MPESA_PASSKEY');
+    const callbackUrl = await this.getSetting('MPESA_CALLBACK_URL', 'MPESA_CALLBACK_URL');
+    const env = process.env.MPESA_ENV || 'sandbox';
+    const baseUrl = env === 'production' ? 'https://api.safaricom.co.ke' : 'https://sandbox.safaricom.co.ke';
+
+    const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
     const payload = {
-      BusinessShortCode: MPESA_SHORTCODE,
+      BusinessShortCode: shortcode,
       Password: password,
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
       Amount: Math.ceil(amount),
       PartyA: formattedPhone,
-      PartyB: MPESA_SHORTCODE,
+      PartyB: shortcode,
       PhoneNumber: formattedPhone,
-      CallBackURL: MPESA_CALLBACK_URL,
+      CallBackURL: callbackUrl,
       AccountReference: `Masuma Order`,
       TransactionDesc: `Payment for Order ${orderId.slice(0, 5)}`
     };
 
     try {
-      const response = await axios.post(`${BASE_URL}/mpesa/stkpush/v1/processrequest`, payload, {
+      const response = await axios.post(`${baseUrl}/mpesa/stkpush/v1/processrequest`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

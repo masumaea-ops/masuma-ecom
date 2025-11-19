@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Settings, Users, Building, FileText, Loader2, Activity, Server, Database, RefreshCw } from 'lucide-react';
+import { Save, Settings, Users, Building, FileText, Loader2, Activity, Server, Database, RefreshCw, Globe, Smartphone, Key, Shield } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 
 const SettingsManager: React.FC = () => {
@@ -53,7 +53,7 @@ const SettingsManager: React.FC = () => {
         setIsSaving(true);
         try {
             await apiClient.post('/settings', settings);
-            alert('Settings saved successfully');
+            alert('Settings saved successfully. Some changes may require a service restart to take full effect.');
         } catch (error) {
             alert('Failed to save settings');
         } finally {
@@ -64,11 +64,11 @@ const SettingsManager: React.FC = () => {
     if (isLoading) return <div className="p-10 text-center"><Loader2 className="animate-spin mx-auto" /></div>;
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">System Settings</h2>
-                    <p className="text-sm text-gray-500">Configure Branch, Users, and Fiscal Devices.</p>
+                    <p className="text-sm text-gray-500">Configure Branch, API Keys, and Fiscal Integrations.</p>
                 </div>
                 <button 
                     onClick={handleSave} 
@@ -76,23 +76,24 @@ const SettingsManager: React.FC = () => {
                     className="bg-masuma-dark text-white px-6 py-3 rounded font-bold uppercase tracking-widest text-sm hover:bg-masuma-orange transition shadow-lg flex items-center gap-2 disabled:opacity-50"
                 >
                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} 
-                    Save Changes
+                    Save Configuration
                 </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex min-h-[500px]">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
                 {/* Sidebar */}
-                <div className="w-64 bg-gray-50 border-r border-gray-200">
+                <div className="w-full md:w-64 bg-gray-50 border-r border-gray-200 flex md:flex-col overflow-x-auto md:overflow-visible">
                     {[
                         { id: 'general', label: 'General Config', icon: Settings },
                         { id: 'branch', label: 'Branch Details', icon: Building },
+                        { id: 'integrations', label: 'API Integrations', icon: Globe },
                         { id: 'fiscal', label: 'Fiscal / eTIMS', icon: FileText },
                         { id: 'status', label: 'System Health', icon: Activity },
                     ].map(tab => (
                         <button 
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`w-full text-left px-6 py-4 font-bold text-sm flex items-center gap-3 border-l-4 transition ${
+                            className={`w-full text-left px-6 py-4 font-bold text-sm flex items-center gap-3 border-l-4 transition whitespace-nowrap ${
                                 activeTab === tab.id ? 'bg-white border-masuma-orange text-masuma-orange' : 'border-transparent text-gray-500 hover:bg-gray-100'
                             }`}
                         >
@@ -102,11 +103,11 @@ const SettingsManager: React.FC = () => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-8 overflow-y-auto">
                     {activeTab === 'general' && (
                         <div className="space-y-6">
                             <h3 className="text-lg font-bold uppercase text-masuma-dark mb-6 pb-2 border-b border-gray-100">General Configuration</h3>
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase text-gray-500">Company Name</label>
                                     <input type="text" value={settings['COMPANY_NAME'] || ''} onChange={e => handleChange('COMPANY_NAME', e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
@@ -141,19 +142,71 @@ const SettingsManager: React.FC = () => {
                          </div>
                     )}
 
+                    {activeTab === 'integrations' && (
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-lg font-bold uppercase text-masuma-dark mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
+                                    <Smartphone size={20} className="text-green-600"/> Safaricom Daraja (M-Pesa)
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold uppercase text-gray-500">Consumer Key</label>
+                                        <input type="password" value={settings['MPESA_CONSUMER_KEY'] || ''} onChange={e => handleChange('MPESA_CONSUMER_KEY', e.target.value)} className="w-full p-3 border border-gray-300 rounded font-mono text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold uppercase text-gray-500">Consumer Secret</label>
+                                        <input type="password" value={settings['MPESA_CONSUMER_SECRET'] || ''} onChange={e => handleChange('MPESA_CONSUMER_SECRET', e.target.value)} className="w-full p-3 border border-gray-300 rounded font-mono text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold uppercase text-gray-500">Passkey</label>
+                                        <input type="password" value={settings['MPESA_PASSKEY'] || ''} onChange={e => handleChange('MPESA_PASSKEY', e.target.value)} className="w-full p-3 border border-gray-300 rounded font-mono text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold uppercase text-gray-500">Shortcode (Paybill/Till)</label>
+                                        <input type="text" value={settings['MPESA_SHORTCODE'] || ''} onChange={e => handleChange('MPESA_SHORTCODE', e.target.value)} className="w-full p-3 border border-gray-300 rounded font-mono text-sm" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold uppercase text-masuma-dark mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
+                                    <Key size={20} className="text-blue-600"/> External Services
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold uppercase text-gray-500">VIN Decoder API Key</label>
+                                        <input type="password" value={settings['VIN_API_KEY'] || ''} onChange={e => handleChange('VIN_API_KEY', e.target.value)} className="w-full p-3 border border-gray-300 rounded font-mono text-sm" placeholder="e.g. NHTSA or AutoLoop Key" />
+                                        <p className="text-[10px] text-gray-400">Used for the Vehicle Identification module.</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold uppercase text-gray-500">Google Gemini API Key</label>
+                                        <input type="password" value={settings['GEMINI_API_KEY'] || ''} disabled className="w-full p-3 border border-gray-200 bg-gray-100 rounded font-mono text-sm cursor-not-allowed" placeholder="Managed via Environment Variables for Security" />
+                                        <p className="text-[10px] text-gray-400">Contact system administrator to update AI keys.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {activeTab === 'fiscal' && (
                         <div className="space-y-6">
-                           <h3 className="text-lg font-bold uppercase text-masuma-dark mb-6 pb-2 border-b border-gray-100">KRA eTIMS Settings</h3>
+                           <h3 className="text-lg font-bold uppercase text-masuma-dark mb-6 pb-2 border-b border-gray-100 flex items-center gap-2">
+                               <Shield size={20} className="text-purple-600"/> KRA eTIMS Configuration
+                           </h3>
                            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mb-4">
-                               <p className="text-xs text-yellow-800"><strong>Warning:</strong> Changing these settings will affect fiscal signature generation.</p>
+                               <p className="text-xs text-yellow-800"><strong>Warning:</strong> Changing these settings will affect fiscal signature generation. Ensure the device is online.</p>
                            </div>
                            <div className="space-y-2">
-                               <label className="text-xs font-bold uppercase text-gray-500">KRA PIN</label>
+                               <label className="text-xs font-bold uppercase text-gray-500">Tax Payer PIN (P05...)</label>
                                <input type="text" value={settings['KRA_PIN'] || ''} onChange={e => handleChange('KRA_PIN', e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" />
                            </div>
                            <div className="space-y-2">
                                <label className="text-xs font-bold uppercase text-gray-500">Device Serial Number</label>
                                <input type="text" value={settings['DEVICE_SERIAL'] || ''} onChange={e => handleChange('DEVICE_SERIAL', e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" />
+                           </div>
+                           <div className="space-y-2">
+                               <label className="text-xs font-bold uppercase text-gray-500">VSCU API URL</label>
+                               <input type="text" value={settings['KRA_API_URL'] || ''} onChange={e => handleChange('KRA_API_URL', e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" placeholder="https://itax.kra.go.ke/eTIMS/api" />
                            </div>
                         </div>
                    )}
@@ -203,10 +256,6 @@ const SettingsManager: React.FC = () => {
                                         <p className="text-[10px] text-gray-500 mt-1">Queue Depth: 0</p>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div className="mt-6">
-                                <button className="text-xs text-gray-500 underline">Download System Logs</button>
                             </div>
                         </div>
                    )}

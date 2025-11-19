@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
 import { BlogPost, Product } from '../types';
-import { PRODUCTS, BLOG_POSTS as STATIC_BLOG_POSTS } from '../constants';
 import { apiClient } from '../utils/apiClient';
 
 interface BlogProps {
@@ -12,20 +11,16 @@ interface BlogProps {
 const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
       const fetchPosts = async () => {
           try {
               const res = await apiClient.get('/blog');
-              if (res.data && res.data.length > 0) {
-                setPosts(res.data);
-              } else {
-                setPosts(STATIC_BLOG_POSTS); // Fallback if empty
-              }
+              setPosts(res.data);
           } catch (error) {
-              console.warn('Blog API offline, using static content');
-              setPosts(STATIC_BLOG_POSTS);
+              console.error('Failed to fetch blog posts');
           } finally {
               setIsLoading(false);
           }
@@ -33,16 +28,22 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
       fetchPosts();
   }, []);
 
-  // Helper to find related products
-  const getRelatedProducts = (category: string) => {
-    // In a real app, fetch from API based on category
-    return PRODUCTS.filter(p => p.category === category && p.stock).slice(0, 4);
-  };
+  // Fetch related products when viewing a post
+  useEffect(() => {
+      if (selectedPost) {
+          const fetchRelated = async () => {
+              try {
+                  const res = await apiClient.get(`/products?category=${selectedPost.relatedProductCategory}`);
+                  setRelatedProducts(res.data.slice(0, 4));
+              } catch (e) {
+                  setRelatedProducts([]);
+              }
+          };
+          fetchRelated();
+      }
+  }, [selectedPost]);
 
   if (selectedPost) {
-    // Single Post View
-    const relatedProducts = getRelatedProducts(selectedPost.relatedProductCategory);
-
     return (
       <div className="animate-fade-in bg-white min-h-screen">
         {/* Article Header */}
@@ -118,7 +119,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                             </div>
                          </div>
                       )) : (
-                          <p className="text-xs text-gray-400 italic">No specific products linked.</p>
+                          <p className="text-xs text-gray-400 italic">Loading suggestions...</p>
                       )}
                    </div>
                 </div>

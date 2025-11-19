@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, Calendar, Image as ImageIcon, Save, X, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Edit, Trash2, Eye, Calendar, Image as ImageIcon, Save, X, Loader2, UploadCloud } from 'lucide-react';
 import { BlogPost, Category } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -9,8 +9,10 @@ const BlogManager: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     
     const [formData, setFormData] = useState<Partial<BlogPost>>({});
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchPosts = async () => {
         setIsLoading(true);
@@ -44,6 +46,26 @@ const BlogManager: React.FC = () => {
     const handleEdit = (post: BlogPost) => {
         setFormData(post);
         setIsEditing(true);
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+
+        try {
+            const res = await apiClient.post('/upload', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setFormData(prev => ({ ...prev, image: res.data.url }));
+        } catch (error) {
+            alert('Upload failed');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleSave = async () => {
@@ -136,8 +158,15 @@ const BlogManager: React.FC = () => {
                          </div>
 
                          <div className="space-y-2">
-                             <label className="text-xs font-bold uppercase text-gray-500">Featured Image URL</label>
+                             <label className="text-xs font-bold uppercase text-gray-500">Featured Image</label>
                              <div className="flex gap-2">
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef}
+                                    className="hidden" 
+                                    accept="image/*" 
+                                    onChange={handleFileUpload}
+                                />
                                 <input 
                                     type="text" 
                                     value={formData.image}
@@ -145,7 +174,13 @@ const BlogManager: React.FC = () => {
                                     className="w-full p-3 border border-gray-200 rounded outline-none focus:border-masuma-orange font-mono text-sm" 
                                     placeholder="https://..." 
                                 />
-                                <button className="p-3 bg-gray-100 rounded hover:bg-gray-200 text-gray-500"><ImageIcon size={20} /></button>
+                                <button 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className="p-3 bg-gray-100 rounded hover:bg-masuma-orange hover:text-white text-gray-500 transition flex items-center gap-2"
+                                >
+                                    {isUploading ? <Loader2 size={20} className="animate-spin"/> : <UploadCloud size={20} />}
+                                </button>
                              </div>
                          </div>
                          

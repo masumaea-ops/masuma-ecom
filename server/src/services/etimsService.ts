@@ -1,58 +1,46 @@
 
 import axios from 'axios';
-
-// Configuration for the Virtual SCU (Sales Control Unit)
-const KRA_API_URL = process.env.KRA_API_URL || 'https://itax.kra.go.ke/eTIMS/api'; // Placeholder URL
-const DEVICE_SERIAL = process.env.KRA_DEVICE_SERIAL;
-const PIN = process.env.COMPANY_PIN; // P05...
+import { AppDataSource } from '../config/database';
+import { SystemSetting } from '../entities/SystemSetting';
 
 interface FiscalItem {
   hsCode: string;
   name: string;
   qty: number;
   unitPrice: number;
-  taxRate: 16 | 0 | 8; // 16% VAT, 0% Exempt, 8% Fuel
+  taxRate: 16 | 0 | 8; 
 }
 
 export class EtimsService {
+  private static settingsRepo = AppDataSource.getRepository(SystemSetting);
+
+  private static async getSetting(key: string): Promise<string> {
+      const s = await this.settingsRepo.findOneBy({ key });
+      return s?.value || '';
+  }
   
-  /**
-   * Submits a transaction to KRA VSCU
-   */
   static async signInvoice(invoiceId: string, items: FiscalItem[], total: number) {
-    // In a real integration, this involves:
-    // 1. Constructing a specific JSON payload defined by KRA specs
-    // 2. Calculating SHA256 checksums
-    // 3. Sending to the local VSCU middleware or Cloud API
-
     try {
-      console.log(`[eTIMS] Signing Invoice ${invoiceId} for KES ${total}`);
+      const deviceSerial = await this.getSetting('DEVICE_SERIAL') || process.env.KRA_DEVICE_SERIAL || 'DEV-SIMULATOR';
+      const pin = await this.getSetting('KRA_PIN') || process.env.COMPANY_PIN || 'P000000000Z';
+      const apiUrl = await this.getSetting('KRA_API_URL') || 'https://itax.kra.go.ke/eTIMS/api';
 
-      // SIMULATION: Returning mock KRA data
-      // Replace this block with actual Axios call to your ETR Middleware
+      console.log(`[eTIMS] Signing Invoice ${invoiceId} via ${deviceSerial} (PIN: ${pin})`);
+
+      // MOCK IMPLEMENTATION
+      // In real world, perform Axios POST to apiUrl with payload signed by private key
+      
       const mockResponse = {
-        controlCode: `${DEVICE_SERIAL}-${invoiceId.substring(0, 8)}-${Date.now()}`,
-        qrCode: `https://itax.kra.go.ke/verify?invoice=${invoiceId}`,
-        signature: 'ABC123SIGNATURE_HASH_X99',
+        controlCode: `${deviceSerial}-${invoiceId.substring(0, 8)}-${Date.now().toString().slice(-6)}`,
+        qrCode: `https://itax.kra.go.ke/verify?pin=${pin}&invoice=${invoiceId}`,
+        signature: `SIG_${Math.random().toString(36).substring(7).toUpperCase()}_${Date.now()}`,
         fiscalDate: new Date()
       };
-
-      /* 
-      const response = await axios.post(`${KRA_API_URL}/sign`, {
-          tin: PIN,
-          deviceSerial: DEVICE_SERIAL,
-          items: items.map(i => ({ ... })),
-          total: total
-      });
-      return response.data;
-      */
 
       return mockResponse;
 
     } catch (error) {
       console.error('KRA eTIMS Error:', error);
-      // In production, you might want to allow "Offline Mode" and sync later
-      // but for now, we log the error.
       return null; 
     }
   }

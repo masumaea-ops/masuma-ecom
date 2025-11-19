@@ -1,20 +1,22 @@
 
 import React, { useState, useRef } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2 } from 'lucide-react';
 import { Product, Customer } from '../../types';
-import { PRODUCTS } from '../../constants';
 import { apiClient } from '../../utils/apiClient';
 
 interface PosItem extends Product {
     qty: number;
-    appliedPrice: number; // Price after customer discount
+    appliedPrice: number;
 }
 
 const PosTerminal: React.FC = () => {
     const [cart, setCart] = useState<PosItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [lastSale, setLastSale] = useState<any>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -22,14 +24,30 @@ const PosTerminal: React.FC = () => {
     
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    // --- Cart Logic ---
+    const handleProductSearch = async (term: string) => {
+        setSearchTerm(term);
+        if (term.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        
+        setIsSearching(true);
+        try {
+            const res = await apiClient.get(`/products?q=${term}`);
+            setSearchResults(res.data);
+        } catch (error) {
+            console.error('Search failed');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
     const addToCart = (product: Product) => {
         setCart(prev => {
             const exists = prev.find(p => p.id === product.id);
             if (exists) {
                 return prev.map(p => p.id === product.id ? { ...p, qty: p.qty + 1 } : p);
             }
-            // Apply Wholesale Price if customer is B2B
             const price = (customer?.isWholesale && product.wholesalePrice) 
                           ? product.wholesalePrice 
                           : product.price;
@@ -37,6 +55,7 @@ const PosTerminal: React.FC = () => {
             return [...prev, { ...product, qty: 1, appliedPrice: price }];
         });
         setSearchTerm('');
+        setSearchResults([]);
         searchInputRef.current?.focus();
     };
 
@@ -51,7 +70,6 @@ const PosTerminal: React.FC = () => {
         setCart(prev => prev.filter(p => p.id !== id));
     };
 
-    // --- Customer Search Logic ---
     const handleSearchCustomer = async (term: string) => {
         setCustomerSearchTerm(term);
         if (term.length > 2) {
@@ -59,12 +77,7 @@ const PosTerminal: React.FC = () => {
                 const res = await apiClient.get(`/customers?search=${term}`);
                 setFoundCustomers(res.data);
             } catch (err) {
-                console.error(err);
-                // Mock Data Fallback
-                setFoundCustomers([
-                    { id: '1', name: 'AutoExpress Ltd', phone: '0722000000', isWholesale: true, totalSpend: 0, lastVisit: '' },
-                    { id: '2', name: 'Walk-in Customer', phone: '0700000000', isWholesale: false, totalSpend: 0, lastVisit: '' }
-                ]);
+                setFoundCustomers([]);
             }
         }
     };
@@ -72,15 +85,12 @@ const PosTerminal: React.FC = () => {
     const selectCustomer = (c: Customer) => {
         setCustomer(c);
         setIsCustomerSearchOpen(false);
-        
-        // Recalculate prices in cart based on new customer status
         setCart(prev => prev.map(item => ({
             ...item,
             appliedPrice: (c.isWholesale && item.wholesalePrice) ? item.wholesalePrice : item.price
         })));
     };
 
-    // --- Checkout Logic ---
     const handleCompleteSale = async () => {
         setIsProcessing(true);
         try {
@@ -101,7 +111,7 @@ const PosTerminal: React.FC = () => {
             const response = await apiClient.post('/sales', payload);
             setLastSale(response.data);
             setCart([]);
-            setCustomer(null); // Reset for next sale
+            setCustomer(null);
         } catch (error) {
             alert('Sale Failed: Network Error');
         } finally {
@@ -111,12 +121,6 @@ const PosTerminal: React.FC = () => {
 
     const total = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
 
-    const filteredProducts = PRODUCTS.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 5);
-
-    // SUCCESS / RECEIPT VIEW
     if (lastSale) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-100px)] animate-scale-up">
@@ -127,7 +131,6 @@ const PosTerminal: React.FC = () => {
                     <h2 className="text-xl font-bold text-masuma-dark mb-1">Sale Completed</h2>
                     <p className="text-gray-500 text-sm mb-6">Receipt #{lastSale.receiptNumber}</p>
                     
-                    {/* KRA SECTION */}
                     <div className="bg-gray-50 p-4 border border-gray-200 rounded mb-6 text-left">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-[10px] font-bold text-gray-500 uppercase">KRA Control Code</span>
@@ -164,7 +167,7 @@ const PosTerminal: React.FC = () => {
                             className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-transparent focus:bg-white focus:border-masuma-orange outline-none rounded"
                             placeholder="Scan barcode or search SKU / Name..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => handleProductSearch(e.target.value)}
                             autoFocus
                         />
                         <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
@@ -172,9 +175,11 @@ const PosTerminal: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                    {searchTerm ? (
+                    {isSearching ? (
+                         <div className="flex justify-center pt-10"><Loader2 className="animate-spin text-masuma-orange"/></div>
+                    ) : searchTerm ? (
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredProducts.map(p => (
+                            {searchResults.map(p => (
                                 <div 
                                     key={p.id} 
                                     onClick={() => addToCart(p)}
@@ -185,6 +190,7 @@ const PosTerminal: React.FC = () => {
                                     <div className="mt-2 text-masuma-orange font-bold">KES {p.price.toLocaleString()}</div>
                                 </div>
                             ))}
+                            {searchResults.length === 0 && <div className="col-span-3 text-center text-gray-400">No products found</div>}
                         </div>
                     ) : (
                          <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -202,7 +208,6 @@ const PosTerminal: React.FC = () => {
                     <span className="bg-masuma-orange px-2 py-1 text-xs rounded font-bold">{cart.length} Items</span>
                 </div>
 
-                {/* Customer Selector */}
                 <div className="p-3 border-b border-gray-200 bg-gray-50">
                     {!customer ? (
                         <button 
@@ -222,7 +227,6 @@ const PosTerminal: React.FC = () => {
                     )}
                 </div>
 
-                {/* Customer Search Dropdown */}
                 {isCustomerSearchOpen && !customer && (
                     <div className="absolute top-[116px] left-0 w-full bg-white shadow-xl border-b border-gray-200 z-10 p-2 animate-slide-up">
                         <input 
@@ -264,7 +268,6 @@ const PosTerminal: React.FC = () => {
                             </div>
                             <div className="text-right">
                                 <div className="text-sm font-bold text-masuma-dark">{(item.appliedPrice * item.qty).toLocaleString()}</div>
-                                {item.appliedPrice < (item.price || 0) && <div className="text-[9px] text-green-600 line-through decoration-gray-400">KES {(item.price || 0).toLocaleString()}</div>}
                                 <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600 mt-1"><Trash2 size={12} /></button>
                             </div>
                         </div>
@@ -275,15 +278,6 @@ const PosTerminal: React.FC = () => {
                     <div className="flex justify-between text-lg font-bold text-masuma-dark">
                         <span>Total</span>
                         <span>KES {total.toLocaleString()}</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                        <button className="flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 uppercase text-xs">
-                            <CreditCard size={16} /> Cash / M-Pesa
-                        </button>
-                        <button className="flex items-center justify-center gap-2 bg-gray-800 text-white py-3 rounded font-bold hover:bg-gray-900 uppercase text-xs">
-                            <Save size={16} /> Save Quote
-                        </button>
                     </div>
                     <button 
                         onClick={handleCompleteSale}
