@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
-import { Quote, QuoteStatus } from '../entities/Quote';
+import { Quote, QuoteStatus, QuoteType } from '../entities/Quote';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -18,10 +18,19 @@ const createQuoteSchema = z.object({
     email: z.string().email(),
     phone: z.string().min(10),
     message: z.string().optional(),
+    
+    // Standard Quote Fields
     productId: z.string().optional(),
     productName: z.string().optional(),
+    
+    // Sourcing Request Fields
+    vin: z.string().min(5).optional(),
+    partNumber: z.string().optional(),
+    description: z.string().optional(),
+    requestType: z.enum(['STANDARD', 'SOURCING']).default('STANDARD'),
+
     items: z.array(z.object({
-        productId: z.string(),
+        productId: z.string().optional(),
         name: z.string(),
         quantity: z.number(),
         unitPrice: z.number(),
@@ -42,12 +51,14 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
         const formatted = quotes.map(q => ({
             id: q.id,
             quoteNumber: q.quoteNumber,
-            customerName: q.customer?.name || q.items[0]?.name || 'Guest', // Corrected fallback
-            customerEmail: q.customer?.email || 'N/A', // Added
-            customerPhone: q.customer?.phone || 'N/A', // Added
+            customerName: q.customer?.name || 'Guest',
+            customerEmail: q.customer?.email || 'N/A',
+            customerPhone: q.customer?.phone || 'N/A',
             date: q.createdAt.toLocaleDateString(),
             total: Number(q.total),
             status: q.status,
+            type: q.requestType,
+            vin: q.vin,
             itemsCount: q.items?.length || 0,
             items: q.items // Return raw JSON items
         }));
@@ -62,13 +73,29 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
 // POST /api/quotes (Public Request)
 router.post('/', validate(createQuoteSchema), async (req, res) => {
     try {
-        const { name, email, phone, message, productId, productName, items } = req.body;
+        const { name, email, phone, message, productId, productName, items, vin, partNumber, description, requestType } = req.body;
 
         const quote = new Quote();
         quote.quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
-        
+        quote.requestType = requestType as QuoteType;
+        quote.vin = vin;
+
         let quoteItems = items || [];
-        if (!items && productId && productName) {
+
+        // Case 1: Sourcing Request (No Product ID, Item constructed from Description)
+        if (requestType === 'SOURCING') {
+            const itemName = description || 'Special Order Part';
+            const details = partNumber ? `${itemName} (PN: ${partNumber})` : itemName;
+            
+            quoteItems = [{
+                name: details,
+                quantity: 1,
+                unitPrice: 0, // TBD by Admin
+                total: 0
+            }];
+        } 
+        // Case 2: Quick Quote from Product Page
+        else if (!items && productId && productName) {
             quoteItems = [{
                 productId,
                 name: productName,
@@ -89,12 +116,25 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         
         await quoteRepo.save(quote);
 
+        // Notify via Email
+        const emailSubject = requestType === 'SOURCING' 
+            ? `Special Import Request: ${vin}` 
+            : `Quote Request: ${quoteItems[0]?.name}`;
+
+        const emailBody = requestType === 'SOURCING'
+            ? `Customer: ${name}\nVIN: ${vin}\nPart: ${partNumber || 'N/A'}\nDesc: ${description}`
+            : `Customer: ${name}\nProduct: ${productName}\nMessage: ${message}`;
+
         await emailQueue.add('send-email', { 
             type: 'QUOTE_REQUEST', 
-            data: { name, email, phone, message, productName: quoteItems[0]?.name || 'Multiple Items' } 
+            data: { 
+                name, email, phone, 
+                message: emailBody,
+                productName: requestType === 'SOURCING' ? 'Special Sourcing' : quoteItems[0]?.name 
+            } 
         });
 
-        res.status(201).json({ message: 'Quote request received', quoteId: quote.id });
+        res.status(201).json({ message: 'Request received', quoteId: quote.id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to submit quote' });
@@ -102,7 +142,6 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
 });
 
 // PATCH /api/quotes/:id (Admin Update Status & Prices)
-// We allow updating items (prices) here too
 const updateQuoteSchema = z.object({
     status: z.enum(['DRAFT', 'SENT', 'ACCEPTED', 'EXPIRED']).optional(),
     items: z.array(z.any()).optional(),

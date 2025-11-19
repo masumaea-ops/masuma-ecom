@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Menu, X, Bot, Phone, MessageCircle, MapPin, User, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Menu, X, Bot, Phone, MessageCircle, MapPin, User, ChevronDown, Plane } from 'lucide-react';
 import { ViewState } from '../types';
 import { useCurrency, CurrencyCode } from '../contexts/CurrencyContext';
 import { apiClient } from '../utils/apiClient';
+import SourcingModal from './SourcingModal';
 
 interface NavbarProps {
   cartCount: number;
@@ -17,7 +18,8 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
   const [isScrolled, setIsScrolled] = useState(false);
   const { currency, setCurrency } = useCurrency();
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
-  const [contactPhone, setContactPhone] = useState('+254 792 506590'); // Default
+  const [contactPhone, setContactPhone] = useState('+254 792 506 590'); // Default
+  const [isSourcingOpen, setIsSourcingOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,8 +65,11 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
 
             {/* Right: Locations, Settings, Login */}
             <div className="flex items-center divide-x divide-gray-700">
+               <button onClick={() => setIsSourcingOpen(true)} className="flex items-center gap-2 px-4 text-masuma-orange font-bold hover:text-white transition uppercase tracking-wider">
+                 <Plane size={12} className="transform -rotate-45" /> Special Orders
+               </button>
                <button onClick={() => setView('CONTACT')} className="flex items-center gap-2 px-4 opacity-80 hover:opacity-100 transition hover:text-masuma-orange">
-                 <MapPin size={12} /> Click to discover Locations
+                 <MapPin size={12} /> Locations
                </button>
                <div className="flex items-center gap-4 px-4 relative z-[1001]">
                   <div className="relative">
@@ -94,7 +99,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                </div>
                <button 
                  onClick={() => setView('LOGIN')}
-                 className="flex items-center gap-2 pl-4 text-masuma-orange hover:text-white transition font-bold uppercase tracking-wider ml-2"
+                 className="flex items-center gap-2 pl-4 text-gray-400 hover:text-white transition uppercase tracking-wider ml-2"
                >
                  <User size={12} /> Login
                </button>
@@ -184,10 +189,19 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       <button key={c} onClick={() => setCurrency(c)} className={`text-xs border px-2 py-1 rounded ${currency === c ? 'bg-masuma-orange text-white border-masuma-orange' : 'bg-white text-gray-600'}`}>{c}</button>
                   ))}
               </div>
+              
+              {/* Mobile Special Order */}
+               <button 
+                  onClick={() => { setIsSourcingOpen(true); setIsMenuOpen(false); }} 
+                  className="block w-full text-left px-4 py-4 text-sm font-bold text-masuma-orange hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider flex items-center gap-2"
+              >
+                  <Plane size={16} className="transform -rotate-45" /> Request Special Part
+              </button>
+
               {/* Mobile Login */}
               <button 
                   onClick={() => { setView('LOGIN'); setIsMenuOpen(false); }} 
-                  className="block w-full text-left px-4 py-4 text-sm font-bold text-masuma-dark hover:text-masuma-orange hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider flex items-center gap-2"
+                  className="block w-full text-left px-4 py-4 text-sm font-bold text-gray-500 hover:text-masuma-dark hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider flex items-center gap-2"
               >
                   <User size={16} /> Staff Login
               </button>
@@ -201,6 +215,8 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
             </div>
         </div>
       </nav>
+
+      <SourcingModal isOpen={isSourcingOpen} onClose={() => setIsSourcingOpen(false)} />
     </>
   );
 };

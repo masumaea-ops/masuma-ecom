@@ -1,3 +1,4 @@
+
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Customer } from './Customer';
 import { User } from './User';
@@ -7,6 +8,11 @@ export enum QuoteStatus {
   SENT = 'SENT',
   ACCEPTED = 'ACCEPTED',
   EXPIRED = 'EXPIRED'
+}
+
+export enum QuoteType {
+  STANDARD = 'STANDARD',
+  SOURCING = 'SOURCING'
 }
 
 @Entity('quotes')
@@ -24,7 +30,10 @@ export class Quote {
   createdBy!: User;
 
   @Column('json')
-  items!: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[];
+  items!: { productId?: string; name: string; quantity: number; unitPrice: number; total: number }[];
+
+  @Column({ nullable: true })
+  vin?: string; // Chassis Number for Sourcing
 
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal!: number;
@@ -41,6 +50,13 @@ export class Quote {
     default: QuoteStatus.DRAFT
   })
   status!: QuoteStatus;
+
+  @Column({
+    type: 'enum',
+    enum: QuoteType,
+    default: QuoteType.STANDARD
+  })
+  requestType!: QuoteType;
 
   @Column({ type: 'date', nullable: true })
   validUntil?: Date;

@@ -58,7 +58,7 @@ export const emailWorker = new Worker('email-queue', async (job) => {
       <p><strong>Message:</strong> ${data.message}</p>
     `;
     await sendEmail(
-      'sales@masuma.co.ke',
+      'sales@masuma.africa',
       `New Inquiry: ${data.productName}`,
       internalHtml
     );

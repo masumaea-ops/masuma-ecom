@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Check, Send, Printer, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { X, Check, Send, Printer, Save, Plus, Trash2, AlertCircle, Plane } from 'lucide-react';
 import { Quote, QuoteStatus } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
 interface QuoteDetailsModalProps {
-    quote: Quote | null;
+    quote: any; // Relaxing type slightly to accept backend expanded fields
     isOpen: boolean;
     onClose: () => void;
     onUpdate: () => void;
@@ -62,7 +62,14 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                 {/* Header */}
                 <div className="bg-masuma-dark text-white p-6 flex justify-between items-start">
                     <div>
-                        <h2 className="text-xl font-bold font-display uppercase tracking-wider">Quote #{quote.quoteNumber}</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-bold font-display uppercase tracking-wider">Quote #{quote.quoteNumber}</h2>
+                            {quote.type === 'SOURCING' && (
+                                <span className="bg-purple-600 text-white text-[10px] px-2 py-1 rounded font-bold uppercase flex items-center gap-1">
+                                    <Plane size={10} className="transform -rotate-45" /> Sourcing Request
+                                </span>
+                            )}
+                        </div>
                         <p className="text-gray-400 text-sm">Created on {quote.date}</p>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition"><X size={24} /></button>
@@ -83,12 +90,20 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                             <div>
                                 <p className="text-xs font-bold text-gray-500 uppercase">Customer</p>
                                 <p className="font-bold text-gray-800">{quote.customerName}</p>
+                                <p className="text-xs text-gray-500">{quote.customerEmail} | {quote.customerPhone}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-xs font-bold text-gray-500 uppercase">Quote Value</p>
                                 <p className="font-bold text-masuma-orange text-lg">KES {calculateGrandTotal().toLocaleString()}</p>
                             </div>
                         </div>
+                        
+                        {quote.vin && (
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs font-bold text-gray-500 uppercase">Vehicle Chassis (VIN)</p>
+                                <p className="font-mono text-sm font-bold text-purple-700">{quote.vin}</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Items Table */}
@@ -96,7 +111,7 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                         <table className="w-full text-left text-sm">
                             <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs">
                                 <tr>
-                                    <th className="px-4 py-3">Product</th>
+                                    <th className="px-4 py-3">Product / Description</th>
                                     <th className="px-4 py-3 w-20 text-center">Qty</th>
                                     <th className="px-4 py-3 w-32 text-right">Unit Price</th>
                                     <th className="px-4 py-3 text-right">Total</th>
@@ -106,12 +121,12 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                                 {items.map((item, idx) => (
                                     <tr key={idx}>
                                         <td className="px-4 py-3">
-                                            <input 
-                                                type="text" 
+                                            <textarea 
                                                 value={item.name}
                                                 disabled={!isEditable}
                                                 onChange={(e) => updateItem(idx, 'name', e.target.value)}
-                                                className="w-full p-1 border-b border-transparent focus:border-masuma-orange outline-none disabled:bg-transparent"
+                                                className="w-full p-1 border-b border-transparent focus:border-masuma-orange outline-none disabled:bg-transparent h-auto resize-y"
+                                                rows={2}
                                             />
                                         </td>
                                         <td className="px-4 py-3">
@@ -133,7 +148,7 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                                             />
                                         </td>
                                         <td className="px-4 py-3 text-right font-bold">
-                                            {item.total.toLocaleString()}
+                                            {(item.quantity * item.unitPrice).toLocaleString()}
                                         </td>
                                     </tr>
                                 ))}

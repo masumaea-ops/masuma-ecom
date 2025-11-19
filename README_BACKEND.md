@@ -59,7 +59,7 @@ Navigate to the `server` folder:
    ```bash
    npm run seed
    ```
-   *Default Admin:* `admin@masuma.co.ke` / `password`
+   *Default Admin:* `admin@masuma.africa` / `password`
 
 4. **Start Server**:
    ```bash

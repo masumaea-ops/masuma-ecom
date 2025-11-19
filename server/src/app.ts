@@ -1,4 +1,3 @@
-
 import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
@@ -91,6 +90,7 @@ const mpesaOrderSchema = z.object({
   customerName: z.string().min(2),
   customerEmail: z.string().email(),
   customerPhone: z.string().min(10),
+  shippingAddress: z.string().optional(),
   items: z.array(z.object({ 
     productId: z.string(), 
     quantity: z.number().min(1), 
@@ -100,7 +100,7 @@ const mpesaOrderSchema = z.object({
 
 app.post('/api/mpesa/pay', validate(mpesaOrderSchema), async (req, res) => {
   try {
-    const { customerName, customerEmail, customerPhone, items } = req.body;
+    const { customerName, customerEmail, customerPhone, shippingAddress, items } = req.body;
     const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
     const orderRepo = AppDataSource.getRepository(Order);
@@ -108,6 +108,7 @@ app.post('/api/mpesa/pay', validate(mpesaOrderSchema), async (req, res) => {
     order.customerName = customerName;
     order.customerEmail = customerEmail;
     order.customerPhone = customerPhone;
+    order.shippingAddress = shippingAddress || 'Walk-in / Pickup';
     order.totalAmount = totalAmount;
     order.status = OrderStatus.PENDING;
     order.items = items.map((i: any) => {

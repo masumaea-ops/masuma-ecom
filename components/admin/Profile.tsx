@@ -75,7 +75,7 @@ const Profile: React.FC = () => {
 
               <div className="text-left space-y-3 border-t border-gray-100 pt-4">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Mail size={16} className="text-masuma-orange" /> {user?.email || 'admin@masuma.co.ke'}
+                  <Mail size={16} className="text-masuma-orange" /> {user?.email || 'admin@masuma.africa'}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <MapPin size={16} className="text-masuma-orange" /> {user?.branch?.name || 'Nairobi HQ'}

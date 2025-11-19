@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ShoppingCart, Package, Users, TrendingUp, AlertTriangle, ArrowUpRight, Loader2, Activity, User, Clock } from 'lucide-react';
+import { ShoppingCart, Package, Users, TrendingUp, AlertTriangle, ArrowUpRight, Loader2, Activity, User, Clock, Plane } from 'lucide-react';
 import { apiClient, formatCurrency } from '../../utils/apiClient';
 import { DashboardStats } from '../../types';
 
@@ -14,18 +14,26 @@ const DashboardHome: React.FC = () => {
   const [activityLog, setActivityLog] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
+  // Additional state for sourcing requests (since it might not be in the base DashboardStats type initially)
+  const [sourcingCount, setSourcingCount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Parallel fetch
-        const [statsRes, logsRes] = await Promise.all([
+        const [statsRes, logsRes, quotesRes] = await Promise.all([
             apiClient.get('/admin/stats'),
-            apiClient.get('/audit-logs') // Assuming recent 10 are returned or we slice
+            apiClient.get('/audit-logs'),
+            apiClient.get('/quotes') // Quick fetch to filter sourcing type client-side for this specific KPI card
         ]);
 
         setStats(statsRes.data);
-        setActivityLog(logsRes.data.slice(0, 6)); // Top 6 recent actions
+        setActivityLog(logsRes.data.slice(0, 6));
+        
+        // Calculate sourcing requests
+        const sourcing = quotesRes.data.filter((q: any) => q.type === 'SOURCING' && q.status === 'DRAFT').length;
+        setSourcingCount(sourcing);
+
         setUsingFallback(false);
       } catch (err) {
         // Fallback Mock Data for Offline Demo
@@ -44,6 +52,7 @@ const DashboardHome: React.FC = () => {
             { name: 'Suspension', value: 20 }, { name: 'Engine', value: 10 }
           ]
         });
+        setSourcingCount(2);
         setUsingFallback(true);
       } finally {
         setIsLoading(false);
@@ -83,25 +92,26 @@ const DashboardHome: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Sales', value: formatCurrency(stats?.totalSales || 0), icon: TrendingUp, color: 'bg-green-500', change: 'Today' },
           { label: 'Orders Today', value: stats?.todaysOrders || 0, icon: ShoppingCart, color: 'bg-blue-500', change: 'Live' },
-          { label: 'Low Stock Items', value: stats?.lowStockItems || 0, icon: AlertTriangle, color: 'bg-red-500', change: 'Action Req' },
-          { label: 'Pending Quotes', value: stats?.pendingQuotes || 0, icon: Users, color: 'bg-purple-500', change: 'Active' },
+          { label: 'Low Stock', value: stats?.lowStockItems || 0, icon: AlertTriangle, color: 'bg-red-500', change: 'Action Req' },
+          { label: 'Pending Quotes', value: stats?.pendingQuotes || 0, icon: Users, color: 'bg-gray-600', change: 'General' },
+          { label: 'Sourcing Queue', value: sourcingCount, icon: Plane, color: 'bg-purple-600', change: 'High Priority' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 transition hover:shadow-md">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-lg text-white shadow-sm ${stat.color}`}>
-                <stat.icon size={24} />
+          <div key={i} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 transition hover:shadow-md">
+            <div className="flex justify-between items-start mb-3">
+              <div className={`p-2 rounded-lg text-white shadow-sm ${stat.color}`}>
+                <stat.icon size={20} />
               </div>
-              <span className="flex items-center text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stat.change === 'High Priority' ? 'bg-purple-100 text-purple-700' : 'bg-green-50 text-green-600'}`}>
                 {stat.change}
               </span>
             </div>
             <div>
-              <div className="text-3xl font-bold text-masuma-dark tracking-tight">{stat.value}</div>
-              <div className="text-xs text-gray-500 uppercase font-bold tracking-wide mt-1">{stat.label}</div>
+              <div className="text-2xl font-bold text-masuma-dark tracking-tight">{stat.value}</div>
+              <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wide mt-1">{stat.label}</div>
             </div>
           </div>
         ))}

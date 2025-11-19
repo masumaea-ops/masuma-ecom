@@ -60,7 +60,7 @@ const B2BPortal: React.FC = () => {
         setIsSubmitting(true);
         try {
             const userStr = localStorage.getItem('masuma_user');
-            const user = userStr ? JSON.parse(userStr) : { name: 'Admin User', email: 'admin@masuma.co.ke' };
+            const user = userStr ? JSON.parse(userStr) : { name: 'Admin User', email: 'admin@masuma.africa' };
 
             await apiClient.post('/orders', {
                 customerName: user.name || 'Wholesale Partner',

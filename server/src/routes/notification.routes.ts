@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { ProductStock } from '../entities/ProductStock';
 import { Order, OrderStatus } from '../entities/Order';
-import { Quote, QuoteStatus } from '../entities/Quote';
+import { Quote, QuoteStatus, QuoteType } from '../entities/Quote';
 import { authenticate, authorize } from '../middleware/auth';
 
 const router = Router();
@@ -13,7 +13,22 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
     try {
         const notifications = [];
 
-        // 1. Low Stock Alerts
+        // 1. Special Sourcing Requests (High Priority)
+        const sourcingRequests = await AppDataSource.getRepository(Quote)
+            .count({ where: { status: QuoteStatus.DRAFT, requestType: QuoteType.SOURCING } });
+
+        if (sourcingRequests > 0) {
+            notifications.push({
+                id: 'sourcing-pending',
+                title: 'Special Import Requests',
+                message: `${sourcingRequests} customers are waiting for part sourcing (VIN provided).`,
+                type: 'warning', // Orange/Red to grab attention
+                time: 'Action Required',
+                link: 'quotes'
+            });
+        }
+
+        // 2. Low Stock Alerts
         const lowStockItems = await AppDataSource.getRepository(ProductStock)
             .createQueryBuilder('stock')
             .leftJoinAndSelect('stock.product', 'product')
@@ -27,13 +42,13 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
                 id: `stock-${item.id}`,
                 title: 'Low Stock Alert',
                 message: `${item.product.name} is low (${item.quantity} left) at ${item.branch.name}.`,
-                type: 'warning',
+                type: 'info',
                 time: 'Live',
                 link: 'inventory'
             });
         });
 
-        // 2. Pending Orders
+        // 3. Pending Orders
         const pendingOrdersCount = await AppDataSource.getRepository(Order)
             .count({ where: { status: OrderStatus.PENDING } });
 
@@ -48,15 +63,15 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
             });
         }
 
-        // 3. Pending Quotes
+        // 4. Standard Quotes
         const pendingQuotesCount = await AppDataSource.getRepository(Quote)
-            .count({ where: { status: QuoteStatus.DRAFT } });
+            .count({ where: { status: QuoteStatus.DRAFT, requestType: QuoteType.STANDARD } });
 
         if (pendingQuotesCount > 0) {
             notifications.push({
                 id: 'quotes-pending',
-                title: 'Quote Requests',
-                message: `${pendingQuotesCount} new quote requests received.`,
+                title: 'General Quotes',
+                message: `${pendingQuotesCount} standard price inquiries received.`,
                 type: 'info',
                 time: 'Live',
                 link: 'quotes'

@@ -1,0 +1,164 @@
+
+import React, { useState } from 'react';
+import { X, CreditCard, Loader2, MapPin, User, Mail, Phone } from 'lucide-react';
+import { CartItem } from '../types';
+import { apiClient } from '../utils/apiClient';
+import Price from './Price';
+
+interface CheckoutModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    cartItems: CartItem[];
+    onSuccess: () => void;
+}
+
+const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItems, onSuccess }) => {
+    const [step, setStep] = useState<'input' | 'processing' | 'success'>('input');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: ''
+    });
+    const [error, setError] = useState('');
+
+    if (!isOpen) return null;
+
+    const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStep('processing');
+        setError('');
+
+        try {
+            await apiClient.post('/orders', {
+                customerName: formData.name,
+                customerEmail: formData.email,
+                customerPhone: formData.phone,
+                shippingAddress: formData.address,
+                paymentMethod: 'MANUAL', // Pay on Delivery
+                items: cartItems.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            });
+
+            setStep('success');
+            setTimeout(() => {
+                onSuccess();
+                onClose();
+                setStep('input');
+                setFormData({ name: '', email: '', phone: '', address: '' });
+            }, 3000);
+
+        } catch (err: any) {
+            console.error(err);
+            setError(err.response?.data?.error || 'Failed to place order. Please try again.');
+            setStep('input');
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[2050] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+
+            <div className="relative bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-scale-up font-sans">
+                {/* Header */}
+                <div className="bg-masuma-dark p-5 flex justify-between items-center border-b-4 border-masuma-orange">
+                    <h3 className="text-white font-bold text-lg uppercase tracking-wider flex items-center gap-2">
+                        <CreditCard size={20} className="text-masuma-orange" /> Pay on Delivery
+                    </h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition"><X size={24} /></button>
+                </div>
+
+                <div className="p-6">
+                    {step === 'success' ? (
+                        <div className="flex flex-col items-center text-center py-8">
+                            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+                                <CreditCard size={32} />
+                            </div>
+                            <h4 className="text-xl font-bold text-masuma-dark mb-2">Order Placed!</h4>
+                            <p className="text-gray-600 text-sm">
+                                Thank you, {formData.name}. Your order has been received. We will contact you at {formData.phone} to arrange delivery.
+                            </p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="bg-gray-50 p-4 border border-gray-200 rounded text-center mb-4">
+                                <p className="text-xs text-gray-500 uppercase font-bold">Order Total</p>
+                                <p className="text-2xl font-bold text-masuma-dark"><Price amount={totalAmount} /></p>
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 text-red-600 p-3 rounded text-xs font-bold border border-red-200">
+                                    {error}
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><User size={12}/> Full Name</label>
+                                <input 
+                                    required 
+                                    type="text" 
+                                    value={formData.name} 
+                                    onChange={e => setFormData({...formData, name: e.target.value})} 
+                                    className="w-full p-3 border border-gray-300 rounded-sm focus:border-masuma-orange outline-none text-sm" 
+                                    placeholder="Enter your name" 
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><Phone size={12}/> Phone</label>
+                                    <input 
+                                        required 
+                                        type="tel" 
+                                        value={formData.phone} 
+                                        onChange={e => setFormData({...formData, phone: e.target.value})} 
+                                        className="w-full p-3 border border-gray-300 rounded-sm focus:border-masuma-orange outline-none text-sm" 
+                                        placeholder="07XX..." 
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><Mail size={12}/> Email</label>
+                                    <input 
+                                        required 
+                                        type="email" 
+                                        value={formData.email} 
+                                        onChange={e => setFormData({...formData, email: e.target.value})} 
+                                        className="w-full p-3 border border-gray-300 rounded-sm focus:border-masuma-orange outline-none text-sm" 
+                                        placeholder="john@doe.com" 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><MapPin size={12}/> Delivery Address</label>
+                                <textarea 
+                                    required 
+                                    value={formData.address} 
+                                    onChange={e => setFormData({...formData, address: e.target.value})} 
+                                    className="w-full p-3 border border-gray-300 rounded-sm focus:border-masuma-orange outline-none text-sm h-20 resize-none" 
+                                    placeholder="Street, Building, Pickup Station..." 
+                                ></textarea>
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                disabled={step === 'processing'}
+                                className="w-full bg-masuma-dark text-white font-bold uppercase tracking-widest py-4 rounded-sm hover:bg-masuma-orange transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
+                            >
+                                {step === 'processing' ? <Loader2 className="animate-spin" size={20} /> : <CreditCard size={20} />}
+                                {step === 'processing' ? 'Placing Order...' : 'Confirm Order'}
+                            </button>
+                        </form>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CheckoutModal;

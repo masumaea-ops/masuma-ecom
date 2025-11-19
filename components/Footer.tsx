@@ -7,8 +7,8 @@ const Footer: React.FC = () => {
   const [info, setInfo] = useState({
       about: 'Masuma Autoparts East Africa Limited. The official distributor of certified Masuma components. Engineering you can trust for the African road.',
       address: 'Godown 4, Enterprise Road, Industrial Area, Nairobi',
-      phone: '+254 700 123 456',
-      email: 'sales@masuma.co.ke'
+      phone: '+254 792 506 590',
+      email: 'sales@masuma.africa'
   });
 
   useEffect(() => {

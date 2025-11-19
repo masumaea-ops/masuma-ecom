@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Smartphone, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Smartphone, Loader2, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
 import { CartItem } from '../types';
 import { apiClient } from '../utils/apiClient';
+import Price from './Price';
 
 interface MpesaModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface MpesaModalProps {
 
 const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onSuccess }) => {
   const [step, setStep] = useState<'input' | 'processing' | 'success' | 'error'>('input');
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -63,6 +64,7 @@ const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onS
         customerName: formData.name,
         customerEmail: formData.email,
         customerPhone: formData.phone,
+        shippingAddress: formData.address,
         items: cartItems.map(item => ({
           productId: item.id,
           quantity: item.quantity,
@@ -82,7 +84,7 @@ const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onS
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[2050] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
       
       <div className="relative bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-scale-up font-sans">
@@ -101,7 +103,7 @@ const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onS
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="bg-gray-50 p-4 border border-gray-200 rounded text-center mb-4">
                 <p className="text-xs text-gray-500 uppercase font-bold">Total Amount</p>
-                <p className="text-2xl font-bold text-masuma-dark">KES {totalAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-masuma-dark"><Price amount={totalAmount} /></p>
               </div>
 
               <div className="space-y-1">
@@ -116,6 +118,10 @@ const MpesaModal: React.FC<MpesaModalProps> = ({ isOpen, onClose, cartItems, onS
                  <label className="text-xs font-bold text-masuma-dark uppercase">M-Pesa Phone Number</label>
                  <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full p-3 border border-gray-300 rounded-sm focus:border-[#4CAF50] outline-none text-sm" placeholder="07XX XXX XXX" />
                  <p className="text-[10px] text-gray-500">Enter the number you wish to pay with.</p>
+              </div>
+              <div className="space-y-1">
+                 <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><MapPin size={12}/> Shipping Address</label>
+                 <textarea required value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full p-3 border border-gray-300 rounded-sm focus:border-[#4CAF50] outline-none text-sm h-16 resize-none" placeholder="Delivery Location..." ></textarea>
               </div>
 
               <button type="submit" className="w-full bg-[#4CAF50] hover:bg-[#1B5E20] text-white font-bold uppercase tracking-widest py-4 rounded-sm transition shadow-lg mt-2">

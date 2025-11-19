@@ -59,7 +59,7 @@ const seed = async () => {
 
     // 2. Create Admin User
     const userRepo = AppDataSource.getRepository(User);
-    const adminEmail = 'admin@masuma.co.ke';
+    const adminEmail = 'admin@masuma.africa';
     let admin = await userRepo.findOneBy({ email: adminEmail });
     if (!admin) {
         admin = userRepo.create({
@@ -70,7 +70,7 @@ const seed = async () => {
             branch: hq
         });
         await userRepo.save(admin);
-        console.log('Admin user created (admin@masuma.co.ke / password).');
+        console.log('Admin user created (admin@masuma.africa / password).');
     }
 
     // 3. Create Categories & Products

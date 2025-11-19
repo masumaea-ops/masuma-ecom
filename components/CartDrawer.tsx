@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { X, Trash2, CreditCard, Smartphone } from 'lucide-react';
+import { X, Trash2, CreditCard, Smartphone, Plus, Minus } from 'lucide-react';
 import { CartItem } from '../types';
 import MpesaModal from './MpesaModal';
+import CheckoutModal from './CheckoutModal';
 import Price from './Price';
 
 interface CartDrawerProps {
@@ -11,14 +12,17 @@ interface CartDrawerProps {
   cartItems: CartItem[];
   removeFromCart: (id: string) => void;
   onCheckout: () => void; // This now acts as a clearer for success
+  updateQuantity: (id: string, quantity: number) => void;
 }
 
-const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, removeFromCart, onCheckout }) => {
+const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, removeFromCart, onCheckout, updateQuantity }) => {
   const [isMpesaOpen, setIsMpesaOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const handleMpesaSuccess = () => {
+  const handleSuccess = () => {
     setIsMpesaOpen(false);
+    setIsCheckoutOpen(false);
     onCheckout(); // Triggers app toast and clears cart
   };
 
@@ -59,16 +63,34 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-sm text-masuma-dark line-clamp-1">{item.name}</h4>
-                    <p className="text-xs text-gray-500 mb-1">SKU: {item.sku}</p>
+                    <p className="text-xs text-gray-500 mb-2">SKU: {item.sku}</p>
                     <div className="flex justify-between items-center">
                       <span className="text-masuma-orange font-bold text-sm">
                         <Price amount={item.price} />
                       </span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-600">x{item.quantity}</span>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center border border-gray-300 rounded-sm bg-white h-8">
+                            <button 
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)} 
+                                className="px-2 h-full hover:bg-gray-100 text-gray-500 disabled:opacity-50"
+                                disabled={item.quantity <= 1}
+                            >
+                                <Minus size={12}/>
+                            </button>
+                            <span className="text-xs font-bold w-8 text-center text-masuma-dark">{item.quantity}</span>
+                            <button 
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                                className="px-2 h-full hover:bg-gray-100 text-gray-500"
+                            >
+                                <Plus size={12}/>
+                            </button>
+                        </div>
+
                         <button 
                           onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-500"
+                          className="text-gray-400 hover:text-red-500 transition"
+                          title="Remove Item"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -101,7 +123,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                 </button>
 
                 <button 
-                onClick={onCheckout} // Keeps original flow for "Pay Later / Manual"
+                onClick={() => setIsCheckoutOpen(true)}
                 disabled={cartItems.length === 0}
                 className="w-full bg-white border-2 border-masuma-dark text-masuma-dark hover:bg-gray-100 font-bold py-3 rounded-none flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
                 >
@@ -118,7 +140,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
         isOpen={isMpesaOpen} 
         onClose={() => setIsMpesaOpen(false)} 
         cartItems={cartItems}
-        onSuccess={handleMpesaSuccess}
+        onSuccess={handleSuccess}
+      />
+
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cartItems={cartItems}
+        onSuccess={handleSuccess}
       />
     </>
   );

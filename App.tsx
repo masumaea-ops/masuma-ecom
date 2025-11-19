@@ -100,36 +100,22 @@ function App() {
     showToast(msg);
   };
 
+  const updateCartQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    setCart(prev => prev.map(item => 
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    ));
+  };
+
   const removeFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
-    
-    const orderPayload = {
-        customerName: 'Guest Customer', 
-        customerEmail: 'guest@example.com',
-        customerPhone: '0700000000',
-        paymentMethod: 'MANUAL',
-        items: cart.map(item => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price
-        }))
-    };
-
-    try {
-        await apiClient.post('/orders', orderPayload);
-        setIsCartOpen(false);
-        setCart([]);
-        showToast('Order request sent successfully! Ref: ' + `ORD-${Date.now().toString().slice(-4)}`, 'success');
-    } catch (error) {
-        console.warn('Backend unreachable, switching to offline checkout mode.');
-        setIsCartOpen(false);
-        setCart([]);
-        showToast('Order placed locally! (Offline Mode) Ref: ' + `ORD-${Date.now().toString().slice(-4)}`, 'success');
-    }
+  // Triggered when a modal (Mpesa or Manual) completes successfully
+  const handleOrderSuccess = () => {
+    setIsCartOpen(false);
+    setCart([]);
+    showToast('Order placed successfully! Ref: ' + `ORD-${Date.now().toString().slice(-4)}`, 'success');
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -215,7 +201,7 @@ function App() {
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
                 className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
-                placeholder="admin@masuma.co.ke"
+                placeholder="admin@masuma.africa"
                 required
               />
             </div>
@@ -391,7 +377,7 @@ function App() {
                     <div className="grid md:grid-cols-3 gap-8 mb-12">
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MapPin size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Visit Us</h4><p className="text-gray-500 text-sm">Godown 4, Enterprise Road<br/>Industrial Area, Nairobi</p></div>
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-dark text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Call Us</h4><p className="text-gray-500 text-sm">+254 700 123 456</p></div>
-                         <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Email Us</h4><p className="text-gray-500 text-sm">sales@masuma.co.ke</p></div>
+                         <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Email Us</h4><p className="text-gray-500 text-sm">sales@masuma.africa</p></div>
                     </div>
 
                     <div className="bg-white p-8 shadow-lg border border-gray-100 rounded-lg max-w-2xl mx-auto">
@@ -463,7 +449,7 @@ function App() {
         <main className="flex-grow">{renderView()}</main>
         <Footer />
         <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
-        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleCheckout} />
+        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleOrderSuccess} updateQuantity={updateCartQuantity} />
         <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>

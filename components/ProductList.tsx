@@ -2,11 +2,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Category, Product } from '../types';
 import { PRODUCTS as STATIC_PRODUCTS } from '../constants';
-import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw } from 'lucide-react';
+import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
+import SourcingModal from './SourcingModal';
 
 interface ProductListProps {
   addToCart: (product: Product, quantity?: number) => void;
@@ -20,6 +21,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [vinFilter, setVinFilter] = useState('');
   const [usingFallback, setUsingFallback] = useState(false);
+  
+  const [isSourcingOpen, setIsSourcingOpen] = useState(false);
 
   // Fetch Products with Server-Side Search
   useEffect(() => {
@@ -110,6 +113,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         onClose={() => setSelectedProduct(null)} 
         addToCart={addToCart}
       />
+      <SourcingModal isOpen={isSourcingOpen} onClose={() => setIsSourcingOpen(false)} />
 
       <div className="mb-10 text-center md:text-left flex flex-col md:flex-row justify-between items-end">
         <div>
@@ -171,20 +175,31 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
            {[1,2,3,4,5,6,7,8].map(i => <ProductSkeleton key={i} />)}
         </div>
       ) : displayProducts.length === 0 ? (
-        <div className="text-center py-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg">
+        <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center">
           <div className="inline-flex p-6 bg-white rounded-full shadow-sm mb-6">
             <AlertCircle className="text-masuma-orange" size={48} />
           </div>
-          <h3 className="text-2xl font-bold text-masuma-dark font-display">No parts found</h3>
+          <h3 className="text-2xl font-bold text-masuma-dark font-display">Part Not Found</h3>
           <p className="text-gray-500 max-w-md mx-auto mt-2 mb-8">
             We couldn't find a match for "{searchQuery}" {vinFilter && `compatible with ${vinFilter}`}.
+            However, we can source it directly from Masuma Japan for you.
           </p>
-          <button 
-            onClick={() => {setSearchQuery(''); setSelectedCategory(Category.ALL); setVinFilter('');}}
-            className="px-8 py-3 bg-masuma-dark text-white font-bold uppercase tracking-widest text-sm hover:bg-masuma-orange transition shadow-lg"
-          >
-            Clear Filters
-          </button>
+          
+          <div className="flex gap-4">
+              <button 
+                onClick={() => {setSearchQuery(''); setSelectedCategory(Category.ALL); setVinFilter('');}}
+                className="px-8 py-3 bg-white border border-gray-300 text-gray-600 font-bold uppercase tracking-widest text-xs hover:bg-gray-50 transition"
+              >
+                Clear Filters
+              </button>
+              
+              <button 
+                onClick={() => setIsSourcingOpen(true)}
+                className="px-8 py-3 bg-masuma-orange text-white font-bold uppercase tracking-widest text-xs hover:bg-orange-600 transition shadow-lg flex items-center gap-2"
+              >
+                <Plane size={16} className="transform -rotate-45" /> Request Special Import
+              </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">

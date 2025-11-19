@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { Order, OrderStatus } from '../entities/Order';
@@ -16,6 +15,7 @@ const createOrderSchema = z.object({
     customerName: z.string().min(2),
     customerEmail: z.string().email(),
     customerPhone: z.string().min(10),
+    shippingAddress: z.string().min(5),
     items: z.array(z.object({
         productId: z.string(),
         quantity: z.number().min(1),
@@ -26,7 +26,7 @@ const createOrderSchema = z.object({
 
 router.post('/', validate(createOrderSchema), async (req, res) => {
     try {
-        const { customerName, customerEmail, customerPhone, items, paymentMethod } = req.body;
+        const { customerName, customerEmail, customerPhone, shippingAddress, items, paymentMethod } = req.body;
         
         const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
@@ -34,6 +34,7 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
         order.customerName = customerName;
         order.customerEmail = customerEmail;
         order.customerPhone = customerPhone;
+        order.shippingAddress = shippingAddress;
         order.totalAmount = totalAmount;
         order.status = OrderStatus.PENDING; // Manual orders are pending until verified
         
@@ -89,6 +90,7 @@ router.get('/', authenticate, async (req, res) => {
             customerName: o.customerName,
             customerEmail: o.customerEmail,
             customerPhone: o.customerPhone,
+            shippingAddress: o.shippingAddress,
             date: new Date(o.createdAt).toLocaleDateString(),
             total: Number(o.totalAmount),
             status: o.status,

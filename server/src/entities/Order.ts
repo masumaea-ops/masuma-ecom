@@ -22,6 +22,9 @@ export class Order {
 
   @Column()
   customerPhone!: string;
+  
+  @Column({ nullable: true })
+  shippingAddress?: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   totalAmount!: number;

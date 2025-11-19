@@ -115,13 +115,13 @@ const ReportsManager: React.FC = () => {
                             <tr>
                                 <td className="px-6 py-4 font-bold">Daily Sales EOD</td>
                                 <td className="px-6 py-4">Daily @ 6:00 PM</td>
-                                <td className="px-6 py-4 text-gray-500">director@masuma.co.ke, accounts@masuma.co.ke</td>
+                                <td className="px-6 py-4 text-gray-500">director@masuma.africa, accounts@masuma.africa</td>
                                 <td className="px-6 py-4 text-right"><span className="text-green-600 font-bold text-xs uppercase bg-green-50 px-2 py-1 rounded">Active</span></td>
                             </tr>
                             <tr>
                                 <td className="px-6 py-4 font-bold">Monthly Stocktake</td>
                                 <td className="px-6 py-4">Monthly (Last Day)</td>
-                                <td className="px-6 py-4 text-gray-500">inventory@masuma.co.ke</td>
+                                <td className="px-6 py-4 text-gray-500">inventory@masuma.africa</td>
                                 <td className="px-6 py-4 text-right"><span className="text-green-600 font-bold text-xs uppercase bg-green-50 px-2 py-1 rounded">Active</span></td>
                             </tr>
                         </tbody>

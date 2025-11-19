@@ -35,7 +35,7 @@ const envSchema = z.object({
   SMTP_PORT: z.string().default('587'),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  FROM_EMAIL: z.string().default('noreply@masuma.co.ke'),
+  FROM_EMAIL: z.string().default('noreply@masuma.africa'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

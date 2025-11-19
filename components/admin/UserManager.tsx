@@ -29,7 +29,7 @@ const UserManager: React.FC = () => {
             console.error(error);
             // Fallback
             setUsers([
-                { id: '1', fullName: 'Admin (Fallback)', email: 'admin@masuma.co.ke', role: 'ADMIN', isActive: true, createdAt: 'N/A' }
+                { id: '1', fullName: 'Admin (Fallback)', email: 'admin@masuma.africa', role: 'ADMIN', isActive: true, createdAt: 'N/A' }
             ]);
         } finally {
             setIsLoading(false);

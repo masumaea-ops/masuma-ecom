@@ -32,7 +32,7 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
         <h1 className="text-2xl font-bold uppercase tracking-widest mb-2">MASUMA AUTOPARTS E.A. LTD</h1>
         <p>Godown 4, Enterprise Road, Industrial Area</p>
         <p>P.O. Box 12345-00100, Nairobi, Kenya</p>
-        <p>Tel: +254 700 123 456 | Email: sales@masuma.co.ke</p>
+        <p>Tel: +254 792 506 590 | Email: sales@masuma.africa</p>
         <p className="font-bold mt-2">PIN: P051234567Z | VAT No: 0123456V</p>
       </div>
 
