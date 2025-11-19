@@ -19,10 +19,11 @@ export interface Product {
   oemNumbers: string[]; // Original Equipment Manufacturer Numbers
   category: Category;
   price: number; // In KES
+  wholesalePrice?: number;
   description: string;
   compatibility: string[]; // e.g., ["Toyota Vitz", "Corolla"]
   image: string;
-  stock: boolean;
+  stock: boolean; // Frontend derived flag
 }
 
 export interface CartItem extends Product {
@@ -41,10 +42,33 @@ export interface BlogPost {
   relatedProductCategory: Category; // To link products to articles
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'ABOUT' | 'CONTACT' | 'BLOG';
+export type ViewState = 'HOME' | 'CATALOG' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD';
 
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   isError?: boolean;
+}
+
+// --- Admin / Dashboard Types ---
+
+export interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'B2B_USER';
+  branchId?: string;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface DashboardStats {
+  totalSales: number;
+  lowStockItems: number;
+  todaysOrders: number;
+  pendingQuotes: number;
 }

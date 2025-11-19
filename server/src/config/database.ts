@@ -6,6 +6,12 @@ import { OemNumber } from '../entities/OemNumber';
 import { Order } from '../entities/Order';
 import { OrderItem } from '../entities/OrderItem';
 import { MpesaTransaction } from '../entities/MpesaTransaction';
+import { Branch } from '../entities/Branch';
+import { User } from '../entities/User';
+import { Customer } from '../entities/Customer';
+import { ProductStock } from '../entities/ProductStock';
+import { Quote } from '../entities/Quote';
+import { Sale } from '../entities/Sale';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -23,11 +29,16 @@ export const AppDataSource = new DataSource({
     OemNumber,
     Order,
     OrderItem,
-    MpesaTransaction
+    MpesaTransaction,
+    Branch,
+    User,
+    Customer,
+    ProductStock,
+    Quote,
+    Sale
   ],
   subscribers: [],
   migrations: [],
-  // Connection pool settings for enterprise scale
   extra: {
     connectionLimit: 10,
     waitForConnections: true,

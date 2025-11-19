@@ -12,6 +12,10 @@ import { z } from 'zod';
 import { AppDataSource } from './config/database';
 import { Order, OrderStatus } from './entities/Order';
 import { OrderItem } from './entities/OrderItem';
+import { Branch } from './entities/Branch';
+import { Sale } from './entities/Sale';
+import { Product } from './entities/Product';
+import { Like } from 'typeorm';
 
 const app = express();
 
@@ -155,6 +159,50 @@ app.post('/api/quotes', async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: 'Invalid Input' });
   }
+});
+
+// --- ADMIN / DASHBOARD ROUTES ---
+
+// Get Dashboard Stats
+app.get('/api/admin/stats', async (req, res) => {
+  // Mock stats for now
+  res.json({
+    totalSales: 1540000,
+    lowStockItems: 12,
+    todaysOrders: 24,
+    pendingQuotes: 5
+  });
+});
+
+// Quick Product Lookup for POS
+app.get('/api/admin/products/search', async (req, res) => {
+  try {
+    const term = req.query.term as string;
+    const products = await AppDataSource.getRepository(Product).find({
+        where: [
+            { sku: Like(`${term}%`) },
+            { name: Like(`%${term}%`) }
+        ],
+        take: 10
+    });
+    res.json(products);
+  } catch (e) {
+    res.status(500).json({ error: 'Error searching products' });
+  }
+});
+
+// Save POS Sale
+app.post('/api/admin/sales', async (req, res) => {
+    try {
+        const saleRepo = AppDataSource.getRepository(Sale);
+        const sale = saleRepo.create(req.body);
+        await saleRepo.save(sale);
+        // TODO: Deduct inventory from ProductStock
+        res.status(201).json({ message: 'Sale recorded', id: sale.id });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to record sale' });
+    }
 });
 
 app.get('/sitemap.xml', async (req, res) => {

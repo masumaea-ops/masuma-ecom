@@ -3,6 +3,7 @@ import { Category } from './Category';
 import { OemNumber } from './OemNumber';
 import { Vehicle } from './Vehicle';
 import { OrderItem } from './OrderItem';
+import { ProductStock } from './ProductStock';
 
 @Entity('products')
 export class Product {
@@ -19,14 +20,16 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2 })
   price!: number;
 
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  wholesalePrice?: number; // Added for B2B
+
   @Column('text')
   description!: string;
 
   @Column({ nullable: true })
   imageUrl?: string;
 
-  @Column({ default: 0 })
-  stockLevel!: number;
+  // REMOVED: stockLevel (moved to ProductStock)
 
   @ManyToOne(() => Category, (category) => category.products)
   category!: Category;
@@ -40,4 +43,7 @@ export class Product {
 
   @OneToMany(() => OrderItem, (item) => item.product)
   orderItems!: OrderItem[];
+
+  @OneToMany(() => ProductStock, (stock) => stock.product)
+  stock!: ProductStock[];
 }
