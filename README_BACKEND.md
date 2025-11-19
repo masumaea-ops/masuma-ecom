@@ -1,36 +1,52 @@
+# Masuma Autoparts Backend (TypeORM)
 
-# Masuma Autoparts Backend
-
-This folder contains a production-grade backend architecture designed for high performance and SEO.
+This folder contains a production-grade backend architecture designed for high performance and SEO, featuring **M-Pesa Integration** and **TypeORM**.
 
 ## Prerequisites
 1. **Node.js** (v18+)
 2. **MySQL Database** (Local or Cloud, e.g., AWS RDS)
 3. **Redis** (Local or Cloud, e.g., AWS ElastiCache)
+4. **Safaricom Daraja Account** (Sandbox or Production)
 
 ## Setup Steps
 
 1. **Install Dependencies**
    ```bash
    cd server
-   npm install express @prisma/client ioredis bullmq cors helmet compression zod
-   npm install --save-dev prisma typescript @types/node @types/express
+   # Remove Prisma
+   npm uninstall @prisma/client prisma
+   
+   # Install TypeORM & Drivers
+   npm install express typeorm mysql2 reflect-metadata ioredis bullmq cors helmet compression zod axios
+   npm install --save-dev typescript @types/node @types/express ts-node
    ```
 
 2. **Environment Variables**
-   Create a `.env` file in the `server` directory:
+   Update `.env` in the `server` directory:
    ```env
-   DATABASE_URL="mysql://user:password@localhost:3306/masuma_db"
+   # DB Config
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=password
+   DB_NAME=masuma_db
+   
    REDIS_HOST="localhost"
    REDIS_PORT="6379"
    FRONTEND_URL="http://localhost:5173"
+
+   # M-Pesa Config
+   MPESA_ENV="sandbox" # or "production"
+   MPESA_CONSUMER_KEY="your_daraja_key"
+   MPESA_CONSUMER_SECRET="your_daraja_secret"
+   MPESA_PASSKEY="your_daraja_passkey"
+   MPESA_SHORTCODE="174379" # Sandbox Paybill
+   MPESA_CALLBACK_URL="https://your-ngrok-url.ngrok-free.app/api/mpesa/callback"
    ```
 
-3. **Database Migration**
-   Push the schema to your MySQL database:
-   ```bash
-   npx prisma db push
-   ```
+3. **Sync Database**
+   The app is configured to `synchronize: true` in development, which will auto-create tables.
+   For production, set `synchronize: false` in `src/config/database.ts` and use `typeorm-cli` for migrations.
 
 4. **Run Server**
    ```bash
@@ -38,14 +54,6 @@ This folder contains a production-grade backend architecture designed for high p
    ```
 
 5. **Run Workers**
-   In a separate terminal, run the background worker for emails:
    ```bash
    npx ts-node src/workers/emailWorker.ts
    ```
-
-## Architecture Highlights
-
-- **Cache-Aside Pattern**: See `src/lib/cache.ts`. We check Redis before hitting MySQL.
-- **Async Queues**: Order emails are handled by `BullMQ` so the API remains fast.
-- **Sitemap**: `/sitemap.xml` is dynamically generated for SEO.
-- **Security**: Rate limiting and Zod validation are implemented.

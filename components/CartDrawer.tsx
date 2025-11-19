@@ -1,17 +1,24 @@
-import React from 'react';
-import { X, Trash2, CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Trash2, CreditCard, Smartphone } from 'lucide-react';
 import { CartItem } from '../types';
+import MpesaModal from './MpesaModal';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cartItems: CartItem[];
   removeFromCart: (id: string) => void;
-  onCheckout: () => void;
+  onCheckout: () => void; // This now acts as a clearer for success
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, removeFromCart, onCheckout }) => {
+  const [isMpesaOpen, setIsMpesaOpen] = useState(false);
   const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const handleMpesaSuccess = () => {
+    setIsMpesaOpen(false);
+    onCheckout(); // Triggers app toast and clears cart
+  };
 
   return (
     <>
@@ -76,20 +83,39 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
               <span className="text-xl font-bold text-masuma-dark">KES {total.toLocaleString()}</span>
             </div>
             <p className="text-[10px] text-gray-500 mb-4 text-center">
-              Shipping via G4S or Wells Fargo available countrywide. Free delivery within Nairobi Industrial Area.
+              Secure payments powered by M-Pesa.
             </p>
-            <button 
-              onClick={onCheckout}
-              disabled={cartItems.length === 0}
-              className="w-full bg-masuma-orange hover:bg-masuma-dark text-white font-bold py-3 rounded-none flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
-            >
-              <CreditCard size={18} />
-              Checkout
-            </button>
+            
+            <div className="grid grid-cols-1 gap-3">
+                <button 
+                onClick={() => setIsMpesaOpen(true)}
+                disabled={cartItems.length === 0}
+                className="w-full bg-[#4CAF50] hover:bg-[#1B5E20] text-white font-bold py-3 rounded-none flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                >
+                <Smartphone size={18} />
+                Lipa Na M-Pesa
+                </button>
+
+                <button 
+                onClick={onCheckout} // Keeps original flow for "Pay Later / Manual"
+                disabled={cartItems.length === 0}
+                className="w-full bg-white border-2 border-masuma-dark text-masuma-dark hover:bg-gray-100 font-bold py-3 rounded-none flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
+                >
+                <CreditCard size={18} />
+                Pay on Delivery / Manual
+                </button>
+            </div>
           </div>
 
         </div>
       </div>
+
+      <MpesaModal 
+        isOpen={isMpesaOpen} 
+        onClose={() => setIsMpesaOpen(false)} 
+        cartItems={cartItems}
+        onSuccess={handleMpesaSuccess}
+      />
     </>
   );
 };

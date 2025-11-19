@@ -1,88 +1,67 @@
-
-import { PrismaClient } from '@prisma/client';
+import { AppDataSource } from '../config/database';
+import { Product } from '../entities/Product';
 import { CacheService } from '../lib/cache';
 
-const prisma = new PrismaClient();
-
 export class ProductService {
+  private static productRepo = AppDataSource.getRepository(Product);
   
-  static async getAllProducts(query: string = '', category: string = 'All') {
-    const cacheKey = `products:list:${query}:${category}`;
+  static async getAllProducts(query: string = '', categoryName: string = 'All') {
+    const cacheKey = `products:list:${query}:${categoryName}`;
 
     return CacheService.getOrSet(cacheKey, async () => {
-      const whereClause: any = {
-        AND: [],
-      };
+      const qb = this.productRepo.createQueryBuilder('product')
+        .leftJoinAndSelect('product.category', 'category')
+        .leftJoinAndSelect('product.oemNumbers', 'oem')
+        .leftJoinAndSelect('product.vehicles', 'vehicle')
+        .take(50);
 
       // Category Filter
-      if (category && category !== 'All') {
-        whereClause.AND.push({
-          category: { name: category }
-        });
+      if (categoryName && categoryName !== 'All') {
+        qb.andWhere('category.name = :categoryName', { categoryName });
       }
 
-      // Search Logic (Name, SKU, or OEM)
+      // Advanced Search Logic
       if (query) {
-        whereClause.AND.push({
-          OR: [
-            { name: { contains: query } }, // Case insensitive in MySQL usually
-            { sku: { contains: query } },
-            { 
-              oemNumbers: {
-                some: {
-                  code: { contains: query }
-                }
-              }
-            }
-          ]
-        });
+        const searchTerm = `%${query}%`;
+        qb.andWhere(
+          '(product.name LIKE :search OR product.sku LIKE :search OR oem.code LIKE :search OR vehicle.model LIKE :search)',
+          { search: searchTerm }
+        );
       }
 
-      const products = await prisma.product.findMany({
-        where: whereClause,
-        include: {
-          category: true,
-          oemNumbers: true,
-          compatibility: {
-            include: { vehicle: true }
-          }
-        },
-        take: 50, // Limit for performance
-      });
+      const products = await qb.getMany();
 
-      // Transform for frontend
+      // Transform for frontend (DTO Pattern)
       return products.map(p => ({
         id: p.id,
         name: p.name,
         sku: p.sku,
-        category: p.category.name,
+        category: p.category?.name || 'Uncategorized',
         price: Number(p.price),
         description: p.description,
         image: p.imageUrl || '',
         stock: p.stockLevel > 0,
-        oemNumbers: p.oemNumbers.map(o => o.code),
-        compatibility: p.compatibility.map(c => `${c.vehicle.make} ${c.vehicle.model}`)
+        oemNumbers: p.oemNumbers?.map(o => o.code) || [],
+        compatibility: p.vehicles?.map(v => `${v.make} ${v.model}`) || []
       }));
-    }, 300); // Short TTL (5 min) for list results as stock/prices change
+    }, 300);
   }
 
   static async getProductById(id: string) {
     const cacheKey = `product:detail:${id}`;
     return CacheService.getOrSet(cacheKey, async () => {
-      return prisma.product.findUnique({
+      return this.productRepo.findOne({
         where: { id },
-        include: {
-          oemNumbers: true,
-          compatibility: { include: { vehicle: true } }
-        }
+        relations: ['category', 'oemNumbers', 'vehicles']
       });
-    }, 3600); // Long TTL (1 hour) for static product details
+    }, 3600);
   }
   
-  // Helper to generate Sitemap data
   static async getAllProductIdsForSitemap() {
-     return prisma.product.findMany({
-       select: { id: true, updatedAt: true }
+     return this.productRepo.find({
+       select: { id: true }
+       // Note: TypeORM doesn't automatically select updateAt unless specified if it's not in the select object, 
+       // but find() without relations is fast.
      });
   }
 }
