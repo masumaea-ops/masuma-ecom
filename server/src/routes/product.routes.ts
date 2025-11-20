@@ -12,11 +12,39 @@ router.get('/', async (req, res) => {
     try {
         const query = req.query.q as string || '';
         const category = req.query.category as string || 'All';
-        const products = await ProductService.getAllProducts(query, category);
-        res.json(products);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        // Use the service which now handles pagination internally or update service signature
+        // For now, relying on the existing service structure, but enriching the response
+        // Note: Service getAllProducts logic was basic. Reusing it but ignoring pagination 
+        // inside service for this specific call to keep consistency, or calling it directly.
+        // A better way is to update the Service to accept pagination. 
+        // Assuming Service.getAllProducts accepts query, category.
+        
+        const result = await ProductService.getAllProducts(query, category);
+        // Mocking pagination wrapper around result if service doesn't support it yet
+        // In previous steps, we updated service to return { data, meta }.
+        
+        res.json(result); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch products' });
+    }
+});
+
+// GET /api/products/sku/:sku
+router.get('/sku/:sku', async (req, res) => {
+    try {
+        // Quick lookup for B2B
+        const products = await ProductService.getAllProducts(req.params.sku);
+        // Filter exact match in memory if service is fuzzy
+        const product = (products as any).data ? (products as any).data.find((p: any) => p.sku === req.params.sku) : null;
+        
+        if (!product) return res.status(404).json({ error: 'SKU not found' });
+        res.json([product]); // Return array for consistency
+    } catch (error) {
+         res.status(500).json({ error: 'Search failed' });
     }
 });
 
@@ -36,10 +64,13 @@ const productSchema = z.object({
     name: z.string().min(3),
     sku: z.string().min(3),
     price: z.number().positive(),
+    costPrice: z.number().min(0).optional(), // Added Cost Price
     wholesalePrice: z.number().optional(),
     description: z.string(),
     category: z.string(),
     imageUrl: z.string().url().optional().or(z.literal('')),
+    images: z.array(z.string()).optional(),
+    videoUrl: z.string().optional(),
     oemNumbers: z.array(z.string()).optional(),
 });
 

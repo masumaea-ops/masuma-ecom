@@ -68,15 +68,30 @@ export interface Branch {
   code: string;
 }
 
+export interface Payment {
+    id: string;
+    date: string;
+    amount: number;
+    method: string;
+    reference?: string;
+    notes?: string;
+}
+
 export interface Order {
     id: string;
     orderNumber: string;
     customerName: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    shippingAddress?: string;
     date: string;
     total: number;
-    status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED';
+    amountPaid: number;
+    balance: number;
+    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
     paymentMethod: string;
-    items: { name: string; qty: number }[];
+    items: { name: string; qty: number; price: number; sku?: string }[];
+    payments?: Payment[];
 }
 
 export interface Sale {
@@ -146,7 +161,8 @@ export enum QuoteStatus {
   DRAFT = 'DRAFT',
   SENT = 'SENT',
   ACCEPTED = 'ACCEPTED',
-  EXPIRED = 'EXPIRED'
+  EXPIRED = 'EXPIRED',
+  CONVERTED = 'CONVERTED'
 }
 
 export interface Quote {
@@ -156,5 +172,8 @@ export interface Quote {
     date: string;
     total: number;
     status: QuoteStatus;
+    type: 'STANDARD' | 'SOURCING';
+    vin?: string;
+    itemsCount?: number;
     items: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[];
 }

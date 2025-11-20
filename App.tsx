@@ -29,6 +29,7 @@ import ShippingManager from './components/admin/ShippingManager';
 import Profile from './components/admin/Profile';
 import BranchManager from './components/admin/BranchManager';
 import CategoryManager from './components/admin/CategoryManager';
+import FinanceManager from './components/admin/FinanceManager'; // Added
 import NotFound from './components/NotFound';
 import PartFinder from './components/PartFinder';
 import { CartItem, Product, ViewState } from './types';
@@ -153,13 +154,8 @@ function App() {
         showToast(`Welcome back, ${user.name}`, 'success');
     } catch (error: any) {
         if (error.message === 'Network Error' || !error.response) {
-             const mockToken = 'mock-admin-token';
-             const mockUser = { id: '1', name: 'Admin (Offline)', role: 'ADMIN' };
-             localStorage.setItem('masuma_auth_token', mockToken);
-             localStorage.setItem('masuma_user', JSON.stringify(mockUser));
-             setIsAuthenticated(true);
-             setCurrentView('DASHBOARD');
-             showToast(`Welcome back, Admin (Offline Mode)`, 'success');
+             // Disabled mock fallback logic for production
+             setLoginError('Unable to connect to server.');
              setAuthLoading(false);
              return;
         }
@@ -247,6 +243,7 @@ function App() {
             onLogout={handleLogout}
           >
             {adminModule === 'dashboard' && <DashboardHome />}
+            {adminModule === 'finance' && <FinanceManager />} 
             {adminModule === 'pos' && <PosTerminal />}
             {adminModule === 'products' && <ProductManager />}
             {adminModule === 'categories' && <CategoryManager />}
@@ -267,7 +264,7 @@ function App() {
             {adminModule === 'shipping' && <ShippingManager />}
             {adminModule === 'profile' && <Profile />}
             
-            {!['dashboard', 'pos', 'products', 'categories', 'orders', 'inventory', 'branches', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
+            {!['dashboard', 'finance', 'pos', 'products', 'categories', 'orders', 'inventory', 'branches', 'sales_history', 'mpesa', 'customers', 'quotes', 'reports', 'users', 'audit', 'blog', 'cms', 'settings', 'b2b', 'shipping', 'profile'].includes(adminModule) && (
                  <div className="flex flex-col items-center justify-center h-96 text-gray-400">
                     <Package size={64} className="mb-4 opacity-20" />
                     <h2 className="text-2xl font-bold uppercase text-masuma-dark">Module Under Construction</h2>
@@ -441,7 +438,7 @@ function App() {
             </div>
         );
       default:
-        return <NotFound />; // Fallback
+        return <NotFound />; 
     }
   };
 

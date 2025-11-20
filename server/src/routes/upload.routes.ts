@@ -1,23 +1,22 @@
-
-import { Router } from 'express';
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
 import { upload } from '../config/multer';
 
 const router = Router();
 
 // POST /api/upload
-router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), upload.single('image'), (req, res) => {
-    if (!req.file) {
+router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), upload.single('image'), (req: ExpressRequest, res: ExpressResponse) => {
+    if (!(req as any).file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
 
     // Construct URL (Assuming server is at root relative to client or configured base URL)
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    const fileUrl = `${baseUrl}/uploads/${(req as any).file.filename}`;
 
     res.json({ 
         url: fileUrl,
-        filename: req.file.filename 
+        filename: (req as any).file.filename 
     });
 });
 

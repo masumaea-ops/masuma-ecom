@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 import 'reflect-metadata';
 import { AppDataSource } from '../config/database';
@@ -126,7 +128,7 @@ const seed = async () => {
             name: 'Nairobi Industrial HQ',
             code: 'NBI-HQ',
             address: 'Godown 4, Enterprise Road',
-            phone: '+254 700 123 456'
+            phone: '+254 792 506 590'
         });
         await branchRepo.save(hq);
         console.log('Branch created.');

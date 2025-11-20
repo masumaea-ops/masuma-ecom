@@ -1,20 +1,17 @@
-
-import { Request, Response, NextFunction } from 'express';
+import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Security } from '../utils/security';
 
 // Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: User;
   }
 }
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+export const authenticate = async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
   
   if (!authHeader) {
     return res.status(401).json({ error: 'Unauthorized. Please log in.' });
@@ -54,7 +51,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 };
 
 export const authorize = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     
     if (!roles.includes(req.user.role)) {

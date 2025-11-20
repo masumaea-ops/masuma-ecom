@@ -1,13 +1,15 @@
 
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { Customer } from './Customer';
 import { User } from './User';
+import { Order } from './Order';
 
 export enum QuoteStatus {
   DRAFT = 'DRAFT',
   SENT = 'SENT',
   ACCEPTED = 'ACCEPTED',
-  EXPIRED = 'EXPIRED'
+  EXPIRED = 'EXPIRED',
+  CONVERTED = 'CONVERTED' // New status
 }
 
 export enum QuoteType {
@@ -21,7 +23,7 @@ export class Quote {
   id!: string;
 
   @Column({ unique: true })
-  quoteNumber!: string; // e.g. QT-2023-0001
+  quoteNumber!: string; 
 
   @ManyToOne(() => Customer, (customer) => customer.quotes)
   customer!: Customer;
@@ -29,11 +31,16 @@ export class Quote {
   @ManyToOne(() => User, { nullable: true })
   createdBy!: User;
 
+  // Link to the resulting Order once converted
+  @OneToOne(() => Order, { nullable: true })
+  @JoinColumn()
+  convertedOrder?: Order;
+
   @Column('json')
   items!: { productId?: string; name: string; quantity: number; unitPrice: number; total: number }[];
 
   @Column({ nullable: true })
-  vin?: string; // Chassis Number for Sourcing
+  vin?: string; 
 
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal!: number;

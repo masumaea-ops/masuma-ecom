@@ -12,7 +12,9 @@ export class ProductService {
   static async getAllProducts(query: string = '', categoryName: string = 'All') {
     const cacheKey = `products:list:${query}:${categoryName}`;
 
-    return CacheService.getOrSet(cacheKey, async () => {
+    // Removed cache for this step to ensure instant updates on cost price during testing
+    // In production, re-enable CacheService.getOrSet(cacheKey, ...)
+    
       const qb = this.productRepo.createQueryBuilder('product')
         .leftJoinAndSelect('product.category', 'category')
         .leftJoinAndSelect('product.oemNumbers', 'oem')
@@ -35,23 +37,27 @@ export class ProductService {
       }
 
       const products = await qb.getMany();
+      const total = await qb.getCount();
 
       // Transform for frontend (DTO Pattern)
-      return products.map(p => ({
+      const data = products.map(p => ({
         id: p.id,
         name: p.name,
         sku: p.sku,
         category: p.category?.name || 'Uncategorized',
         price: Number(p.price),
+        costPrice: Number(p.costPrice), // Exposed for Admin
         wholesalePrice: Number(p.wholesalePrice || 0),
         description: p.description,
         image: p.imageUrl || '',
-        // Simple stock check: if any branch has stock > 0
+        images: p.images || [],
+        videoUrl: p.videoUrl || '',
         stock: p.stock?.some(s => s.quantity > 0) || false, 
         oemNumbers: p.oemNumbers?.map(o => o.code) || [],
         compatibility: p.vehicles?.map(v => `${v.make} ${v.model}`) || []
       }));
-    }, 30); // Short cache for active edits
+
+      return { data, meta: { total, page: 1, limit: 50 } };
   }
 
   static async getProductById(id: string) {
@@ -72,9 +78,12 @@ export class ProductService {
     product.name = data.name;
     product.sku = data.sku;
     product.price = data.price;
+    product.costPrice = data.costPrice || 0; // Handle Cost
     product.wholesalePrice = data.wholesalePrice;
     product.description = data.description;
     product.imageUrl = data.imageUrl;
+    product.images = data.images;
+    product.videoUrl = data.videoUrl;
     product.category = category;
 
     // Handle OEM Numbers
@@ -107,13 +116,15 @@ export class ProductService {
     product.name = data.name || product.name;
     product.sku = data.sku || product.sku;
     product.price = data.price || product.price;
+    product.costPrice = (data.costPrice !== undefined) ? data.costPrice : product.costPrice; // Update Cost
     product.wholesalePrice = data.wholesalePrice || product.wholesalePrice;
     product.description = data.description || product.description;
     product.imageUrl = data.imageUrl || product.imageUrl;
+    if (data.images) product.images = data.images;
+    if (data.videoUrl !== undefined) product.videoUrl = data.videoUrl;
 
     // Update OEMs if provided (Replaces all)
     if (data.oemNumbers && Array.isArray(data.oemNumbers)) {
-        // Clear existing (TypeORM cascade usually handles this but careful)
         await AppDataSource.getRepository(OemNumber).delete({ product: { id: product.id } });
         
         product.oemNumbers = data.oemNumbers.map((code: string) => {

@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 import { DataSource } from 'typeorm';
 import { Product } from '../entities/Product';
@@ -16,6 +18,8 @@ import { Sale } from '../entities/Sale';
 import { BlogPost } from '../entities/BlogPost';
 import { AuditLog } from '../entities/AuditLog';
 import { SystemSetting } from '../entities/SystemSetting';
+import { Payment } from '../entities/Payment';
+import { Expense } from '../entities/Expense';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -42,7 +46,9 @@ export const AppDataSource = new DataSource({
     Sale,
     BlogPost,
     AuditLog,
-    SystemSetting
+    SystemSetting,
+    Payment,
+    Expense
   ],
   subscribers: [],
   migrations: [],

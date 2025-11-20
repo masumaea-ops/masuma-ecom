@@ -1,3 +1,4 @@
+
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, JoinTable, Index } from 'typeorm';
 import { Category } from './Category';
 import { OemNumber } from './OemNumber';
@@ -17,8 +18,11 @@ export class Product {
   @Column()
   sku!: string;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  costPrice!: number; // Buying Price (For COGS)
+
   @Column('decimal', { precision: 10, scale: 2 })
-  price!: number;
+  price!: number; // Selling Price
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   wholesalePrice?: number; // Added for B2B
@@ -28,6 +32,12 @@ export class Product {
 
   @Column({ nullable: true })
   imageUrl?: string;
+
+  @Column('json', { nullable: true })
+  images?: string[];
+
+  @Column({ nullable: true })
+  videoUrl?: string;
 
   // REMOVED: stockLevel (moved to ProductStock)
 

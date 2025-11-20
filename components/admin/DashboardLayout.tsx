@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
   Smartphone, Users, FileText, Truck, Car, 
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
 
@@ -29,6 +29,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
   // Define Menu Items with Role Permissions
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'finance', label: 'Finance & Profit', icon: DollarSign, roles: ['ADMIN', 'MANAGER'] }, // NEW
     { id: 'pos', label: 'Point of Sale', icon: ShoppingCart, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'products', label: 'Product Manager', icon: Package, roles: ['ADMIN', 'MANAGER'] },
     { id: 'categories', label: 'Categories', icon: Tag, roles: ['ADMIN', 'MANAGER'] },
