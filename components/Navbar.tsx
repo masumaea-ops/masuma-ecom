@@ -43,8 +43,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems: ViewState[] = ['HOME', 'CATALOG', 'BLOG', 'ABOUT', 'CONTACT'];
+  const navItems: ViewState[] = ['HOME', 'CATALOG', 'PART_FINDER', 'BLOG', 'ABOUT', 'CONTACT'];
   const currencies: CurrencyCode[] = ['KES', 'USD', 'UGX', 'TZS', 'RWF'];
+
+  const formatNavLabel = (item: string) => {
+      if (item === 'PART_FINDER') return 'PART FINDER';
+      return item;
+  };
 
   return (
     <>
@@ -132,7 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       onClick={() => setView(item)} 
                       className="relative text-masuma-dark font-bold uppercase tracking-wide text-xs hover:text-masuma-orange transition group"
                   >
-                      {item}
+                      {formatNavLabel(item)}
                       <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-masuma-orange transition-all duration-300 group-hover:w-full"></span>
                   </button>
               ))}
@@ -180,7 +185,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       onClick={() => { setView(item); setIsMenuOpen(false); }} 
                       className="block w-full text-left px-4 py-4 text-sm font-bold text-masuma-dark hover:text-masuma-orange hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider"
                   >
-                      {item}
+                      {formatNavLabel(item)}
                   </button>
               ))}
               {/* Mobile Currency */}

@@ -81,6 +81,42 @@ const MOCK_PRODUCTS = [
   }
 ];
 
+const MOCK_BLOG_POSTS = [
+    {
+        id: '1',
+        title: 'Why Suspension Parts Fail Faster in Nairobi',
+        excerpt: 'The combination of potholes, speed bumps, and dust creates a harsh environment for bushings and shocks. Learn how Masuma reinforced parts extend lifespan.',
+        content: '<p>Driving in Nairobi is a test of endurance for any vehicle. The constant vibration from uneven surfaces causes standard rubber bushings to crack prematurely.</p><p>Masuma suspension parts use a high-density rubber compound specifically engineered for these conditions, offering 30% longer life than standard aftermarket alternatives.</p>',
+        image: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=800&q=80',
+        category: 'Maintenance',
+        readTime: '4 min read',
+        date: 'Oct 12, 2023',
+        relatedProductCategory: 'Suspension'
+    },
+    {
+        id: '2',
+        title: 'Spotting Fake Oil Filters: A Guide',
+        excerpt: 'Counterfeit filters are flooding Kirinyaga Road. Here is how to identify a genuine Masuma filter and save your engine from catastrophe.',
+        content: '<p>A fake oil filter might look identical on the outside, but inside, the filtration media is often just cardboard. This leads to sludge buildup and eventual engine failure.</p><p>Genuine Masuma filters feature a hologram seal and a specific batch number printed on the canister. Always buy from authorized distributors.</p>',
+        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=800&q=80',
+        category: 'Advisory',
+        readTime: '3 min read',
+        date: 'Sep 28, 2023',
+        relatedProductCategory: 'Filters'
+    },
+    {
+        id: '3',
+        title: 'Brake Pad Bedding-In Procedure',
+        excerpt: 'Just installed new pads? Do not slam on the brakes yet. Follow this procedure to ensure optimal stopping power and silence.',
+        content: '<p>Bedding-in transfers a layer of friction material to the rotor. Accelerate to 60kph, then brake moderately to 10kph. Repeat 10 times without coming to a complete stop.</p><p>This prevents squeaking and ensures your Masuma ceramic pads perform at their peak immediately.</p>',
+        image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80',
+        category: 'Technical',
+        readTime: '5 min read',
+        date: 'Aug 15, 2023',
+        relatedProductCategory: 'Brakes'
+    }
+];
+
 const MOCK_STATS = {
   totalSales: 254300,
   lowStockItems: 3,
@@ -132,6 +168,14 @@ apiClient.interceptors.response.use(
         }
         if (url.includes('/products')) {
             return Promise.resolve({ data: MOCK_PRODUCTS });
+        }
+        if (url.includes('/blog')) {
+             return Promise.resolve({ 
+                 data: { 
+                     data: MOCK_BLOG_POSTS, 
+                     meta: { page: 1, limit: 6, total: MOCK_BLOG_POSTS.length, pages: 1 } 
+                 } 
+             });
         }
         if (url.includes('/admin/stats')) {
             return Promise.resolve({ data: MOCK_STATS });

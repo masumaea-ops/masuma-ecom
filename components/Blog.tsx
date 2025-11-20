@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 
@@ -14,6 +14,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0, pages: 1 });
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
       fetchPosts(1);
@@ -58,8 +59,36 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
               }
           };
           fetchRelated();
+          window.scrollTo(0, 0);
       }
   }, [selectedPost]);
+
+  const handleShare = async () => {
+    if (!selectedPost) return;
+
+    const shareData = {
+        title: selectedPost.title,
+        text: selectedPost.excerpt,
+        url: window.location.href // In a real router setup, this would be specific link
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log('Share canceled');
+        }
+    } else {
+        // Fallback for desktops without Web Share API
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy');
+        }
+    }
+  };
 
   if (selectedPost) {
     return (
@@ -99,10 +128,16 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
              </div>
 
              {/* Share Section */}
-             <div className="mt-12 border-t border-gray-200 pt-8 flex items-center justify-between">
+             <div className="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-bold text-masuma-dark uppercase text-sm">Share this article:</p>
-                <div className="flex gap-4">
-                   <button className="p-2 bg-gray-100 rounded-full hover:bg-masuma-orange hover:text-white transition"><Share2 size={18} /></button>
+                <div className="flex items-center gap-4">
+                   <button 
+                    onClick={handleShare}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-masuma-orange hover:text-white transition font-bold text-xs uppercase tracking-wider"
+                   >
+                       {copied ? <Check size={16} /> : <Share2 size={16} />}
+                       {copied ? 'Link Copied' : 'Share'}
+                   </button>
                 </div>
              </div>
           </div>

@@ -44,7 +44,7 @@ export interface BlogPost {
   relatedProductCategory: Category; // To link products to articles
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD';
 
 export interface ChatMessage {
   role: 'user' | 'model';

@@ -30,6 +30,7 @@ import Profile from './components/admin/Profile';
 import BranchManager from './components/admin/BranchManager';
 import CategoryManager from './components/admin/CategoryManager';
 import NotFound from './components/NotFound';
+import PartFinder from './components/PartFinder';
 import { CartItem, Product, ViewState } from './types';
 import { CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock, Loader2, MapPin, Send } from 'lucide-react';
 import { apiClient } from './utils/apiClient';
@@ -353,6 +354,8 @@ function App() {
         );
       case 'CATALOG':
         return <div className="animate-fade-in bg-white"><div className="bg-gray-100 py-12 border-b border-gray-200"><div className="max-w-7xl mx-auto px-4"><h1 className="text-4xl font-bold text-masuma-dark font-display uppercase">Full Catalog</h1></div></div><ProductList addToCart={addToCart} /></div>;
+      case 'PART_FINDER':
+        return <PartFinder addToCart={addToCart} />;
       case 'BLOG': return <Blog addToCart={addToCart} />;
       case 'ABOUT':
         return (
