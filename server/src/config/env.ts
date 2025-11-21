@@ -1,8 +1,10 @@
 
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Explicitly load .env from root
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -12,12 +14,13 @@ const envSchema = z.object({
   DB_HOST: z.string().min(1),
   DB_PORT: z.string().default('3306'),
   DB_USER: z.string().min(1),
-  DB_PASSWORD: z.string().min(1),
+  DB_PASSWORD: z.string().optional(),
   DB_NAME: z.string().min(1),
 
-  // Redis
-  REDIS_HOST: z.string().default('localhost'),
-  REDIS_PORT: z.string().default('6379'),
+  // Redis (Optional)
+  REDIS_HOST: z.string().optional(),
+  REDIS_PORT: z.string().optional(),
+  REDIS_PASSWORD: z.string().optional(),
 
   // Security
   JWT_SECRET: z.string().min(10),
@@ -36,13 +39,18 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   FROM_EMAIL: z.string().default('noreply@masuma.africa'),
+
+  // External API Keys
+  GEMINI_API_KEY: z.string().optional(),
+  VIN_API_KEY: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
   console.error('❌ Invalid environment variables:', parsedEnv.error.format());
-  (process as any).exit(1);
+  throw new Error('Invalid environment variables');
 }
 
+// Export strongly typed config
 export const config = parsedEnv.data;

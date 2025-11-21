@@ -3,16 +3,18 @@ import { ZodSchema, ZodError } from 'zod';
 
 export const validate = (schema: ZodSchema<any>) => 
   async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    const request = req as any;
+    const response = res as any;
     try {
       await schema.parseAsync({
-        body: req.body,
-        query: req.query,
-        params: req.params,
+        body: request.body,
+        query: request.query,
+        params: request.params,
       });
       return next();
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({
+        return response.status(400).json({
           error: 'Validation Error',
           details: error.issues.map((e: any) => ({
             path: e.path.join('.'),
@@ -20,6 +22,6 @@ export const validate = (schema: ZodSchema<any>) =>
           }))
         });
       }
-      return res.status(400).json({ error: 'Invalid input data' });
+      return response.status(400).json({ error: 'Invalid input data' });
     }
   };

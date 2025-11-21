@@ -1,4 +1,5 @@
 
+
 export enum Category {
   ALL = 'All',
   FILTERS = 'Filters',
@@ -66,6 +67,8 @@ export interface Branch {
   id: string;
   name: string;
   code: string;
+  address?: string;
+  phone?: string;
 }
 
 export interface Payment {
@@ -98,6 +101,7 @@ export interface Sale {
     id: string;
     receiptNumber: string;
     date: string;
+    createdAt?: string;
     totalAmount: number;
     paymentMethod: string;
     cashierName: string;

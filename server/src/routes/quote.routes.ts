@@ -5,12 +5,10 @@ import { Quote, QuoteStatus, QuoteType } from '../entities/Quote';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
-import { Queue } from 'bullmq';
-import { redis } from '../config/redis';
+import { EmailService } from '../services/emailService';
 
 const router = Router();
 const quoteRepo = AppDataSource.getRepository(Quote);
-const emailQueue = new Queue('email-queue', { connection: redis });
 
 // Schema
 const createQuoteSchema = z.object({
@@ -19,11 +17,9 @@ const createQuoteSchema = z.object({
     phone: z.string().min(10),
     message: z.string().optional(),
     
-    // Standard Quote Fields
     productId: z.string().optional(),
     productName: z.string().optional(),
     
-    // Sourcing Request Fields
     vin: z.string().min(5).optional(),
     partNumber: z.string().optional(),
     description: z.string().optional(),
@@ -38,7 +34,6 @@ const createQuoteSchema = z.object({
     })).optional()
 });
 
-// GET /api/quotes (Admin)
 router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
         const quotes = await quoteRepo.find({
@@ -47,7 +42,6 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
             relations: ['customer']
         });
         
-        // Map for frontend
         const formatted = quotes.map(q => ({
             id: q.id,
             quoteNumber: q.quoteNumber,
@@ -60,7 +54,7 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
             type: q.requestType,
             vin: q.vin,
             itemsCount: q.items?.length || 0,
-            items: q.items // Return raw JSON items
+            items: q.items 
         }));
 
         res.json(formatted);
@@ -70,7 +64,6 @@ router.get('/', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) 
     }
 });
 
-// POST /api/quotes (Public Request)
 router.post('/', validate(createQuoteSchema), async (req, res) => {
     try {
         const { name, email, phone, message, productId, productName, items, vin, partNumber, description, requestType } = req.body;
@@ -82,7 +75,6 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
 
         let quoteItems = items || [];
 
-        // Case 1: Sourcing Request (No Product ID, Item constructed from Description)
         if (requestType === 'SOURCING') {
             const itemName = description || 'Special Order Part';
             const details = partNumber ? `${itemName} (PN: ${partNumber})` : itemName;
@@ -90,11 +82,10 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
             quoteItems = [{
                 name: details,
                 quantity: 1,
-                unitPrice: 0, // TBD by Admin
+                unitPrice: 0, 
                 total: 0
             }];
         } 
-        // Case 2: Quick Quote from Product Page
         else if (!items && productId && productName) {
             quoteItems = [{
                 productId,
@@ -111,27 +102,16 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         quote.total = 0;
         quote.status = QuoteStatus.DRAFT;
         
-        // Note: We are saving without linking a real customer entity for speed in this public endpoint
-        // In production, we should upsert the Customer entity here
-        
         await quoteRepo.save(quote);
-
-        // Notify via Email
-        const emailSubject = requestType === 'SOURCING' 
-            ? `Special Import Request: ${vin}` 
-            : `Quote Request: ${quoteItems[0]?.name}`;
 
         const emailBody = requestType === 'SOURCING'
             ? `Customer: ${name}\nVIN: ${vin}\nPart: ${partNumber || 'N/A'}\nDesc: ${description}`
             : `Customer: ${name}\nProduct: ${productName}\nMessage: ${message}`;
 
-        await emailQueue.add('send-email', { 
-            type: 'QUOTE_REQUEST', 
-            data: { 
-                name, email, phone, 
-                message: emailBody,
-                productName: requestType === 'SOURCING' ? 'Special Sourcing' : quoteItems[0]?.name 
-            } 
+        await EmailService.sendEmail('QUOTE_REQUEST', {
+            name, email, phone,
+            message: emailBody,
+            productName: requestType === 'SOURCING' ? 'Special Sourcing' : quoteItems[0]?.name 
         });
 
         res.status(201).json({ message: 'Request received', quoteId: quote.id });
@@ -141,7 +121,6 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
     }
 });
 
-// PATCH /api/quotes/:id (Admin Update Status & Prices)
 const updateQuoteSchema = z.object({
     status: z.enum(['DRAFT', 'SENT', 'ACCEPTED', 'EXPIRED']).optional(),
     items: z.array(z.any()).optional(),

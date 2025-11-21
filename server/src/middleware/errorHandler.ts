@@ -23,7 +23,7 @@ export const errorHandler = (err: any, req: ExpressRequest, res: ExpressResponse
       console.error('🔥 UNHANDLED ERROR:', err);
   }
 
-  res.status(statusCode).json({
+  (res as any).status(statusCode).json({
     status: 'error',
     message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })

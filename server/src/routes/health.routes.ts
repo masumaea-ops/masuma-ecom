@@ -27,7 +27,9 @@ router.get('/', async (req, res) => {
 
     // Check Redis
     try {
-        if (redis.status === 'ready') {
+        if (!redis) {
+            health.redis = 'Disabled';
+        } else if (redis.status === 'ready') {
             health.redis = 'Connected';
         } else {
             health.redis = redis.status;
@@ -36,7 +38,7 @@ router.get('/', async (req, res) => {
         health.redis = 'Error';
     }
 
-    const status = (health.database === 'Connected' && health.redis === 'Connected') ? 200 : 503;
+    const status = (health.database === 'Connected' && (health.redis === 'Connected' || health.redis === 'Disabled')) ? 200 : 503;
     res.status(status).json(health);
 });
 

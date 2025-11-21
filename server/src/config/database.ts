@@ -1,7 +1,7 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
 
 import { DataSource } from 'typeorm';
+import * as dotenv from 'dotenv';
+import path from 'path';
 import { Product } from '../entities/Product';
 import { Category } from '../entities/Category';
 import { Vehicle } from '../entities/Vehicle';
@@ -21,15 +21,34 @@ import { SystemSetting } from '../entities/SystemSetting';
 import { Payment } from '../entities/Payment';
 import { Expense } from '../entities/Expense';
 
+// Load .env explicitly from the server root directory
+const envPath = path.resolve((process as any).cwd(), '.env');
+const result = dotenv.config({ path: envPath });
+
+if (result.error) {
+    console.warn(`⚠️  .env file not found at: ${envPath}`);
+    console.warn('   Using default credentials (password: "password")');
+} else {
+    console.log(`✅ Loaded configuration from: ${envPath}`);
+}
+
+// Log connection details (masking password for security if not empty)
+const dbUser = process.env.DB_USER || 'root';
+const dbHost = process.env.DB_HOST || 'localhost';
+const dbPort = process.env.DB_PORT || 3306;
+const dbName = process.env.DB_NAME || 'masuma_db';
+console.log(`🔌 Connecting to Database: ${dbUser}@${dbHost}:${dbPort}/${dbName}`);
+
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 3306,
   username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'password',
+  // Use ?? 'password' to allow empty string passwords (common in XAMPP)
+  password: process.env.DB_PASSWORD ?? 'password',
   database: process.env.DB_NAME || 'masuma_db',
   synchronize: process.env.NODE_ENV !== 'production', // Set to false in production and use migrations
-  logging: process.env.NODE_ENV === 'development',
+  logging: false, // Disable verbose SQL logs during seed/start
   entities: [
     Product,
     Category,

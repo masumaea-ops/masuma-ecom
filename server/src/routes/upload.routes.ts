@@ -5,18 +5,18 @@ import { upload } from '../config/multer';
 const router = Router();
 
 // POST /api/upload
-router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), upload.single('image'), (req: ExpressRequest, res: ExpressResponse) => {
-    if (!(req as any).file) {
+router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), upload.single('image'), (req: any, res: any) => {
+    if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
 
     // Construct URL (Assuming server is at root relative to client or configured base URL)
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const fileUrl = `${baseUrl}/uploads/${(req as any).file.filename}`;
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     res.json({ 
         url: fileUrl,
-        filename: (req as any).file.filename 
+        filename: req.file.filename 
     });
 });
 
