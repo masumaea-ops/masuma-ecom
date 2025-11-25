@@ -14,7 +14,7 @@ import { BlogPost } from '../entities/BlogPost';
 import { SystemSetting } from '../entities/SystemSetting';
 import { Security } from '../utils/security';
 
-// Mock Data Source
+// --- 10 Sample Masuma Products ---
 const PRODUCTS_DATA = [
   {
     name: 'Oil Filter (Spin-on)',
@@ -22,7 +22,8 @@ const PRODUCTS_DATA = [
     category: 'Filters',
     price: 850,
     oems: ['90915-10001', '90915-YZZE1'],
-    fits: [{ make: 'Toyota', model: 'Corolla' }, { make: 'Toyota', model: 'Vitz' }]
+    fits: [{ make: 'Toyota', model: 'Corolla' }, { make: 'Toyota', model: 'Vitz' }, { make: 'Toyota', model: 'Premio' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg'
   },
   {
     name: 'Disc Brake Pads (Front)',
@@ -30,23 +31,26 @@ const PRODUCTS_DATA = [
     category: 'Brakes',
     price: 4500,
     oems: ['26296-SA031', '26296-FG010'],
-    fits: [{ make: 'Subaru', model: 'Forester' }, { make: 'Subaru', model: 'Impreza' }]
+    fits: [{ make: 'Subaru', model: 'Forester SG5' }, { make: 'Subaru', model: 'Impreza' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/MS-2444_1.jpg'
   },
   {
     name: 'Air Filter (Safari Spec)',
-    sku: 'MFA-331',
+    sku: 'MFA-1146',
     category: 'Filters',
     price: 2200,
     oems: ['17801-30040'],
-    fits: [{ make: 'Toyota', model: 'Prado' }]
+    fits: [{ make: 'Toyota', model: 'Land Cruiser Prado' }, { make: 'Toyota', model: 'Hilux' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/MFA-1146_1.jpg'
   },
   {
-    name: 'Stabilizer Link',
+    name: 'Stabilizer Link (Front)',
     sku: 'ML-3320',
     category: 'Suspension',
     price: 1800,
     oems: ['48820-42020'],
-    fits: [{ make: 'Toyota', model: 'RAV4' }]
+    fits: [{ make: 'Toyota', model: 'RAV4' }, { make: 'Toyota', model: 'Vanguard' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/ML-3320_1.jpg'
   },
   {
     name: 'Iridium Spark Plug',
@@ -54,10 +58,57 @@ const PRODUCTS_DATA = [
     category: 'Engine & Ignition',
     price: 1200,
     oems: ['90919-01210'],
-    fits: [{ make: 'Toyota', model: 'Camry' }, { make: 'Lexus', model: 'RX' }]
+    fits: [{ make: 'Toyota', model: 'Camry' }, { make: 'Lexus', model: 'RX' }, { make: 'Nissan', model: 'X-Trail' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/S-102_1.jpg'
+  },
+  {
+    name: 'Hybrid Wiper Blade (26")',
+    sku: 'MU-026',
+    category: 'Wiper Blades',
+    price: 1500,
+    oems: ['85222-53070'],
+    fits: [{ make: 'Toyota', model: 'Harrier' }, { make: 'Honda', model: 'CR-V' }, { make: 'Nissan', model: 'Murano' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/MU-026_1.jpg'
+  },
+  {
+    name: 'Fuel Filter (In-Tank)',
+    sku: 'MFF-T103',
+    category: 'Filters',
+    price: 3500,
+    oems: ['23300-21010'],
+    fits: [{ make: 'Toyota', model: 'NZE' }, { make: 'Toyota', model: 'Fielder' }, { make: 'Toyota', model: 'Runx' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/MFF-T103_1.jpg'
+  },
+  {
+    name: 'Control Arm Bushing',
+    sku: 'RU-388',
+    category: 'Suspension',
+    price: 1200,
+    oems: ['48655-12170'],
+    fits: [{ make: 'Toyota', model: 'Corolla AE100' }, { make: 'Toyota', model: 'Sprinter' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/RU-388_1.jpg'
+  },
+  {
+    name: 'Ignition Coil',
+    sku: 'MIC-110',
+    category: 'Engine & Ignition',
+    price: 4800,
+    oems: ['90919-02240'],
+    fits: [{ make: 'Toyota', model: 'Vitz' }, { make: 'Toyota', model: 'Yaris' }, { make: 'Toyota', model: 'FunCargo' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/MIC-110_1.jpg'
+  },
+  {
+    name: 'Drive Belt (Serpentine)',
+    sku: '5PK1100',
+    category: 'Drive Belts',
+    price: 1600,
+    oems: ['90916-02556'],
+    fits: [{ make: 'Toyota', model: 'Premio' }, { make: 'Toyota', model: 'Allion' }],
+    image: 'https://masuma.com/wp-content/uploads/2021/09/5PK1100_1.jpg'
   }
 ];
 
+// --- 5 Blog Posts ---
 const BLOG_DATA = [
     {
         title: 'Why Suspension Parts Fail Faster in Nairobi',
@@ -85,6 +136,24 @@ const BLOG_DATA = [
         category: 'Technical',
         readTime: '5 min read',
         relatedProductCategory: 'Brakes'
+    },
+    {
+        title: 'When to Replace Your Wiper Blades',
+        excerpt: 'Don\'t wait for the rainy season. Streaking, squeaking, and skipping are signs your blades are dead. Masuma Hybrid blades offer the best solution.',
+        content: '<p>Rubber deteriorates in the African sun. If your wipers leave streaks or miss spots, they are a safety hazard. Masuma Hybrid blades combine the aerodynamics of a beam blade with the sturdy frame of a conventional blade, lasting 2x longer in tropical climates.</p>',
+        image: 'https://images.unsplash.com/photo-1517357216930-799640240eb0?auto=format&fit=crop&w=800&q=80',
+        category: 'Safety',
+        readTime: '2 min read',
+        relatedProductCategory: 'Wiper Blades'
+    },
+    {
+        title: 'Iridium vs. Nickel Spark Plugs',
+        excerpt: 'Is the extra cost worth it? We break down the mileage and performance benefits of upgrading to Masuma Iridium plugs.',
+        content: '<p>Standard nickel plugs last about 20,000 km. Masuma Iridium plugs can go up to 100,000 km. While they cost more upfront, the fuel savings and reduced misfires make them the smarter choice for Nairobi traffic where idling causes carbon buildup.</p>',
+        image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+        category: 'Performance',
+        readTime: '4 min read',
+        relatedProductCategory: 'Engine & Ignition'
     }
 ];
 
@@ -134,20 +203,52 @@ const seed = async () => {
         console.log('Branch created.');
     }
 
-    // 2. Create Admin User
+    // 2a. Create or Update System Admin
     const userRepo = AppDataSource.getRepository(User);
     const adminEmail = 'admin@masuma.africa';
     let admin = await userRepo.findOneBy({ email: adminEmail });
+    const defaultPassword = 'password';
+    const passwordHash = await Security.hashPassword(defaultPassword);
+
     if (!admin) {
         admin = userRepo.create({
             email: adminEmail,
             fullName: 'System Admin',
-            passwordHash: await Security.hashPassword('password'), 
+            passwordHash: passwordHash, 
             role: UserRole.ADMIN,
             branch: hq
         });
         await userRepo.save(admin);
-        console.log('Admin user created (admin@masuma.africa / password).');
+        console.log(`Admin user created (${adminEmail} / ${defaultPassword}).`);
+    } else {
+        // Force reset password to ensure login works
+        admin.passwordHash = passwordHash;
+        await userRepo.save(admin);
+        console.log(`Admin password reset to "${defaultPassword}" for existing user.`);
+    }
+
+    // 2b. Create Mbaru Tech Admin
+    const mbaruEmail = 'mbarutech@gmail.com';
+    let mbaruUser = await userRepo.findOneBy({ email: mbaruEmail });
+    const mbaruPassword = 'jesuslord1J';
+    const mbaruHash = await Security.hashPassword(mbaruPassword);
+
+    if (!mbaruUser) {
+        mbaruUser = userRepo.create({
+            email: mbaruEmail,
+            fullName: 'Mbaru Tech',
+            passwordHash: mbaruHash,
+            role: UserRole.ADMIN,
+            branch: hq
+        });
+        await userRepo.save(mbaruUser);
+        console.log(`Second Admin user created: ${mbaruEmail}`);
+    } else {
+        // FORCE UPDATE PASSWORD & ROLE
+        mbaruUser.passwordHash = mbaruHash;
+        mbaruUser.role = UserRole.ADMIN; 
+        await userRepo.save(mbaruUser);
+        console.log(`Security credentials forcefully updated for: ${mbaruEmail}`);
     }
 
     // 3. Create Categories & Products
@@ -171,9 +272,9 @@ const seed = async () => {
             product.name = pData.name;
             product.sku = pData.sku;
             product.price = pData.price;
-            product.description = `Genuine Masuma ${pData.name}`;
+            product.description = `Genuine Masuma ${pData.name}. Engineered for reliability.`;
             product.category = cat;
-            product.imageUrl = 'https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg'; // Placeholder
+            product.imageUrl = pData.image;
             
             // OEMs
             product.oemNumbers = pData.oems.map(code => {
@@ -232,6 +333,8 @@ const seed = async () => {
     }
 
     console.log('Seeding complete.');
+    console.log('1. Admin: admin@masuma.africa / password');
+    console.log('2. Admin: mbarutech@gmail.com / jesuslord1J');
     (process as any).exit(0);
   } catch (error) {
     console.error('Seeding failed:', error);

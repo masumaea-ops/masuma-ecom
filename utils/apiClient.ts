@@ -1,4 +1,3 @@
-
 import axios, { InternalAxiosRequestConfig } from 'axios';
 import { Product, Category } from '../types';
 
@@ -112,6 +111,7 @@ apiClient.interceptors.response.use(
 // --- MOCK HANDLER ---
 const serveMockData = (config: InternalAxiosRequestConfig) => {
     const url = config.url || '';
+    const mockHeaders = { 'x-datasource': 'mock' };
     
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -119,10 +119,10 @@ const serveMockData = (config: InternalAxiosRequestConfig) => {
             if (url.includes('/products')) {
                 if (url.includes('sku')) {
                     // Single SKU search
-                    resolve({ data: MOCK_PRODUCTS.slice(0, 1), status: 200 });
+                    resolve({ data: MOCK_PRODUCTS.slice(0, 1), status: 200, headers: mockHeaders });
                 } else {
                     // List
-                    resolve({ data: { data: MOCK_PRODUCTS, meta: { total: 5, page: 1, limit: 20 } }, status: 200 });
+                    resolve({ data: { data: MOCK_PRODUCTS, meta: { total: 5, page: 1, limit: 20 } }, status: 200, headers: mockHeaders });
                 }
                 return;
             }
@@ -145,38 +145,60 @@ const serveMockData = (config: InternalAxiosRequestConfig) => {
                             { name: 'Suspension', value: 25 }
                         ]
                     },
-                    status: 200
+                    status: 200,
+                    headers: mockHeaders
                 });
                 return;
             }
 
-            // 3. Auth
+            // 3. Auth (Dynamic Mock Login)
             if (url.includes('/auth/login')) {
+                let email = 'admin@masuma.africa';
+                let name = 'Admin User';
+                
+                // Try to simulate the requested user
+                try {
+                    if (config.data) {
+                        const body = JSON.parse(config.data);
+                        if (body.email) {
+                            email = body.email;
+                            name = email.split('@')[0].toUpperCase();
+                        }
+                    }
+                } catch(e) {}
+
                 resolve({
                     data: {
-                        token: 'mock-token-123',
-                        user: { id: '1', name: 'Admin User', email: 'admin@masuma.africa', role: 'ADMIN', branch: { id: '1', name: 'HQ' } }
+                        token: 'mock-token-123-offline',
+                        user: { 
+                            id: 'mock-id', 
+                            name: name, 
+                            email: email, 
+                            role: 'ADMIN', // Grant admin access in offline mode
+                            branch: { id: '1', name: 'Offline HQ' } 
+                        }
                     },
-                    status: 200
+                    status: 200,
+                    headers: mockHeaders
                 });
                 return;
             }
 
             // 4. Generic Arrays (Inventory, Sales, Users, etc.)
             if (['/inventory', '/users', '/sales', '/orders', '/quotes', '/customers', '/branches'].some(path => url.includes(path))) {
-                resolve({ data: [], status: 200 });
+                resolve({ data: [], status: 200, headers: mockHeaders });
                 return;
             }
             
             // 5. Settings
             if (url.includes('/settings')) {
-                resolve({ data: {}, status: 200 });
+                resolve({ data: {}, status: 200, headers: mockHeaders });
                 return;
             }
 
             // Default 200 OK for POSTs (create/update)
             if (config.method !== 'get') {
-                resolve({ data: { message: 'Action simulated (Offline Mode)' }, status: 200 });
+                resolve({ data: { message: 'Action simulated (Offline Mode)' }, status: 200, headers: mockHeaders });
                 return;
             }
             

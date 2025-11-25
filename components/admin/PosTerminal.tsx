@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2 } from 'lucide-react';
 import { Product, Customer } from '../../types';
@@ -34,9 +33,12 @@ const PosTerminal: React.FC = () => {
         setIsSearching(true);
         try {
             const res = await apiClient.get(`/products?q=${term}`);
-            setSearchResults(res.data);
+            // FIX: Unpack the data structure
+            const products = res.data.data || res.data || [];
+            setSearchResults(Array.isArray(products) ? products : []);
         } catch (error) {
             console.error('Search failed');
+            setSearchResults([]);
         } finally {
             setIsSearching(false);
         }

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Copy, Check, WifiOff, Database } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 
@@ -15,6 +15,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0, pages: 1 });
   const [copied, setCopied] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
       fetchPosts(1);
@@ -24,6 +25,8 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
       setIsLoading(true);
       try {
           const res = await apiClient.get(`/blog?page=${page}&limit=${pagination.limit}`);
+          setIsOffline(res.headers['x-datasource'] === 'mock');
+
           if (res.data && res.data.data) {
               setPosts(res.data.data);
               setPagination(res.data.meta);
@@ -196,6 +199,17 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
             <p className="text-gray-400 max-w-2xl mx-auto text-lg font-light">
                Technical advice, maintenance tips, and industry news from the engineers who know your car best.
             </p>
+            <div className="mt-6 flex justify-center">
+                {isOffline ? (
+                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold uppercase border border-red-500/50">
+                        <WifiOff size={14} /> Offline Mode
+                    </span>
+                ) : (
+                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-bold uppercase border border-green-500/50">
+                        <Database size={14} /> Live Database
+                    </span>
+                )}
+            </div>
          </div>
       </div>
 

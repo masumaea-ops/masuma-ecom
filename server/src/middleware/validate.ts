@@ -6,14 +6,14 @@ export const validate = (schema: ZodSchema<any>) =>
     const request = req as any;
     const response = res as any;
     try {
-      await schema.parseAsync({
-        body: request.body,
-        query: request.query,
-        params: request.params,
-      });
+      // FIX: Validate req.body directly matches the schema structure
+      // IMPORTANT: Assign the parsed result back to req.body to ensure sanitized data is used
+      request.body = await schema.parseAsync(request.body);
+      
       return next();
     } catch (error) {
       if (error instanceof ZodError) {
+        console.error('Validation Error:', JSON.stringify(error.issues));
         return response.status(400).json({
           error: 'Validation Error',
           details: error.issues.map((e: any) => ({

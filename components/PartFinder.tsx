@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, ShoppingBag, Plane, ArrowRight, ExternalLink, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
@@ -27,11 +26,13 @@ const PartFinder: React.FC<PartFinderProps> = ({ addToCart }) => {
         
         try {
             const res = await apiClient.get(`/products?q=${sku}`);
-            // Look for exact match on SKU or close match
-            if (res.data && res.data.length > 0) {
+            // FIX: Handle pagination
+            const products = res.data.data || res.data || [];
+            
+            if (products && products.length > 0) {
                 // Prioritize exact SKU match
-                const exact = res.data.find((p: any) => p.sku.toLowerCase() === sku.toLowerCase());
-                setFoundProduct(exact || res.data[0]);
+                const exact = products.find((p: any) => p.sku.toLowerCase() === sku.toLowerCase());
+                setFoundProduct(exact || products[0]);
             }
         } catch (error) {
             console.error(error);

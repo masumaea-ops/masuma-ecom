@@ -3,6 +3,9 @@ import { Worker } from 'bullmq';
 import { redis } from '../config/redis';
 import { EmailService } from '../services/emailService';
 
+declare const require: any;
+declare const module: any;
+
 export const startEmailWorker = () => {
     if (!redis) {
         console.log('⚠️ Redis unavailable. Background Email Worker not started.');

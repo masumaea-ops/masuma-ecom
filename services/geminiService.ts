@@ -1,10 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize the client
-// The API key must be obtained from process.env.API_KEY
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const SYSTEM_INSTRUCTION = `
 You are 'MasumaBot', the official digital assistant for Masuma Autoparts East Africa Limited in Nairobi.
 Your brand color is Orange (#E0621B). You are helpful, knowledgeable, and concise.
@@ -22,6 +18,15 @@ Rules:
 
 export const sendMessageToGemini = async (history: {role: string, parts: {text: string}[]}[], message: string): Promise<string> => {
   try {
+    // Check for API Key at runtime, not load time
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+        console.warn("Gemini API Key is missing in environment variables.");
+        return "I am currently unable to connect to the AI service. Please contact support.";
+    }
+
+    // Initialize client here to prevent top-level crashes
+    const ai = new GoogleGenAI({ apiKey });
     const model = 'gemini-2.5-flash';
     
     const chat = ai.chats.create({
@@ -40,6 +45,7 @@ export const sendMessageToGemini = async (history: {role: string, parts: {text: 
     return result.text || "I'm having trouble accessing the network right now. Please try again.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    throw new Error("Failed to connect to the Masuma AI service.");
+    // Fail gracefully instead of crashing the app
+    return "I'm having trouble connecting to the Masuma network right now. Please check your internet connection.";
   }
 };

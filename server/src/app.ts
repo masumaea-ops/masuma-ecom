@@ -1,9 +1,9 @@
-
 import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 // FIX: Use require for compression to bypass TS errors
+declare const require: any;
 const compression = require('compression'); 
 import rateLimit from 'express-rate-limit';
 import path from 'path';
@@ -67,9 +67,12 @@ app.use(express.json() as any);
 // --- Static Files ---
 app.use('/uploads', express.static(path.join((process as any).cwd(), 'uploads')) as any);
 
+// RELAXED RATE LIMITER for Development
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 300, 
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20000, // Significantly increased for dev to prevent 429 errors
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api', limiter as any);
 

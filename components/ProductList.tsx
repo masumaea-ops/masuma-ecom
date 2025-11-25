@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Category, Product } from '../types';
-import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane, Loader2 } from 'lucide-react';
+import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane, Loader2, Database, WifiOff } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
@@ -20,6 +20,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [vinFilter, setVinFilter] = useState('');
   const [error, setError] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   
   const [isSourcingOpen, setIsSourcingOpen] = useState(false);
 
@@ -36,9 +37,16 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             
             const response = await apiClient.get(`/products?${params.toString()}`);
             
-            if (response.data && Array.isArray(response.data)) {
-                setProducts(response.data);
+            // Check for Mock Header to verify DB connection
+            setIsOffline(response.headers['x-datasource'] === 'mock');
+
+            // FIX: Handle both paginated { data: [...] } and flat [...] responses
+            const productsData = response.data.data || response.data;
+
+            if (Array.isArray(productsData)) {
+                setProducts(productsData);
             } else {
+                console.warn("Unexpected API response format", response.data);
                 setProducts([]);
             }
         } catch (error) {
@@ -99,6 +107,17 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             <p className="text-gray-600 max-w-2xl">
             Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
             </p>
+        </div>
+        <div className="mt-4 md:mt-0">
+            {isOffline ? (
+                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold uppercase border border-red-200">
+                    <WifiOff size={14} /> Offline Mode (Mock Data)
+                </span>
+            ) : (
+                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-600 text-xs font-bold uppercase border border-green-200">
+                    <Database size={14} /> Live Database
+                </span>
+            )}
         </div>
       </div>
 

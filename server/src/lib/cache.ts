@@ -39,7 +39,8 @@ export class CacheService {
         const stream = redis.scanStream({ match: pattern });
         stream.on('data', (keys) => {
         if (keys.length) {
-            const pipeline = redis.pipeline();
+            // Use ! assertion because we checked existence at start of function
+            const pipeline = redis!.pipeline();
             keys.forEach((key: string) => pipeline.del(key));
             pipeline.exec();
         }

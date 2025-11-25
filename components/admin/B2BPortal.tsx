@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Package, ShoppingCart, Upload, FileText, Plus, Trash2, Download, Loader2, CheckCircle } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
@@ -36,8 +35,11 @@ const B2BPortal: React.FC = () => {
             for (const item of validItems) {
                 try {
                     const res = await apiClient.get(`/products?q=${item.sku}`);
+                    // FIX: Handle pagination
+                    const products = res.data.data || res.data || [];
+                    
                     // Find exact match
-                    const product = res.data.find((p: any) => p.sku === item.sku);
+                    const product = products.find((p: any) => p.sku === item.sku);
                     if (product) {
                         payloadItems.push({
                             productId: product.id,

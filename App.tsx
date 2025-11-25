@@ -32,6 +32,7 @@ import CategoryManager from './components/admin/CategoryManager';
 import FinanceManager from './components/admin/FinanceManager'; // Added
 import NotFound from './components/NotFound';
 import PartFinder from './components/PartFinder';
+import AdminLogin from './components/AdminLogin';
 import { CartItem, Product, ViewState } from './types';
 import { CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock, Loader2, MapPin, Send } from 'lucide-react';
 import { apiClient } from './utils/apiClient';
@@ -48,9 +49,6 @@ function App() {
   // Admin State
   const [adminModule, setAdminModule] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
 
   // Contact Form State
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -137,34 +135,13 @@ function App() {
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   // --- Admin/Dashboard Logic ---
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setLoginError('');
-
-    try {
-        const response = await apiClient.post('/auth/login', loginForm);
-        
-        const { token, user } = response.data;
-        localStorage.setItem('masuma_auth_token', token);
-        localStorage.setItem('masuma_user', JSON.stringify(user));
-        
-        setIsAuthenticated(true);
-        setCurrentView('DASHBOARD');
-        showToast(`Welcome back, ${user.name}`, 'success');
-    } catch (error: any) {
-        if (error.message === 'Network Error' || !error.response) {
-             // Disabled mock fallback logic for production
-             setLoginError('Unable to connect to server.');
-             setAuthLoading(false);
-             return;
-        }
-
-        console.error('Login failed', error);
-        setLoginError(error.response?.data?.error || 'Invalid credentials. Please try again.');
-    } finally {
-        setAuthLoading(false);
-    }
+  const handleLoginSuccess = (user: any, token: string) => {
+      localStorage.setItem('masuma_auth_token', token);
+      localStorage.setItem('masuma_user', JSON.stringify(user));
+      
+      setIsAuthenticated(true);
+      setCurrentView('DASHBOARD');
+      showToast(`Welcome back, ${user.name}`, 'success');
   };
 
   const handleLogout = () => {
@@ -176,58 +153,7 @@ function App() {
   };
 
   if (currentView === 'LOGIN') {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border-t-4 border-masuma-orange animate-scale-up">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold font-display text-masuma-dark">MASUMA ERP</h2>
-            <p className="text-sm text-gray-500 uppercase tracking-widest">Staff Access Portal</p>
-          </div>
-          
-          {loginError && (
-              <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4 border border-red-200 flex items-center gap-2">
-                  <Lock size={16} /> {loginError}
-              </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase text-gray-600 mb-1">Email Address</label>
-              <input 
-                type="email" 
-                value={loginForm.email}
-                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
-                placeholder="admin@masuma.africa"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase text-gray-600 mb-1">Password</label>
-              <input 
-                type="password" 
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
-                placeholder="••••••"
-                required
-              />
-            </div>
-            <button 
-                type="submit" 
-                disabled={authLoading}
-                className="w-full bg-masuma-dark text-white py-3 font-bold uppercase hover:bg-masuma-orange transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
-            >
-              {authLoading ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />} 
-              {authLoading ? 'Authenticating...' : 'Secure Login'}
-            </button>
-          </form>
-          <div className="mt-6 text-center">
-             <button onClick={() => setCurrentView('HOME')} className="text-sm text-gray-400 hover:text-masuma-dark underline">Back to Storefront</button>
-          </div>
-        </div>
-      </div>
-    );
+    return <AdminLogin onLoginSuccess={handleLoginSuccess} onBack={() => setCurrentView('HOME')} />;
   }
 
   if (currentView === 'DASHBOARD') {
