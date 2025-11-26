@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Filter, Edit2, Trash2, X, Save, Image as ImageIcon, Loader2, CheckCircle, UploadCloud, Video } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Save, Loader2, UploadCloud, Download, Upload, Package, Car, Image as ImageIcon, Star, Check } from 'lucide-react';
 import { Product } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -14,18 +14,22 @@ const ProductManager: React.FC = () => {
   // Editor State
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  // Add costPrice to form state (not strict Partial<Product> anymore to allow extra fields if needed)
   const [formData, setFormData] = useState<any>({});
   const [oemString, setOemString] = useState(''); 
+  const [compatString, setCompatString] = useState(''); 
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  // Import/Export State
+  const [isImporting, setIsImporting] = useState(false);
+  
+  // Refs for file inputs
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-        const res = await apiClient.get(`/products?q=${searchTerm}`);
-        setProducts(res.data.data || res.data); // Handle both paginated and direct array
+        const res = await apiClient.get(`/products?q=${searchTerm}&limit=1000`);
+        setProducts(res.data.data || res.data);
     } catch (error) {
         console.error('Failed to fetch products', error);
     } finally {
@@ -54,15 +58,20 @@ const ProductManager: React.FC = () => {
   const handleAddNew = () => {
     setFormData({
         name: '', sku: '', price: 0, costPrice: 0, wholesalePrice: 0, 
-        description: '', category: categories[0]?.name || 'Filters', image: '', images: [], oemNumbers: []
+        description: '', category: categories[0]?.name || 'General', image: '', images: [], oemNumbers: [], compatibility: []
     });
     setOemString('');
+    setCompatString('');
     setIsEditorOpen(true);
   };
 
   const handleEdit = (product: Product) => {
-    setFormData(product);
-    setOemString(product.oemNumbers.join(', '));
+    setFormData({
+        ...product,
+        images: product.images || (product.image ? [product.image] : [])
+    });
+    setOemString(product.oemNumbers ? product.oemNumbers.join(', ') : '');
+    setCompatString(product.compatibility ? product.compatibility.join(', ') : '');
     setIsEditorOpen(true);
   };
 
@@ -87,29 +96,55 @@ const ProductManager: React.FC = () => {
       uploadData.append('image', file);
 
       try {
-          const res = await apiClient.post('/upload', uploadData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-          });
+          // Removed manual Content-Type header
+          const res = await apiClient.post('/upload', uploadData);
+          const url = res.data.url;
           
           if (field === 'image') {
-              setFormData((prev: any) => ({
-                  ...prev,
-                  image: res.data.url,
-                  images: [...(prev.images || []), res.data.url]
-              }));
+              setFormData((prev: any) => {
+                  const currentImages = prev.images || [];
+                  // Add to gallery
+                  const updatedImages = [...currentImages, url];
+                  
+                  return {
+                      ...prev,
+                      // If no primary image exists, set this one as primary
+                      image: prev.image ? prev.image : url,
+                      images: updatedImages
+                  };
+              });
           } else {
               setFormData((prev: any) => ({
                   ...prev,
-                  videoUrl: res.data.url
+                  videoUrl: url
               }));
           }
       } catch (error) {
           alert('Upload failed');
       } finally {
           setIsUploading(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-          if (videoInputRef.current) videoInputRef.current.value = '';
+          if (imageInputRef.current) imageInputRef.current.value = '';
       }
+  };
+
+  const handleSetPrimaryImage = (url: string) => {
+      setFormData((prev: any) => ({ ...prev, image: url }));
+  };
+
+  const handleRemoveImage = (urlToRemove: string) => {
+      setFormData((prev: any) => {
+          const updatedImages = prev.images.filter((img: string) => img !== urlToRemove);
+          // If we removed the primary image, set the first available one as primary, or empty
+          let newPrimary = prev.image;
+          if (prev.image === urlToRemove) {
+              newPrimary = updatedImages.length > 0 ? updatedImages[0] : '';
+          }
+          return {
+              ...prev,
+              images: updatedImages,
+              image: newPrimary
+          };
+      });
   };
 
   const handleSave = async () => {
@@ -123,10 +158,13 @@ const ProductManager: React.FC = () => {
         const payload = {
             ...formData,
             oemNumbers: oemString.split(',').map(s => s.trim()).filter(s => s.length > 0),
+            compatibility: compatString.split(',').map(s => s.trim()).filter(s => s.length > 0),
             price: Number(formData.price),
-            costPrice: Number(formData.costPrice), // Save Cost
+            costPrice: Number(formData.costPrice),
             wholesalePrice: Number(formData.wholesalePrice),
-            imageUrl: formData.image 
+            quantity: Number(formData.quantity || 0),
+            imageUrl: formData.image, // Ensure legacy field is populated
+            images: formData.images // Ensure array is sent
         };
 
         if (formData.id) {
@@ -145,10 +183,140 @@ const ProductManager: React.FC = () => {
     }
   };
 
-  const removeImage = (index: number) => {
-      const newImages = [...(formData.images || [])];
-      newImages.splice(index, 1);
-      setFormData({...formData, images: newImages, image: newImages[0] || ''});
+  // --- CSV FUNCTIONS ---
+
+  const handleExport = () => {
+      const headers = ['SKU', 'Name', 'Category', 'Price (Retail)', 'Cost Price', 'Wholesale Price', 'Description', 'OEM Numbers', 'Compatible Vehicles', 'Image URL'];
+      
+      const rows = products.map((p: any) => [
+          p.sku,
+          `"${p.name.replace(/"/g, '""')}"`,
+          p.category,
+          p.price,
+          p.costPrice || 0,
+          p.wholesalePrice || 0,
+          `"${(p.description || '').replace(/"/g, '""')}"`,
+          `"${(p.oemNumbers || []).join('|')}"`,
+          `"${(p.compatibility || []).join('|')}"`,
+          p.image
+      ].join(','));
+
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products_catalog_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+  };
+
+  const handleImportClick = () => {
+      csvInputRef.current?.click();
+  };
+
+  const parseCSVLine = (line: string) => {
+      const result = [];
+      let current = '';
+      let inQuote = false;
+      
+      for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+              inQuote = !inQuote;
+          } else if (char === ',' && !inQuote) {
+              result.push(current.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+              current = '';
+          } else {
+              current += char;
+          }
+      }
+      result.push(current.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+      return result;
+  };
+
+  const cleanNumber = (str: string) => {
+      if (!str) return 0;
+      const clean = str.replace(/[^\d.-]/g, '');
+      const num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsImporting(true);
+      const reader = new FileReader();
+      
+      reader.onload = async (evt) => {
+          const text = evt.target?.result as string;
+          const lines = text.split('\n');
+          if (lines.length < 2) {
+              alert("CSV file is empty or invalid format.");
+              setIsImporting(false);
+              return;
+          }
+
+          const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+          const importedProducts = [];
+          
+          for (let i = 1; i < lines.length; i++) {
+              if (!lines[i].trim()) continue;
+              const values = parseCSVLine(lines[i]);
+              
+              const getVal = (headerPart: string) => {
+                  const idx = headers.findIndex(h => h.includes(headerPart));
+                  return idx > -1 ? values[idx] : '';
+              };
+
+              const sku = getVal('sku');
+              const name = getVal('name');
+
+              if (sku && name) {
+                  importedProducts.push({
+                      sku: sku,
+                      name: name,
+                      category: getVal('category') || 'General',
+                      price: cleanNumber(getVal('retail') || getVal('price')),
+                      costPrice: cleanNumber(getVal('cost')),
+                      wholesalePrice: cleanNumber(getVal('wholesale')),
+                      quantity: parseInt(String(cleanNumber(getVal('qty') || getVal('quantity')))),
+                      description: getVal('desc'),
+                      oemNumbers: getVal('oem'), 
+                      compatibility: getVal('compatible') || getVal('vehicle') || getVal('fits'), 
+                      imageUrl: getVal('image')
+                  });
+              }
+          }
+
+          try {
+              const user = JSON.parse(localStorage.getItem('masuma_user') || '{}');
+              let branchId = user.branch?.id;
+              
+              if (!branchId) {
+                  const bRes = await apiClient.get('/branches');
+                  if (bRes.data && bRes.data.length > 0) branchId = bRes.data[0].id;
+              }
+
+              if (!branchId) throw new Error("No active branch found to initialize inventory.");
+
+              await apiClient.post('/products/bulk', {
+                  branchId,
+                  products: importedProducts
+              });
+              
+              alert(`Successfully processed ${importedProducts.length} products.`);
+              fetchProducts();
+          } catch (error: any) {
+              console.error(error);
+              alert('Import failed: ' + (error.response?.data?.error || error.message));
+          } finally {
+              setIsImporting(false);
+              if (csvInputRef.current) csvInputRef.current.value = '';
+          }
+      };
+      
+      reader.readAsText(file);
   };
 
   return (
@@ -158,14 +326,31 @@ const ProductManager: React.FC = () => {
           <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Product Inventory</h2>
           <p className="text-sm text-gray-500">Manage catalog items, pricing, and OEM mappings.</p>
         </div>
-        <button 
-          onClick={handleAddNew}
-          className="bg-masuma-orange text-white px-6 py-3 rounded font-bold uppercase tracking-widest text-sm hover:bg-orange-600 transition shadow-lg flex items-center gap-2"
-        >
-          <Plus size={18} /> Add Product
-        </button>
+        <div className="flex gap-2">
+            <input type="file" ref={csvInputRef} className="hidden" accept=".csv" onChange={handleImportFile} />
+            <button 
+                onClick={handleImportClick}
+                disabled={isImporting}
+                className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded font-bold uppercase text-xs hover:bg-gray-50 transition flex items-center gap-2"
+            >
+                {isImporting ? <Loader2 size={16} className="animate-spin"/> : <Upload size={16} />} Import CSV
+            </button>
+            <button 
+                onClick={handleExport}
+                className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded font-bold uppercase text-xs hover:bg-gray-50 transition flex items-center gap-2"
+            >
+                <Download size={16} /> Export CSV
+            </button>
+            <button 
+            onClick={handleAddNew}
+            className="bg-masuma-orange text-white px-6 py-2 rounded font-bold uppercase tracking-widest text-xs hover:bg-orange-600 transition shadow-md flex items-center gap-2"
+            >
+            <Plus size={16} /> Add Product
+            </button>
+        </div>
       </div>
 
+      {/* Search Bar */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -192,8 +377,9 @@ const ProductManager: React.FC = () => {
                 <th className="px-6 py-4">Product Detail</th>
                 <th className="px-6 py-4">Category</th>
                 <th className="px-6 py-4">Price (KES)</th>
+                <th className="px-6 py-4">Quantity</th>
                 <th className="px-6 py-4">Cost (KES)</th>
-                <th className="px-6 py-4">OEM Count</th>
+                <th className="px-6 py-4">OEMs</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -213,6 +399,11 @@ const ProductManager: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{product.category}</td>
                   <td className="px-6 py-4 font-bold text-masuma-dark">{product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${product.quantity > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                          {product.quantity || 0}
+                      </span>
+                  </td>
                   <td className="px-6 py-4 font-bold text-gray-500">{product.costPrice ? product.costPrice.toLocaleString() : '-'}</td>
                   <td className="px-6 py-4 text-xs">
                     <span className="bg-gray-100 px-2 py-1 rounded-full text-gray-600 font-bold">{product.oemNumbers?.length} Codes</span>
@@ -242,6 +433,7 @@ const ProductManager: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
+              {/* Basic Info */}
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase text-gray-600">Product Name *</label>
                 <input 
@@ -274,6 +466,7 @@ const ProductManager: React.FC = () => {
                 </div>
               </div>
 
+              {/* Pricing */}
               <div className="grid grid-cols-3 gap-4">
                  <div className="space-y-1">
                    <label className="text-xs font-bold uppercase text-gray-600">Buying Price (Cost)</label>
@@ -304,15 +497,115 @@ const ProductManager: React.FC = () => {
                  </div>
               </div>
 
-              {/* Image & Video sections omitted for brevity, they remain same */}
-              {/* OEM & Description sections remain same */}
+              {/* Initial Stock */}
+              <div className="space-y-1">
+                   <label className="text-xs font-bold uppercase text-gray-600 flex items-center gap-1"><Package size={12}/> Stock Quantity (Active Branch)</label>
+                   <input 
+                    type="number" 
+                    value={formData.quantity || 0}
+                    onChange={e => setFormData({...formData, quantity: Number(e.target.value)})}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-green-50" 
+                    title="Updating this will adjust inventory for your current branch"
+                   />
+                   {formData.id && <p className="text-[10px] text-green-600 font-bold">Live Sync: Updates inventory immediately.</p>}
+              </div>
+
+              {/* Image Gallery & Upload */}
+              <div className="space-y-2">
+                 <label className="text-xs font-bold uppercase text-gray-600 flex items-center gap-2">
+                    <ImageIcon size={14} /> Product Images
+                 </label>
+                 
+                 {/* Main Upload Control */}
+                 <div className="flex gap-2 mb-3">
+                    <input 
+                        type="file" 
+                        ref={imageInputRef}
+                        className="hidden" 
+                        accept="image/*" 
+                        multiple
+                        onChange={(e) => handleFileUpload(e, 'image')}
+                    />
+                    
+                    <input 
+                        type="text" 
+                        value={formData.image || ''} 
+                        readOnly
+                        className="flex-1 p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none text-sm text-gray-500 bg-gray-50"
+                        placeholder="Primary Image URL"
+                    />
+                    <button 
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="px-4 py-2 bg-masuma-dark text-white rounded hover:bg-masuma-orange transition flex items-center gap-2 text-xs font-bold uppercase"
+                    >
+                        {isUploading ? <Loader2 size={16} className="animate-spin"/> : <UploadCloud size={16} />} Add Image
+                    </button>
+                 </div>
+
+                 {/* Image Gallery Grid */}
+                 {formData.images && formData.images.length > 0 && (
+                     <div className="grid grid-cols-3 gap-3 bg-gray-100 p-3 rounded border border-gray-200">
+                         {formData.images.map((img: string, idx: number) => (
+                             <div 
+                                key={idx} 
+                                className={`relative group aspect-square bg-white rounded overflow-hidden border-2 cursor-pointer transition-all ${
+                                    formData.image === img ? 'border-masuma-orange ring-2 ring-masuma-orange/20' : 'border-gray-200 hover:border-gray-400'
+                                }`}
+                                onClick={() => handleSetPrimaryImage(img)}
+                             >
+                                <img src={img} alt={`Product ${idx}`} className="w-full h-full object-contain p-1" />
+                                
+                                {/* Primary Badge */}
+                                {formData.image === img && (
+                                    <div className="absolute top-1 left-1 bg-masuma-orange text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                        <Star size={8} fill="currentColor" /> Primary
+                                    </div>
+                                )}
+
+                                {/* Overlay Actions */}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                                    {formData.image !== img && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleSetPrimaryImage(img); }}
+                                            className="p-1.5 bg-white rounded-full text-green-600 hover:bg-green-50 transition"
+                                            title="Set as Primary"
+                                        >
+                                            <Check size={14} />
+                                        </button>
+                                    )}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveImage(img); }}
+                                        className="p-1.5 bg-white rounded-full text-red-500 hover:bg-red-50 transition"
+                                        title="Remove Image"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                             </div>
+                         ))}
+                     </div>
+                 )}
+              </div>
               
+              {/* Compatibility & OEM */}
               <div className="space-y-1">
                  <label className="text-xs font-bold uppercase text-gray-600">OEM Numbers (Comma Separated)</label>
                  <textarea 
                     value={oemString}
                     onChange={e => setOemString(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-24 font-mono text-sm"
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-20 font-mono text-sm"
+                    placeholder="e.g. 90915-10001, 90915-YZZE1"
+                 ></textarea>
+              </div>
+
+              <div className="space-y-1">
+                 <label className="text-xs font-bold uppercase text-gray-600 flex items-center gap-1"><Car size={12}/> Compatible Vehicles (Comma Separated)</label>
+                 <textarea 
+                    value={compatString}
+                    onChange={e => setCompatString(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none h-20 text-sm"
+                    placeholder="e.g. Toyota Vitz, Subaru Forester, Nissan Note"
                  ></textarea>
               </div>
 

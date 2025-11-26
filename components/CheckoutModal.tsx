@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, CreditCard, Loader2, MapPin, User, Mail, Phone } from 'lucide-react';
+import { X, CreditCard, Loader2, MapPin, User, Mail, Phone, Banknote, FileText } from 'lucide-react';
 import { CartItem } from '../types';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
@@ -18,7 +18,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
         name: '',
         email: '',
         phone: '',
-        address: ''
+        address: '',
+        paymentType: 'CASH' // 'CASH' or 'CHEQUE'
     });
     const [error, setError] = useState('');
 
@@ -37,7 +38,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                 customerEmail: formData.email,
                 customerPhone: formData.phone,
                 shippingAddress: formData.address,
-                paymentMethod: 'MANUAL', // Pay on Delivery
+                paymentMethod: formData.paymentType, // Send specific type (CASH/CHEQUE)
                 items: cartItems.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,
@@ -50,7 +51,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                 onSuccess();
                 onClose();
                 setStep('input');
-                setFormData({ name: '', email: '', phone: '', address: '' });
+                setFormData({ name: '', email: '', phone: '', address: '', paymentType: 'CASH' });
             }, 3000);
 
         } catch (err: any) {
@@ -140,9 +141,30 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                                     required 
                                     value={formData.address} 
                                     onChange={e => setFormData({...formData, address: e.target.value})} 
-                                    className="w-full p-3 border border-gray-300 rounded-sm focus:border-masuma-orange outline-none text-sm h-20 resize-none" 
+                                    className="w-full p-3 border border-gray-300 rounded-sm focus:border-masuma-orange outline-none text-sm h-16 resize-none" 
                                     placeholder="Street, Building, Pickup Station..." 
                                 ></textarea>
+                            </div>
+
+                            {/* Payment Method Selection */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-masuma-dark uppercase">Payment Mode</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({...formData, paymentType: 'CASH'})}
+                                        className={`p-3 border rounded flex items-center justify-center gap-2 text-xs font-bold uppercase transition ${formData.paymentType === 'CASH' ? 'bg-masuma-dark text-white border-masuma-dark' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        <Banknote size={16} /> Cash
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({...formData, paymentType: 'CHEQUE'})}
+                                        className={`p-3 border rounded flex items-center justify-center gap-2 text-xs font-bold uppercase transition ${formData.paymentType === 'CHEQUE' ? 'bg-masuma-dark text-white border-masuma-dark' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        <FileText size={16} /> Cheque
+                                    </button>
+                                </div>
                             </div>
 
                             <button 

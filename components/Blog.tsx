@@ -100,7 +100,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
         <div className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden">
           <div className="absolute inset-0 bg-masuma-dark/50 z-10"></div>
           <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 max-w-7xl mx-auto">
+          <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 max-w-screen-2xl mx-auto">
             <button 
               onClick={() => setSelectedPost(null)}
               className="absolute top-6 left-6 md:left-12 text-white hover:text-masuma-orange transition flex items-center gap-2 font-bold uppercase text-sm tracking-wider bg-black/20 backdrop-blur-md px-4 py-2 rounded-full"
@@ -122,7 +122,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
         </div>
 
         {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="max-w-screen-2xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
           
           {/* Main Article */}
           <div className="lg:col-span-2">
@@ -192,7 +192,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
     <div className="animate-fade-in bg-white min-h-screen">
       <div className="bg-masuma-dark text-white py-20 relative overflow-hidden">
          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-         <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+         <div className="max-w-screen-2xl mx-auto px-4 relative z-10 text-center">
             <span className="text-masuma-orange font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Masuma Knowledge Center</span>
             <h1 className="text-4xl md:text-6xl font-bold font-display uppercase tracking-tight mb-6">Expert Insights</h1>
             <div className="h-1 w-24 bg-masuma-orange mx-auto mb-6"></div>
@@ -213,7 +213,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
          </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-16">
+      <div className="max-w-screen-2xl mx-auto px-4 py-16">
          {isLoading ? (
              <div className="flex justify-center items-center h-64">
                  <Loader2 className="animate-spin text-masuma-orange" size={48} />

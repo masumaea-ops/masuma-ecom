@@ -1,9 +1,9 @@
-
 import { AppDataSource } from '../config/database';
 import { Sale } from '../entities/Sale';
 import { ProductStock } from '../entities/ProductStock';
 import { User } from '../entities/User';
 import { Branch } from '../entities/Branch';
+import { Customer } from '../entities/Customer';
 import { EtimsService } from './etimsService';
 
 interface SaleItemDto {
@@ -31,7 +31,6 @@ export class SaleService {
 
     try {
       // Calculate Tax (Assumes inclusive VAT 16% for all items for simplicity)
-      // In a complex system, tax is per-product based on HS Code
       const taxRate = 0.16;
       const netAmount = data.totalAmount / (1 + taxRate);
       const taxAmount = data.totalAmount - netAmount;
@@ -41,7 +40,15 @@ export class SaleService {
       sale.receiptNumber = `RCP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       sale.branch = { id: data.branchId } as Branch;
       sale.cashier = { id: data.cashierId } as User;
-      if (data.customerId) sale.customer = { id: data.customerId } as any;
+      
+      // Handle Customer Linking & Snapshot
+      if (data.customerId) {
+          const customer = await queryRunner.manager.findOneBy(Customer, { id: data.customerId });
+          if (customer) {
+              sale.customer = customer;
+              sale.customerName = customer.name; // Snapshot name for historical accuracy
+          }
+      }
       
       sale.itemsSnapshot = data.items;
       sale.totalAmount = data.totalAmount;
@@ -51,8 +58,7 @@ export class SaleService {
       sale.paymentMethod = data.paymentMethod;
       sale.paymentDetails = data.paymentDetails;
 
-      // 2. Call KRA eTIMS (Non-blocking or Blocking based on strictness)
-      // We assume strict compliance: Invoice must be signed before saving
+      // 2. Call KRA eTIMS
       const fiscalData = await EtimsService.signInvoice(
         sale.receiptNumber, 
         data.items.map(i => ({

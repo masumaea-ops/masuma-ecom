@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
-import { Edit, AlertTriangle, Package, Loader2, RefreshCw, Plus, Minus, Save, X, ArrowRightLeft, Truck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Edit, AlertTriangle, Package, Loader2, RefreshCw, Plus, Minus, Save, X, ArrowRightLeft, Truck, Upload, Download } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 import { Branch } from '../../types';
 
@@ -28,6 +27,10 @@ const InventoryManager: React.FC = () => {
     const [isTransferMode, setIsTransferMode] = useState(false);
     const [transferData, setTransferData] = useState({ toBranchId: '', quantity: 0 });
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Import States
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -100,6 +103,140 @@ const InventoryManager: React.FC = () => {
         }
     };
 
+    // --- ROBUST CSV HELPER ---
+    const parseCSVLine = (line: string) => {
+        const result = [];
+        let current = '';
+        let inQuote = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+                inQuote = !inQuote;
+            } else if (char === ',' && !inQuote) {
+                result.push(current.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+        return result;
+    };
+
+    const cleanNumber = (str: string) => {
+        if (!str) return 0;
+        const clean = str.replace(/[^\d.-]/g, '');
+        const num = parseFloat(clean);
+        return isNaN(num) ? 0 : num;
+    };
+
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        
+        reader.onload = async (evt) => {
+            const text = evt.target?.result as string;
+            const lines = text.split('\n');
+            if (lines.length < 2) {
+                alert("CSV file is empty.");
+                setIsImporting(false);
+                return;
+            }
+
+            // Robust Header Mapping
+            const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+
+            // Helper to find column index with flexible matching and strict exclusions
+            const getColumnIndex = (candidates: string[], exclusions: string[] = []) => {
+                return headers.findIndex(h => {
+                    const matchesCandidate = candidates.some(c => h.includes(c));
+                    // Ensure it doesn't contain any excluded terms (e.g. 'cost' when searching for 'price')
+                    const matchesExclusion = exclusions.some(e => h.includes(e));
+                    return matchesCandidate && !matchesExclusion;
+                });
+            };
+
+            const products = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const values = parseCSVLine(lines[i]);
+                
+                const getRawValue = (candidates: string[], exclusions: string[] = []) => {
+                    const idx = getColumnIndex(candidates, exclusions);
+                    if (idx === -1) return '';
+                    let val = values[idx] || '';
+                    return val.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+                };
+
+                // Data Extraction using flexible headers
+                const sku = getRawValue(['sku', 'part no', 'code', 'part_number']);
+                
+                if (sku) {
+                    const name = getRawValue(['name', 'product', 'description', 'item', 'title']) || 'Imported Stock';
+                    const category = getRawValue(['category', 'group', 'cat']) || 'General';
+                    
+                    // Price Logic: Look for 'retail', 'selling', or 'price' but avoid 'cost'/'wholesale'
+                    const priceStr = getRawValue(['retail', 'selling', 'price', 'srp', 'amount'], ['cost', 'wholesale', 'trade', 'buying']);
+                    const price = cleanNumber(priceStr);
+
+                    // Cost Price
+                    const costStr = getRawValue(['cost', 'buying', 'purchase']);
+                    const costPrice = cleanNumber(costStr);
+
+                    // Wholesale Price
+                    const wholesaleStr = getRawValue(['wholesale', 'trade', 'dealer']);
+                    const wholesalePrice = cleanNumber(wholesaleStr);
+
+                    // Quantity
+                    const qtyStr = getRawValue(['qty', 'quantity', 'stock', 'count', 'inventory', 'on hand']);
+                    const quantity = parseInt(String(cleanNumber(qtyStr)));
+
+                    // OEM
+                    const oemNumbers = getRawValue(['oem', 'cross', 'ref', 'original']);
+
+                    products.push({
+                        sku,
+                        name,
+                        category,
+                        price,
+                        costPrice,
+                        wholesalePrice,
+                        quantity,
+                        oemNumbers
+                    });
+                }
+            }
+
+            try {
+                const targetBranchId = branches[0]?.id; 
+                if (!targetBranchId) throw new Error("No branch available");
+
+                if (products.length === 0) {
+                    throw new Error("No valid products found in CSV. Check headers (SKU is required).");
+                }
+
+                await apiClient.post('/products/bulk', {
+                    branchId: targetBranchId,
+                    products
+                });
+                alert(`Successfully processed ${products.length} items.`);
+                fetchData();
+            } catch (error: any) {
+                alert('Import failed: ' + (error.response?.data?.error || error.message));
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col relative">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
@@ -108,6 +245,14 @@ const InventoryManager: React.FC = () => {
                     Inventory Management
                 </h2>
                 <div className="flex gap-2">
+                    <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleImportFile} />
+                    <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isImporting}
+                        className="px-4 py-2 border border-gray-300 rounded font-bold uppercase text-xs hover:bg-gray-50 text-gray-600 flex items-center gap-2"
+                    >
+                        {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} Import CSV
+                    </button>
                     <button onClick={fetchData} className="p-2 bg-gray-100 rounded hover:bg-gray-200" title="Refresh">
                         <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                     </button>

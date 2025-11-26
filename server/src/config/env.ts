@@ -43,6 +43,7 @@ const envSchema = z.object({
   // External API Keys
   GEMINI_API_KEY: z.string().optional(),
   VIN_API_KEY: z.string().optional(),
+  EXCHANGE_RATE_API_KEY: z.string().optional(), // New: For reliable currency conversion
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

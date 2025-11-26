@@ -17,8 +17,10 @@ const createSaleSchema = z.object({
         price: z.number()
     })),
     totalAmount: z.number(),
-    paymentMethod: z.enum(['CASH', 'MPESA', 'CARD', 'CREDIT']),
+    // Updated to include CHEQUE and BANK_TRANSFER
+    paymentMethod: z.enum(['CASH', 'MPESA', 'CARD', 'CREDIT', 'CHEQUE', 'BANK_TRANSFER']),
     customerId: z.string().optional(),
+    // Allow any structure for payment details (e.g. { reference: 'QW...' })
     paymentDetails: z.any().optional()
 });
 

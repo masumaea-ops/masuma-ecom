@@ -3,31 +3,54 @@ import { AppDataSource } from '../config/database';
 import { Product } from '../entities/Product';
 import { Category } from '../entities/Category';
 import { OemNumber } from '../entities/OemNumber';
+import { ProductStock } from '../entities/ProductStock';
+import { Branch } from '../entities/Branch';
+import { Vehicle } from '../entities/Vehicle'; 
 import { CacheService } from '../lib/cache';
 
 export class ProductService {
   private static productRepo = AppDataSource.getRepository(Product);
   private static categoryRepo = AppDataSource.getRepository(Category);
+  private static stockRepo = AppDataSource.getRepository(ProductStock);
+  private static branchRepo = AppDataSource.getRepository(Branch);
+  private static vehicleRepo = AppDataSource.getRepository(Vehicle);
   
-  static async getAllProducts(query: string = '', categoryName: string = 'All') {
-    const cacheKey = `products:list:${query}:${categoryName}`;
+  private static async processVehicles(compatibility: string[]): Promise<Vehicle[]> {
+      const vehicles: Vehicle[] = [];
+      for (const item of compatibility) {
+          const cleanItem = item.trim();
+          if (!cleanItem) continue;
 
-    // Removed cache for this step to ensure instant updates on cost price during testing
-    // In production, re-enable CacheService.getOrSet(cacheKey, ...)
-    
+          const parts = cleanItem.split(' ');
+          const make = parts.length > 1 ? parts[0] : 'Generic';
+          const model = parts.length > 1 ? parts.slice(1).join(' ') : cleanItem;
+
+          let vehicle = await this.vehicleRepo.findOneBy({ make, model });
+          
+          if (!vehicle) {
+              vehicle = this.vehicleRepo.create({ make, model });
+              await this.vehicleRepo.save(vehicle);
+          }
+          vehicles.push(vehicle);
+      }
+      return vehicles;
+  }
+
+  static async getAllProducts(query: string = '', categoryName: string = 'All', page: number = 1, limit: number = 50) {
+      const skip = (page - 1) * limit;
+      
       const qb = this.productRepo.createQueryBuilder('product')
         .leftJoinAndSelect('product.category', 'category')
         .leftJoinAndSelect('product.oemNumbers', 'oem')
         .leftJoinAndSelect('product.vehicles', 'vehicle')
         .leftJoinAndSelect('product.stock', 'stock')
-        .take(50);
+        .take(limit)
+        .skip(skip);
 
-      // Category Filter
       if (categoryName && categoryName !== 'All') {
         qb.andWhere('category.name = :categoryName', { categoryName });
       }
 
-      // Advanced Search Logic
       if (query) {
         const searchTerm = `%${query}%`;
         qb.andWhere(
@@ -36,38 +59,34 @@ export class ProductService {
         );
       }
 
-      const products = await qb.getMany();
-      const total = await qb.getCount();
+      const [products, total] = await qb.getManyAndCount();
 
-      // Transform for frontend (DTO Pattern)
       const data = products.map(p => ({
         id: p.id,
         name: p.name,
         sku: p.sku,
         category: p.category?.name || 'Uncategorized',
         price: Number(p.price),
-        costPrice: Number(p.costPrice), // Exposed for Admin
+        costPrice: Number(p.costPrice),
         wholesalePrice: Number(p.wholesalePrice || 0),
         description: p.description,
         image: p.imageUrl || '',
         images: p.images || [],
         videoUrl: p.videoUrl || '',
+        quantity: p.stock?.reduce((sum, s) => sum + s.quantity, 0) || 0,
         stock: p.stock?.some(s => s.quantity > 0) || false, 
         oemNumbers: p.oemNumbers?.map(o => o.code) || [],
         compatibility: p.vehicles?.map(v => `${v.make} ${v.model}`) || []
       }));
 
-      return { data, meta: { total, page: 1, limit: 50 } };
+      return { data, meta: { total, page, limit, pages: Math.ceil(total / limit) } };
   }
 
   static async getProductById(id: string) {
-    const cacheKey = `product:detail:${id}`;
-    return CacheService.getOrSet(cacheKey, async () => {
-      return this.productRepo.findOne({
-        where: { id },
-        relations: ['category', 'oemNumbers', 'vehicles']
-      });
-    }, 3600);
+    return this.productRepo.findOne({
+      where: { id },
+      relations: ['category', 'oemNumbers', 'vehicles', 'stock']
+    });
   }
 
   static async createProduct(data: any) {
@@ -78,7 +97,7 @@ export class ProductService {
     product.name = data.name;
     product.sku = data.sku;
     product.price = data.price;
-    product.costPrice = data.costPrice || 0; // Handle Cost
+    product.costPrice = data.costPrice || 0;
     product.wholesalePrice = data.wholesalePrice;
     product.description = data.description;
     product.imageUrl = data.imageUrl;
@@ -86,7 +105,6 @@ export class ProductService {
     product.videoUrl = data.videoUrl;
     product.category = category;
 
-    // Handle OEM Numbers
     if (data.oemNumbers && Array.isArray(data.oemNumbers)) {
       product.oemNumbers = data.oemNumbers.map((code: string) => {
         const oem = new OemNumber();
@@ -95,15 +113,33 @@ export class ProductService {
       });
     }
 
+    if (data.compatibility && Array.isArray(data.compatibility)) {
+        product.vehicles = await this.processVehicles(data.compatibility);
+    }
+
     const saved = await this.productRepo.save(product);
-    await CacheService.invalidate('products:*'); // Clear cache
+
+    // Auto-create inventory record for the user's branch if provided
+    if (data.branchId) {
+        const branch = await this.branchRepo.findOneBy({ id: data.branchId });
+        if (branch) {
+            const stock = new ProductStock();
+            stock.product = saved;
+            stock.branch = branch;
+            stock.quantity = data.quantity || 0; 
+            stock.lowStockThreshold = 5;
+            await this.stockRepo.save(stock);
+        }
+    }
+
+    await CacheService.invalidate('products:*');
     return saved;
   }
 
   static async updateProduct(id: string, data: any) {
     const product = await this.productRepo.findOne({
       where: { id },
-      relations: ['oemNumbers']
+      relations: ['oemNumbers', 'vehicles']
     });
 
     if (!product) throw new Error('Product not found');
@@ -116,17 +152,15 @@ export class ProductService {
     product.name = data.name || product.name;
     product.sku = data.sku || product.sku;
     product.price = data.price || product.price;
-    product.costPrice = (data.costPrice !== undefined) ? data.costPrice : product.costPrice; // Update Cost
+    product.costPrice = (data.costPrice !== undefined) ? data.costPrice : product.costPrice;
     product.wholesalePrice = data.wholesalePrice || product.wholesalePrice;
     product.description = data.description || product.description;
     product.imageUrl = data.imageUrl || product.imageUrl;
     if (data.images) product.images = data.images;
     if (data.videoUrl !== undefined) product.videoUrl = data.videoUrl;
 
-    // Update OEMs if provided (Replaces all)
     if (data.oemNumbers && Array.isArray(data.oemNumbers)) {
         await AppDataSource.getRepository(OemNumber).delete({ product: { id: product.id } });
-        
         product.oemNumbers = data.oemNumbers.map((code: string) => {
           const oem = new OemNumber();
           oem.code = code;
@@ -134,7 +168,32 @@ export class ProductService {
         });
     }
 
+    if (data.compatibility && Array.isArray(data.compatibility)) {
+        product.vehicles = await this.processVehicles(data.compatibility);
+    }
+
     const saved = await this.productRepo.save(product);
+
+    // --- ACTIVE SYNC: Update Stock Quantity ---
+    if (data.quantity !== undefined && data.branchId) {
+        let stock = await this.stockRepo.findOne({
+            where: { product: { id: product.id }, branch: { id: data.branchId } }
+        });
+
+        if (!stock) {
+            // Create if missing
+            stock = new ProductStock();
+            stock.product = product;
+            stock.branch = { id: data.branchId } as Branch;
+            stock.quantity = data.quantity;
+            stock.lowStockThreshold = 5;
+        } else {
+            // Update existing
+            stock.quantity = data.quantity;
+        }
+        await this.stockRepo.save(stock);
+    }
+
     await CacheService.invalidate('products:*');
     await CacheService.invalidate(`product:detail:${id}`);
     return saved;

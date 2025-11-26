@@ -13,7 +13,7 @@ export default {
     extend: {
       colors: {
         masuma: {
-          orange: '#E0621B', // Restored original brand color
+          orange: '#E0621B',
           dark: '#1A1A1A',
         }
       },

@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { X, Printer, Mail, MapPin, Phone, User, CreditCard, Package } from 'lucide-react';
 import { Order } from '../../types';
@@ -17,8 +16,6 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, on
     if (!isOpen || !order) return null;
 
     const handlePrint = () => {
-        // In a real scenario, you might use a dedicated print window or library
-        // For this demo, we rely on CSS @media print hiding the modal UI
         window.print();
     };
 
@@ -35,8 +32,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, on
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            {/* Hidden Print Component */}
-            <div className="hidden print:block fixed inset-0 bg-white z-[1000]">
+            {/* Hidden Print Component - Uses print-force-container for clean printing */}
+            <div className="hidden print-force-container">
                 <InvoiceTemplate data={order} type="RECEIPT" ref={printRef} />
             </div>
 

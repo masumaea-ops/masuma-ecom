@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import express from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-// FIX: Use require for compression to bypass TS errors
+// FIX: Use require for compression to bypass TS errors in some environments
 declare const require: any;
 const compression = require('compression'); 
 import rateLimit from 'express-rate-limit';
@@ -11,6 +11,8 @@ import { redis } from './config/redis';
 import { AppDataSource } from './config/database';
 import { config } from './config/env'; 
 import { errorHandler } from './middleware/errorHandler'; 
+import { httpLogger } from './middleware/httpLogger'; 
+import { logger } from './utils/logger';
 import { ProductService } from './services/productService';
 
 // Routers
@@ -46,62 +48,78 @@ import { validate } from './middleware/validate';
 
 const app = express();
 
+// CRITICAL: Enable Trust Proxy for correct protocol detection in production (uploads)
+app.set('trust proxy', 1);
+
 // Initialize Database
 AppDataSource.initialize()
   .then(() => {
-    console.log(`✅ Database connected: ${config.DB_NAME} on ${config.DB_HOST}`);
+    logger.info(`✅ Database connected: ${config.DB_NAME} on ${config.DB_HOST}`);
   })
   .catch((err) => {
-    console.error('❌ Database connection failed:', err);
+    logger.error('❌ Database connection failed:', err);
     (process as any).exit(1);
   });
 
 // --- Security & Performance Middleware ---
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" } 
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: config.NODE_ENV === 'production' ? undefined : false 
 }) as any); 
-app.use(compression()); 
-app.use(cors({ origin: config.CORS_ORIGIN }) as any);
+app.use(compression() as any); 
+
+// FIX: CORS Configuration
+app.use(cors({ 
+  origin: true, 
+  credentials: true 
+}) as any);
+
 app.use(express.json() as any);
 
-// --- Static Files ---
-app.use('/uploads', express.static(path.join((process as any).cwd(), 'uploads')) as any);
+// --- Logging Middleware (Must be before routes) ---
+app.use(httpLogger as any);
 
-// RELAXED RATE LIMITER for Development
+// --- Static Files (MEDIA FOLDER) ---
+app.use('/media', express.static(path.join((process as any).cwd(), 'media')) as any);
+
+// --- Rate Limiting Strategy ---
+const isProduction = config.NODE_ENV === 'production';
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20000, // Significantly increased for dev to prevent 429 errors
+  windowMs: 15 * 60 * 1000, 
+  max: isProduction ? 100 : 20000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req: any) => req.path.startsWith('/api/exchange-rates') || req.path.startsWith('/api/health'),
+  message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api', limiter as any);
 
 // --- Mount Modular Routes ---
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes); 
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/admin/stats', statsRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/mpesa', mpesaRoutes);
-app.use('/api/blog', blogRoutes);
-app.use('/api/users', userRoutes); 
-app.use('/api/audit-logs', auditRoutes); 
-app.use('/api/settings', settingsRoutes); 
-app.use('/api/quotes', quoteRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/contact', contactRoutes); 
-app.use('/api/branches', branchRoutes); 
-app.use('/api/notifications', notificationRoutes); 
-app.use('/api/categories', categoryRoutes);
-app.use('/api/health', healthRoutes);
-app.use('/api/exchange-rates', exchangeRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/finance', financeRoutes);
+app.use('/api/auth', authRoutes as any);
+app.use('/api/products', productRoutes as any); 
+app.use('/api/inventory', inventoryRoutes as any);
+app.use('/api/sales', salesRoutes as any);
+app.use('/api/customers', customerRoutes as any);
+app.use('/api/admin/stats', statsRoutes as any);
+app.use('/api/orders', orderRoutes as any);
+app.use('/api/mpesa', mpesaRoutes as any);
+app.use('/api/blog', blogRoutes as any);
+app.use('/api/users', userRoutes as any); 
+app.use('/api/audit-logs', auditRoutes as any); 
+app.use('/api/settings', settingsRoutes as any); 
+app.use('/api/quotes', quoteRoutes as any);
+app.use('/api/reports', reportRoutes as any);
+app.use('/api/contact', contactRoutes as any); 
+app.use('/api/branches', branchRoutes as any); 
+app.use('/api/notifications', notificationRoutes as any); 
+app.use('/api/categories', categoryRoutes as any);
+app.use('/api/health', healthRoutes as any);
+app.use('/api/exchange-rates', exchangeRoutes as any);
+app.use('/api/vehicles', vehicleRoutes as any);
+app.use('/api/upload', uploadRoutes as any);
+app.use('/api/finance', financeRoutes as any);
 
-// Legacy M-Pesa Route (Preserved)
+// Legacy M-Pesa Route
 const mpesaOrderSchema = z.object({
   customerName: z.string().min(2),
   customerEmail: z.string().email(),
@@ -114,7 +132,7 @@ const mpesaOrderSchema = z.object({
   }))
 });
 
-app.post('/api/mpesa/pay', validate(mpesaOrderSchema), async (req: any, res: any) => {
+app.post('/api/mpesa/pay', validate(mpesaOrderSchema) as any, async (req: any, res: any) => {
   try {
     const { customerName, customerEmail, customerPhone, shippingAddress, items } = req.body;
     const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
@@ -140,15 +158,20 @@ app.post('/api/mpesa/pay', validate(mpesaOrderSchema), async (req: any, res: any
     
     try {
         await MpesaService.initiateStkPush(order.id, customerPhone, totalAmount);
+        // Success
         res.status(201).json({ message: 'STK Push initiated', orderId: order.id });
     } catch (mpesaError: any) {
-        console.error('STK Error:', mpesaError.message);
-        res.status(201).json({ message: 'Order created but Payment Initiation Failed (Check Settings)', orderId: order.id });
+        logger.error('STK Error:', mpesaError.message);
+        // CRITICAL FIX: Return 500 status code so frontend detects failure immediately
+        res.status(500).json({ 
+            error: mpesaError.message || 'Payment Initiation Failed', 
+            orderId: order.id 
+        });
     }
 
   } catch (error: any) {
-    console.error(error);
-    res.status(400).json({ error: error.message || 'Payment initiation failed' });
+    logger.error('Order Error', error);
+    res.status(400).json({ error: error.message || 'Order creation failed' });
   }
 });
 
@@ -191,29 +214,29 @@ app.get('/sitemap.xml', async (req: any, res: any) => {
   }
 });
 
-// 404
+// 404 Handler
 app.use((req: any, res: any) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-// Error Handler
+// Global Error Handler (Registers Logger)
 app.use(errorHandler as any);
 
 const PORT = config.PORT;
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  logger.info(`🚀 Server running on port ${PORT} in ${config.NODE_ENV} mode`);
 });
 
 server.on('error', (e: any) => {
   if (e.code === 'EADDRINUSE') {
-    console.error(`\n❌ ERROR: Port ${PORT} is already in use.`);
+    logger.error(`\n❌ ERROR: Port ${PORT} is already in use.`);
     (process as any).exit(1);
   }
 });
 
 // Graceful Shutdown
 const shutdown = async () => {
-    console.log('🛑 Shutting down...');
+    logger.info('🛑 Shutting down...');
     setTimeout(() => {
         console.error('⚠️ Force shutdown...');
         (process as any).exit(1);

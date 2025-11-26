@@ -1,16 +1,17 @@
+
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Ensure upload directory exists
-const uploadDir = path.join((process as any).cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure media directory exists
+const mediaDir = path.join((process as any).cwd(), 'media');
+if (!fs.existsSync(mediaDir)) {
+  fs.mkdirSync(mediaDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    cb(null, mediaDir);
   },
   filename: (req, file, cb) => {
     // Create unique filename: file-[timestamp].ext

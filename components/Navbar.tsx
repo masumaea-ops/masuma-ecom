@@ -55,7 +55,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
     <>
       {/* TOP UTILITY BAR */}
       <div className="bg-masuma-dark text-white text-[10px] md:text-xs font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors relative z-[102]">
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             {/* Left: Contact & Chat */}
             <div className="flex items-center space-x-6">
                <span className="flex items-center gap-2 opacity-80 hover:opacity-100 transition cursor-default">
@@ -118,7 +118,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
           ? 'bg-white shadow-lg border-b border-masuma-orange/20 py-2' 
           : 'bg-white border-b-4 border-masuma-orange py-4'
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
             {/* Logo Section */}

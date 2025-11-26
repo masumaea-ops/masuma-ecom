@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
 import { Branch } from './Branch';
 import { User } from './User';
@@ -20,6 +19,10 @@ export class Sale {
 
   @ManyToOne(() => Customer, { nullable: true })
   customer?: Customer;
+
+  // Snapshot of customer name for historical accuracy
+  @Column({ nullable: true })
+  customerName?: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   totalAmount!: number;

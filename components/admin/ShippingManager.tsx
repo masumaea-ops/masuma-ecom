@@ -1,7 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Truck, MapPin, CheckCircle, Printer, Search, Package, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
+import InvoiceTemplate from './InvoiceTemplate';
 
 interface Shipment {
     id: string;
@@ -17,11 +17,15 @@ const ShippingManager: React.FC = () => {
     const [shipments, setShipments] = useState<Shipment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('PENDING'); // PENDING, PAID, SHIPPED
+    
+    // Print State
+    const [printShipment, setPrintShipment] = useState<any | null>(null);
+    const printRef = useRef<HTMLDivElement>(null);
 
     const fetchShipments = async () => {
         setIsLoading(true);
         try {
-            // Fetch orders that are relevant to shipping (PAID, SHIPPED, or PENDING for review)
+            // Fetch orders relevant to shipping
             const res = await apiClient.get(`/orders?status=${activeTab}`);
             setShipments(res.data);
         } catch (error) {
@@ -38,10 +42,17 @@ const ShippingManager: React.FC = () => {
     const handleDispatch = async (id: string) => {
         try {
             await apiClient.patch(`/orders/${id}/status`, { status: 'SHIPPED' });
-            fetchShipments(); // Refresh list
+            fetchShipments(); 
         } catch (error) {
             alert('Failed to update status');
         }
+    };
+
+    const handlePrintWaybill = (shipment: any) => {
+        setPrintShipment(shipment);
+        setTimeout(() => {
+            window.print();
+        }, 300);
     };
 
     const getStatusBadge = (status: string) => {
@@ -56,7 +67,14 @@ const ShippingManager: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col">
-             <div className="flex justify-between items-center mb-6">
+             {/* Hidden Print Template - Uses print-force-container */}
+             {printShipment && (
+                <div className="hidden print-force-container">
+                    <InvoiceTemplate data={printShipment} type="WAYBILL" ref={printRef} />
+                </div>
+             )}
+
+             <div className="flex justify-between items-center mb-6 print:hidden">
                 <div>
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Logistics & Dispatch</h2>
                     <p className="text-sm text-gray-500">Manage delivery queues, assign drivers, and print waybills.</p>
@@ -67,7 +85,7 @@ const ShippingManager: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4 mb-6 print:hidden">
                 {['PENDING', 'PAID', 'SHIPPED'].map(status => (
                     <button 
                         key={status}
@@ -83,7 +101,7 @@ const ShippingManager: React.FC = () => {
                 ))}
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden print:hidden">
                 <div className="flex-1 overflow-auto">
                     {isLoading ? (
                          <div className="flex justify-center items-center h-64">
@@ -118,7 +136,13 @@ const ShippingManager: React.FC = () => {
                                         <td className="px-6 py-4">{getStatusBadge(ship.status)}</td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
-                                                <button className="p-1 text-gray-400 hover:text-masuma-dark" title="Print Waybill"><Printer size={16} /></button>
+                                                <button 
+                                                    onClick={() => handlePrintWaybill(ship)}
+                                                    className="p-1 text-gray-400 hover:text-masuma-dark" 
+                                                    title="Print Waybill"
+                                                >
+                                                    <Printer size={16} />
+                                                </button>
                                                 {ship.status === 'PAID' && (
                                                     <button 
                                                         onClick={() => handleDispatch(ship.id)}

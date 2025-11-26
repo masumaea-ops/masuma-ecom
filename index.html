@@ -4,72 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Masuma Autoparts East Africa Limited</title>
+    <meta name="description" content="Official distributor of Masuma automotive parts in Kenya. High-quality Japanese engineered parts for Toyota, Nissan, Subaru, and more." />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              masuma: {
-                orange: '#E0621B',
-                dark: '#1A1A1A',
-              }
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              display: ['Oswald', 'sans-serif'],
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
-              'slide-up': 'slideUp 0.4s ease-out',
-              'slide-right': 'slideRight 0.6s ease-out',
-              'scale-up': 'scaleUp 0.3s ease-out',
-              'pulse-once': 'pulseOnce 0.5s ease-in-out',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              slideUp: {
-                '0%': { transform: 'translateY(20px)', opacity: '0' },
-                '100%': { transform: 'translateY(0)', opacity: '1' },
-              },
-              slideRight: {
-                '0%': { transform: 'translateX(-20px)', opacity: '0' },
-                '100%': { transform: 'translateX(0)', opacity: '1' },
-              },
-              scaleUp: {
-                '0%': { transform: 'scale(0.95)', opacity: '0' },
-                '100%': { transform: 'scale(1)', opacity: '1' },
-              },
-              pulseOnce: {
-                '0%, 100%': { transform: 'scale(1)' },
-                '50%': { transform: 'scale(1.2)' },
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style type="text/tailwindcss">
-      @layer utilities {
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-      }
-    </style>
   <script type="importmap">
 {
   "imports": {
@@ -77,26 +17,26 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "ioredis": "https://aistudiocdn.com/ioredis@^5.8.2",
-    "bullmq": "https://aistudiocdn.com/bullmq@^5.64.1",
+    "bullmq": "https://aistudiocdn.com/bullmq@^5.65.0",
     "reflect-metadata": "https://aistudiocdn.com/reflect-metadata@^0.2.2",
     "express": "https://aistudiocdn.com/express@^5.1.0",
     "cors": "https://aistudiocdn.com/cors@^2.8.5",
     "helmet": "https://aistudiocdn.com/helmet@^8.1.0",
     "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.2.1",
     "path": "https://aistudiocdn.com/path@^0.12.7",
-    "zod": "https://aistudiocdn.com/zod@^4.1.12",
+    "zod": "https://aistudiocdn.com/zod@^4.1.13",
     "axios": "https://aistudiocdn.com/axios@^1.13.2",
     "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
     "typeorm": "https://aistudiocdn.com/typeorm@^0.3.27",
     "dotenv": "https://aistudiocdn.com/dotenv@^17.2.3",
-    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
     "bcryptjs": "https://aistudiocdn.com/bcryptjs@^3.0.3",
     "jsonwebtoken": "https://aistudiocdn.com/jsonwebtoken@^9.0.2",
     "multer": "https://aistudiocdn.com/multer@^2.0.2",
     "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
-    "nodemailer": "https://aistudiocdn.com/nodemailer@^7.0.10",
+    "nodemailer": "https://aistudiocdn.com/nodemailer@^7.0.11",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }

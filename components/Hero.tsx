@@ -102,7 +102,8 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
             {announcement}
         </div>
     )}
-    <div className="relative bg-masuma-dark overflow-hidden h-[600px] md:h-[700px] group">
+    {/* Updated Height for Large Screens */}
+    <div className="relative bg-masuma-dark overflow-hidden h-[600px] md:h-[700px] 2xl:h-[850px] group">
       
       {/* Slides */}
       {slides.map((slide, index) => (
@@ -145,7 +146,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
 
              {/* Content */}
              <div className="absolute inset-0 flex items-center">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                     <div className={`lg:w-2/3 transform transition-all duration-1000 delay-300 ${index === currentSlide ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                         
                         <div className="inline-flex items-center gap-2 bg-masuma-orange/20 border border-masuma-orange text-white text-[10px] font-bold px-3 py-1 mb-6 uppercase tracking-[0.2em] backdrop-blur-sm">
@@ -153,27 +154,28 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                             Official Distributor for East Africa
                         </div>
                         
+                        {/* Increased font size for 2XL screens */}
                         <h1 
-                            className="text-5xl md:text-7xl font-bold text-white leading-[0.9] mb-8 font-display whitespace-pre-line drop-shadow-lg"
+                            className="text-5xl md:text-7xl 2xl:text-8xl font-bold text-white leading-[0.9] mb-8 font-display whitespace-pre-line drop-shadow-lg"
                             dangerouslySetInnerHTML={{ 
                                 __html: slide.title.replace(/\\n/g, '\n').replace(/KENYAN GRIT\./, '<span class="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-400">KENYAN GRIT.</span>') 
                             }}
                         />
                         
-                        <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl font-light leading-relaxed drop-shadow-md">
+                        <p className="text-lg md:text-xl 2xl:text-2xl text-gray-300 mb-10 max-w-xl 2xl:max-w-3xl font-light leading-relaxed drop-shadow-md">
                             {slide.subtitle}
                         </p>
                         
                         <div className="flex flex-col sm:flex-row gap-5">
                             <button 
                                 onClick={() => setView(slide.ctaLink as any || 'CATALOG')}
-                                className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold py-4 px-10 rounded-none flex items-center justify-center transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 uppercase tracking-wider text-sm"
+                                className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold py-4 px-10 2xl:px-12 2xl:py-5 rounded-none flex items-center justify-center transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 uppercase tracking-wider text-sm 2xl:text-base"
                             >
                                 {slide.ctaText || 'Learn More'} <ArrowRight className="ml-3" size={18} />
                             </button>
                             <button 
                                 onClick={() => setView('CONTACT')}
-                                className="bg-transparent border-2 border-white/30 text-white hover:bg-white hover:text-masuma-dark hover:border-white font-bold py-4 px-10 rounded-none flex items-center justify-center transition duration-300 uppercase tracking-wider text-sm backdrop-blur-sm"
+                                className="bg-transparent border-2 border-white/30 text-white hover:bg-white hover:text-masuma-dark hover:border-white font-bold py-4 px-10 2xl:px-12 2xl:py-5 rounded-none flex items-center justify-center transition duration-300 uppercase tracking-wider text-sm 2xl:text-base backdrop-blur-sm"
                             >
                                 Become a Dealer
                             </button>
@@ -215,7 +217,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
 
       {/* Floating Features Banner */}
       <div className="absolute bottom-0 left-0 right-0 z-20 hidden md:block">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-white shadow-2xl grid grid-cols-3 divide-x divide-gray-100 border-b-4 border-masuma-orange">
                 {[
                     { icon: ShieldCheck, title: "12 Month Warranty", desc: "On all suspension parts" },

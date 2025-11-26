@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Category, Product } from '../types';
-import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane, Loader2, Database, WifiOff } from 'lucide-react';
+import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane, Loader2, Database, WifiOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
@@ -24,7 +24,13 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   
   const [isSourcingOpen, setIsSourcingOpen] = useState(false);
 
-  // Fetch Products with Server-Side Search
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const ITEMS_PER_PAGE = 12;
+
+  // Fetch Products with Server-Side Search and Pagination
   useEffect(() => {
     const fetchProducts = async () => {
         setIsLoading(true);
@@ -32,6 +38,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         try {
             // Construct query params
             const params = new URLSearchParams();
+            params.append('page', currentPage.toString());
+            params.append('limit', ITEMS_PER_PAGE.toString());
             if (searchQuery) params.append('q', searchQuery);
             if (selectedCategory !== Category.ALL) params.append('category', selectedCategory);
             
@@ -40,11 +48,20 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             // Check for Mock Header to verify DB connection
             setIsOffline(response.headers['x-datasource'] === 'mock');
 
-            // FIX: Handle both paginated { data: [...] } and flat [...] responses
-            const productsData = response.data.data || response.data;
-
-            if (Array.isArray(productsData)) {
-                setProducts(productsData);
+            // Handle paginated response structure { data: [...], meta: { ... } }
+            const responseData = response.data;
+            
+            if (responseData.data && Array.isArray(responseData.data)) {
+                setProducts(responseData.data);
+                if (responseData.meta) {
+                    setTotalPages(responseData.meta.pages || 1);
+                    setTotalProducts(responseData.meta.total || 0);
+                }
+            } else if (Array.isArray(responseData)) {
+                // Fallback for flat array responses (mostly mock mode)
+                setProducts(responseData);
+                setTotalPages(1);
+                setTotalProducts(responseData.length);
             } else {
                 console.warn("Unexpected API response format", response.data);
                 setProducts([]);
@@ -63,9 +80,15 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCategory]); 
+  }, [searchQuery, selectedCategory, currentPage]); 
+
+  // Reset page when filters change
+  useEffect(() => {
+      setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
 
   // Client-side VIN Filtering (on top of server results for now)
+  // Note: For large datasets, VIN filtering should ideally move to the backend too.
   const displayProducts = useMemo(() => {
     let filtered = products;
 
@@ -77,6 +100,17 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
 
     return filtered;
   }, [vinFilter, products]);
+
+  const handlePageChange = (newPage: number) => {
+      if (newPage >= 1 && newPage <= totalPages) {
+          setCurrentPage(newPage);
+          // Scroll to top of product list
+          const listElement = document.getElementById('product-list-top');
+          if (listElement) {
+              listElement.scrollIntoView({ behavior: 'smooth' });
+          }
+      }
+  };
 
   const ProductSkeleton = () => (
     <div className="bg-white border border-gray-200 h-full flex flex-col animate-pulse">
@@ -91,12 +125,13 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div id="product-list-top" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <QuickView 
         product={selectedProduct} 
         isOpen={!!selectedProduct} 
         onClose={() => setSelectedProduct(null)} 
         addToCart={addToCart}
+        onSwitchProduct={setSelectedProduct}
       />
       <SourcingModal isOpen={isSourcingOpen} onClose={() => setIsSourcingOpen(false)} />
 
@@ -172,8 +207,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
 
       {/* Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-           {[1,2,3,4,5,6,7,8].map(i => <ProductSkeleton key={i} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+           {[1,2,3,4,5,6,7,8,9,10].map(i => <ProductSkeleton key={i} />)}
         </div>
       ) : !error && displayProducts.length === 0 ? (
         <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center">
@@ -203,87 +238,138 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
           </div>
         </div>
       ) : !error && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {displayProducts.map((product) => (
-            <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
-              
-              {/* Image Area */}
-              <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
-                <img 
-                  src={(product as any).images?.[0] || product.image} 
-                  alt={product.name} 
-                  className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-700 ease-out"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Masuma+Part';
-                  }}
-                />
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+            {displayProducts.map((product) => (
+                <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
                 
-                {/* Floating Badges */}
-                <div className="absolute top-0 left-0 p-3 w-full flex justify-between items-start">
-                    <span className="bg-white/90 backdrop-blur text-masuma-dark text-[10px] font-bold px-2 py-1 uppercase tracking-wider border border-gray-200 shadow-sm">
-                        {product.category}
-                    </span>
-                    {!product.stock && (
-                        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider shadow-sm">
-                            Sold Out
+                {/* Image Area */}
+                <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                    <img 
+                    src={(product as any).images?.[0] || product.image} 
+                    alt={product.name} 
+                    className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-700 ease-out"
+                    onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Masuma+Part';
+                    }}
+                    />
+                    
+                    {/* Floating Badges */}
+                    <div className="absolute top-0 left-0 p-3 w-full flex justify-between items-start">
+                        <span className="bg-white/90 backdrop-blur text-masuma-dark text-[10px] font-bold px-2 py-1 uppercase tracking-wider border border-gray-200 shadow-sm">
+                            {product.category}
                         </span>
-                    )}
-                </div>
-
-                {/* Quick Actions Overlay */}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
-                    <button 
-                        onClick={() => setSelectedProduct(product)}
-                        className="bg-white text-masuma-dark hover:text-masuma-orange px-6 py-3 font-bold uppercase text-xs tracking-widest flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition duration-300 shadow-lg"
-                    >
-                        <Eye size={16} /> Quick View
-                    </button>
-                </div>
-              </div>
-
-              {/* Details Area */}
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="mb-4">
-                  <div className="flex justify-between items-start mb-1">
-                      <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-12">
-                        {product.name}
-                      </h3>
-                  </div>
-                  <p className="text-xs text-gray-400 font-mono">SKU: {product.sku}</p>
-                </div>
-
-                <div className="mt-auto space-y-4">
-                    <div className="p-3 bg-gray-50 rounded-sm border border-gray-100 h-14">
-                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Fits:</p>
-                        <p className="text-xs text-gray-700 line-clamp-1" title={product.compatibility.join(', ')}>
-                            {product.compatibility.join(', ')}
-                        </p>
+                        {!product.stock && (
+                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider shadow-sm">
+                                Sold Out
+                            </span>
+                        )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-2">
-                        <div>
-                            <span className="text-lg font-bold text-masuma-dark">
-                                <Price amount={product.price} />
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => addToCart(product)}
-                            disabled={!product.stock}
-                            className={`p-3 rounded-full transition-all duration-300 ${
-                                product.stock 
-                                ? 'bg-masuma-dark text-white group-hover:bg-masuma-orange group-hover:scale-110 shadow-md hover:shadow-lg' 
-                                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                            }`}
-                            title="Add to Cart"
+                    {/* Quick Actions Overlay */}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
+                        <button 
+                            onClick={() => setSelectedProduct(product)}
+                            className="bg-white text-masuma-dark hover:text-masuma-orange px-6 py-3 font-bold uppercase text-xs tracking-widest flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition duration-300 shadow-lg"
                         >
-                            <ShoppingBag size={18} />
+                            <Eye size={16} /> Quick View
                         </button>
                     </div>
                 </div>
-              </div>
+
+                {/* Details Area */}
+                <div className="p-6 flex-1 flex flex-col">
+                    <div className="mb-4">
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-12">
+                            {product.name}
+                        </h3>
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono">SKU: {product.sku}</p>
+                    </div>
+
+                    <div className="mt-auto space-y-4">
+                        <div className="p-3 bg-gray-50 rounded-sm border border-gray-100 h-14">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Fits:</p>
+                            <p className="text-xs text-gray-700 line-clamp-1" title={product.compatibility.join(', ')}>
+                                {product.compatibility.join(', ')}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                            <div>
+                                <span className="text-lg font-bold text-masuma-dark">
+                                    <Price amount={product.price} />
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => addToCart(product)}
+                                disabled={!product.stock}
+                                className={`p-3 rounded-full transition-all duration-300 ${
+                                    product.stock 
+                                    ? 'bg-masuma-dark text-white group-hover:bg-masuma-orange group-hover:scale-110 shadow-md hover:shadow-lg' 
+                                    : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                                }`}
+                                title="Add to Cart"
+                            >
+                                <ShoppingBag size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            ))}
             </div>
-          ))}
-        </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="mt-12 flex justify-center items-center gap-2">
+                    <button 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    
+                    {/* Simple Page Numbers Logic */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        // Logic to show windows around current page can be complex, simple approach:
+                        // Show first few pages or a sliding window
+                        let pNum = i + 1;
+                        if (totalPages > 5) {
+                            if (currentPage > 3) pNum = currentPage - 2 + i;
+                            if (pNum > totalPages) pNum = totalPages - (4 - i);
+                        }
+                        
+                        return (
+                            <button
+                                key={pNum}
+                                onClick={() => handlePageChange(pNum)}
+                                className={`w-10 h-10 text-sm font-bold rounded transition ${
+                                    currentPage === pNum 
+                                    ? 'bg-masuma-dark text-white' 
+                                    : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                }`}
+                            >
+                                {pNum}
+                            </button>
+                        );
+                    })}
+
+                    <button 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+            )}
+            <div className="text-center mt-4 text-xs text-gray-500">
+                Showing page {currentPage} of {totalPages} ({totalProducts} items)
+            </div>
+        </>
       )}
     </div>
   );

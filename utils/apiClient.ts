@@ -1,12 +1,13 @@
+
 import axios, { InternalAxiosRequestConfig } from 'axios';
 import { Product, Category } from '../types';
 
 // In production, this would be your deployed backend URL
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = process.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000, // Lower timeout to switch to mocks faster
+  timeout: 10000, // Increased timeout for slower production networks
   headers: {
     'Content-Type': 'application/json',
   },
@@ -92,7 +93,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Handle Network Error / Offline Mode
+    // Fallback to mock data on ANY network error to ensure UI stability
     if (error.code === 'ERR_NETWORK' || error.message === 'Network Error' || !error.response) {
         console.warn('Backend unreachable. Serving Mock Data.');
         return serveMockData(error.config);
@@ -156,7 +157,6 @@ const serveMockData = (config: InternalAxiosRequestConfig) => {
                 let email = 'admin@masuma.africa';
                 let name = 'Admin User';
                 
-                // Try to simulate the requested user
                 try {
                     if (config.data) {
                         const body = JSON.parse(config.data);

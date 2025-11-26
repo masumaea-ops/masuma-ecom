@@ -62,9 +62,8 @@ const BlogManager: React.FC = () => {
         uploadData.append('image', file);
 
         try {
-            const res = await apiClient.post('/upload', uploadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // Fix: Removed manual Content-Type header
+            const res = await apiClient.post('/upload', uploadData);
             setFormData(prev => ({ ...prev, image: res.data.url }));
         } catch (error) {
             alert('Upload failed');

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Eye, Printer, FileText, Filter, Download, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Sale } from '../../types';
@@ -61,10 +60,12 @@ const SalesHistory: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col">
-            {/* Hidden Print Template */}
-            <div className="hidden print:block absolute top-0 left-0 w-full bg-white z-[9999]">
-                {printSale && <InvoiceTemplate data={printSale} type="TAX_INVOICE" ref={printRef} />}
-            </div>
+            {/* Hidden Print Template - Uses print-force-container for absolute print visibility */}
+            {printSale && (
+                <div className="hidden print-force-container">
+                    <InvoiceTemplate data={printSale} type="TAX_INVOICE" ref={printRef} />
+                </div>
+            )}
 
             <div className="flex justify-between items-center mb-6 print:hidden">
                 <div>

@@ -1,23 +1,48 @@
-
 import { Router } from 'express';
 import { InventoryService } from '../services/inventoryService';
 import { validate } from '../middleware/validate';
 import { authenticate, authorize } from '../middleware/auth';
 import { z } from 'zod';
+import { AppDataSource } from '../config/database';
+import { ProductStock } from '../entities/ProductStock';
 
 const router = Router();
 
 // GET /api/inventory
-// Returns stock for a specific branch
+// Returns stock for a specific branch with Pagination
 router.get('/', authenticate, async (req, res) => {
     try {
         const branchId = req.query.branchId as string || req.user?.branch?.id;
+        const lowStock = req.query.lowStock === 'true';
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 100;
+        const skip = (page - 1) * limit;
+
         if (!branchId) return res.status(400).json({ error: 'Branch ID required' });
 
-        const lowStock = req.query.lowStock === 'true';
-        const stock = await InventoryService.getStockForBranch(branchId, lowStock);
-        res.json(stock);
+        // Direct query with pagination
+        const query = AppDataSource.getRepository(ProductStock)
+            .createQueryBuilder('stock')
+            .leftJoinAndSelect('stock.product', 'product')
+            .leftJoinAndSelect('stock.branch', 'branch')
+            .where('stock.branchId = :branchId', { branchId })
+            .take(limit)
+            .skip(skip);
+
+        if (lowStock) {
+            query.andWhere('stock.quantity <= stock.lowStockThreshold');
+        }
+
+        const [items, total] = await query.getManyAndCount();
+
+        // Preserve existing format for frontend compatibility but add meta
+        // Frontend currently expects an array, so we return array but include headers if needed
+        // Or we stick to array if the frontend component doesn't handle {data, meta} yet.
+        // For now, returning the array to prevent "Outlook" breakage, but backend is protected via 'take'.
+        
+        res.json(items);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch inventory' });
     }
 });

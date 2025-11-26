@@ -1,11 +1,10 @@
-
 import React, { forwardRef } from 'react';
 import { Sale, Order } from '../../types';
 import { QrCode } from 'lucide-react';
 
 interface InvoiceTemplateProps {
   data: Sale | Order;
-  type: 'TAX_INVOICE' | 'RECEIPT';
+  type: 'TAX_INVOICE' | 'RECEIPT' | 'WAYBILL';
 }
 
 const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data, type }, ref) => {
@@ -15,10 +14,12 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
   const docNumber = isSale(data) ? data.receiptNumber : data.orderNumber;
   const date = isSale(data) ? data.date : data.date;
   const customer = isSale(data) ? (data.customerName || 'Walk-in Customer') : data.customerName;
+  const address = !isSale(data) ? (data.shippingAddress || 'N/A') : 'N/A';
+  const phone = !isSale(data) ? (data.customerPhone || 'N/A') : 'N/A';
   
   // normalize items
   const items = isSale(data) 
-    ? (data as any).itemsSnapshot || [] // Assuming sales have snapshot
+    ? (data as any).itemsSnapshot || [] 
     : data.items;
 
   const total = isSale(data) ? data.totalAmount : data.total;
@@ -26,7 +27,7 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
   const net = total - tax;
 
   return (
-    <div ref={ref} className="bg-white p-8 max-w-3xl mx-auto text-sm text-gray-900 font-mono leading-relaxed hidden print:block">
+    <div ref={ref} className="bg-white p-8 max-w-3xl mx-auto text-sm text-gray-900 font-mono leading-relaxed">
       {/* Header */}
       <div className="text-center mb-6 border-b-2 border-black pb-4">
         <h1 className="text-2xl font-bold uppercase tracking-widest mb-2">MASUMA AUTOPARTS E.A. LTD</h1>
@@ -39,14 +40,22 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
       {/* Title */}
       <div className="flex justify-between items-end mb-6">
         <div>
-          <h2 className="text-xl font-bold uppercase underline">{type === 'TAX_INVOICE' ? 'TAX INVOICE' : 'CASH RECEIPT'}</h2>
-          <p className="mt-2">To: <span className="font-bold">{customer}</span></p>
-          <p>PIN: _________________</p>
+          <h2 className="text-xl font-bold uppercase underline mb-2">
+            {type === 'TAX_INVOICE' ? 'TAX INVOICE' : type === 'WAYBILL' ? 'DELIVERY NOTE / WAYBILL' : 'CASH RECEIPT'}
+          </h2>
+          <p>To: <span className="font-bold">{customer}</span></p>
+          {!isSale(data) && (
+              <>
+                <p>Phone: {phone}</p>
+                <p>Dest: {address}</p>
+              </>
+          )}
+          {type !== 'WAYBILL' && <p>PIN: _________________</p>}
         </div>
         <div className="text-right">
-          <p>Invoice #: <span className="font-bold">{docNumber}</span></p>
+          <p>Doc #: <span className="font-bold">{docNumber}</span></p>
           <p>Date: <span>{new Date(date).toLocaleString()}</span></p>
-          <p>Currency: <span>KES</span></p>
+          {type !== 'WAYBILL' && <p>Currency: <span>KES</span></p>}
         </div>
       </div>
 
@@ -57,59 +66,92 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
             <th className="py-2 text-left w-12">#</th>
             <th className="py-2 text-left">Description</th>
             <th className="py-2 text-center w-20">Qty</th>
-            <th className="py-2 text-right w-32">Unit Price</th>
-            <th className="py-2 text-right w-32">Total</th>
+            {type !== 'WAYBILL' && (
+                <>
+                    <th className="py-2 text-right w-32">Unit Price</th>
+                    <th className="py-2 text-right w-32">Total</th>
+                </>
+            )}
           </tr>
         </thead>
         <tbody>
           {items.map((item: any, idx: number) => (
             <tr key={idx} className="border-b border-gray-300 border-dashed">
               <td className="py-2">{idx + 1}</td>
-              <td className="py-2">{item.name}</td>
+              <td className="py-2">
+                  {item.name}
+                  {item.sku && <span className="block text-[10px] text-gray-500">SKU: {item.sku}</span>}
+              </td>
               <td className="py-2 text-center">{item.qty || item.quantity}</td>
-              <td className="py-2 text-right">{(item.price || item.unitPrice || 0).toLocaleString()}</td>
-              <td className="py-2 text-right">{((item.price || item.unitPrice || 0) * (item.qty || item.quantity)).toLocaleString()}</td>
+              {type !== 'WAYBILL' && (
+                  <>
+                    <td className="py-2 text-right">{(item.price || item.unitPrice || 0).toLocaleString()}</td>
+                    <td className="py-2 text-right">{((item.price || item.unitPrice || 0) * (item.qty || item.quantity)).toLocaleString()}</td>
+                  </>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
 
       {/* Totals */}
-      <div className="flex justify-end mb-8">
-        <div className="w-64 space-y-2">
-          <div className="flex justify-between">
-            <span>Net Amount:</span>
-            <span>{net.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+      {type !== 'WAYBILL' && (
+          <div className="flex justify-end mb-8">
+            <div className="w-64 space-y-2">
+              <div className="flex justify-between">
+                <span>Net Amount:</span>
+                <span>{net.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>VAT (16%):</span>
+                <span>{tax.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg border-t-2 border-black pt-2">
+                <span>TOTAL:</span>
+                <span>{total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span>VAT (16%):</span>
-            <span>{tax.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-          </div>
-          <div className="flex justify-between font-bold text-lg border-t-2 border-black pt-2">
-            <span>TOTAL:</span>
-            <span>{total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-          </div>
-        </div>
-      </div>
+      )}
 
-      {/* KRA / Footer */}
+      {/* Footer */}
       <div className="border-t-2 border-black pt-4">
-        <div className="flex justify-between items-center">
-           <div>
-              <p className="font-bold uppercase mb-1">Fiscal Information:</p>
-              <p>CU Serial: KRA-VSCU-001-992</p>
-              <p>Control Code: {isSale(data) ? data.kraControlCode : 'PENDING'}</p>
-              <p>Date: {new Date().toLocaleString()}</p>
-           </div>
-           <div className="flex flex-col items-center">
-              <QrCode size={80} className="mb-1" />
-              <span className="text-[10px] uppercase">Scan to Verify</span>
-           </div>
-        </div>
+        {type === 'WAYBILL' ? (
+            <div className="grid grid-cols-2 gap-8 mt-8">
+                <div>
+                    <p className="font-bold border-b border-black mb-8">Dispatched By:</p>
+                    <p>Name: ___________________</p>
+                    <p>Sign: ___________________</p>
+                </div>
+                <div>
+                    <p className="font-bold border-b border-black mb-8">Received By:</p>
+                    <p>Name: ___________________</p>
+                    <p>ID No: ___________________</p>
+                    <p>Sign: ___________________</p>
+                </div>
+            </div>
+        ) : (
+            <div className="flex justify-between items-center">
+            <div>
+                <p className="font-bold uppercase mb-1">Fiscal Information:</p>
+                <p>CU Serial: KRA-VSCU-001-992</p>
+                <p>Control Code: {isSale(data) ? data.kraControlCode : 'PENDING'}</p>
+                <p>Date: {new Date().toLocaleString()}</p>
+            </div>
+            <div className="flex flex-col items-center">
+                <QrCode size={80} className="mb-1" />
+                <span className="text-[10px] uppercase">Scan to Verify</span>
+            </div>
+            </div>
+        )}
+        
         <p className="text-center mt-8 italic text-xs">
-          Goods once sold are not returnable. Warranty valid for 12 months on manufacturer defects only.
+          {type === 'WAYBILL' 
+            ? 'Please verify goods upon delivery. Claims for damaged goods must be made immediately.' 
+            : 'Goods once sold are not returnable. Warranty valid for 12 months on manufacturer defects only.'
+          }
         </p>
-        <p className="text-center font-bold mt-2">*** END OF RECEIPT ***</p>
+        <p className="text-center font-bold mt-2">*** END OF DOCUMENT ***</p>
       </div>
     </div>
   );

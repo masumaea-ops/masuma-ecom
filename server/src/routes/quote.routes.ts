@@ -1,7 +1,7 @@
-
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { Quote, QuoteStatus, QuoteType } from '../entities/Quote';
+import { Customer } from '../entities/Customer';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import { EmailService } from '../services/emailService';
 
 const router = Router();
 const quoteRepo = AppDataSource.getRepository(Quote);
+const customerRepo = AppDataSource.getRepository(Customer);
 
 // Schema
 const createQuoteSchema = z.object({
@@ -68,10 +69,30 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
     try {
         const { name, email, phone, message, productId, productName, items, vin, partNumber, description, requestType } = req.body;
 
+        // 1. Find or Create Customer
+        // This fixes the "Failed to send request" error by satisfying the foreign key constraint
+        let customer = await customerRepo.findOne({
+            where: [
+                { email: email },
+                { phone: phone }
+            ]
+        });
+
+        if (!customer) {
+            customer = new Customer();
+            customer.name = name;
+            customer.email = email;
+            customer.phone = phone;
+            customer.isWholesale = false;
+            await customerRepo.save(customer);
+        }
+
+        // 2. Create Quote
         const quote = new Quote();
         quote.quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
         quote.requestType = requestType as QuoteType;
         quote.vin = vin;
+        quote.customer = customer; // Link is now guaranteed
 
         let quoteItems = items || [];
 
@@ -104,19 +125,20 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         
         await quoteRepo.save(quote);
 
+        // 3. Send Notifications (Non-blocking)
         const emailBody = requestType === 'SOURCING'
             ? `Customer: ${name}\nVIN: ${vin}\nPart: ${partNumber || 'N/A'}\nDesc: ${description}`
             : `Customer: ${name}\nProduct: ${productName}\nMessage: ${message}`;
 
-        await EmailService.sendEmail('QUOTE_REQUEST', {
+        EmailService.sendEmail('QUOTE_REQUEST', {
             name, email, phone,
             message: emailBody,
             productName: requestType === 'SOURCING' ? 'Special Sourcing' : quoteItems[0]?.name 
-        });
+        }).catch(err => console.error("Email dispatch error:", err));
 
         res.status(201).json({ message: 'Request received', quoteId: quote.id });
     } catch (error) {
-        console.error(error);
+        console.error("Quote Error:", error);
         res.status(500).json({ error: 'Failed to submit quote' });
     }
 });

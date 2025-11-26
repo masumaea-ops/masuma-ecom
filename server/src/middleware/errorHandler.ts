@@ -1,4 +1,6 @@
+
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
+import { logger } from '../utils/logger';
 
 export class AppError extends Error {
   statusCode: number;
@@ -14,16 +16,18 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = (err: any, req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+export const errorHandler = (err: any, req: any, res: any, next: NextFunction) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
-  // Log error (use a logger like Winston in production)
-  if (statusCode === 500) {
-      console.error('🔥 UNHANDLED ERROR:', err);
-  }
+  // Log the error details
+  logger.error(`Request Failed: ${req.method} ${req.originalUrl}`, {
+    error: message,
+    stack: err.stack,
+    body: req.body // Log body to help debug (ensure passwords are sanitized in production logger)
+  });
 
-  (res as any).status(statusCode).json({
+  res.status(statusCode).json({
     status: 'error',
     message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })

@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2 } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote } from 'lucide-react';
 import { Product, Customer } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -7,6 +8,8 @@ interface PosItem extends Product {
     qty: number;
     appliedPrice: number;
 }
+
+type PaymentMethod = 'CASH' | 'MPESA' | 'CHEQUE' | 'CARD';
 
 const PosTerminal: React.FC = () => {
     const [cart, setCart] = useState<PosItem[]>([]);
@@ -16,6 +19,10 @@ const PosTerminal: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     
+    // Payment State
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
+    const [paymentReference, setPaymentReference] = useState('');
+
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -94,6 +101,16 @@ const PosTerminal: React.FC = () => {
     };
 
     const handleCompleteSale = async () => {
+        // Validation
+        if (paymentMethod === 'MPESA' && paymentReference.length < 5) {
+            alert("Please enter a valid M-Pesa Transaction Code.");
+            return;
+        }
+        if (paymentMethod === 'CHEQUE' && paymentReference.length < 3) {
+            alert("Please enter the Cheque Number.");
+            return;
+        }
+
         setIsProcessing(true);
         try {
             const totalAmount = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
@@ -106,7 +123,8 @@ const PosTerminal: React.FC = () => {
                     price: i.appliedPrice 
                 })),
                 totalAmount,
-                paymentMethod: 'CASH',
+                paymentMethod,
+                paymentDetails: { reference: paymentReference },
                 customerId: customer?.id
             };
 
@@ -114,6 +132,8 @@ const PosTerminal: React.FC = () => {
             setLastSale(response.data);
             setCart([]);
             setCustomer(null);
+            setPaymentMethod('CASH');
+            setPaymentReference('');
         } catch (error) {
             alert('Sale Failed: Network Error');
         } finally {
@@ -276,8 +296,43 @@ const PosTerminal: React.FC = () => {
                     ))}
                 </div>
 
-                <div className="p-4 border-t border-gray-200 bg-white space-y-4">
-                    <div className="flex justify-between text-lg font-bold text-masuma-dark">
+                <div className="p-4 border-t border-gray-200 bg-white space-y-3">
+                    {/* Payment Selector */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button 
+                            onClick={() => setPaymentMethod('CASH')} 
+                            className={`p-2 text-[10px] font-bold uppercase border rounded flex flex-col items-center gap-1 ${paymentMethod === 'CASH' ? 'bg-masuma-dark text-white border-masuma-dark' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            <Banknote size={16} /> Cash
+                        </button>
+                        <button 
+                            onClick={() => setPaymentMethod('MPESA')} 
+                            className={`p-2 text-[10px] font-bold uppercase border rounded flex flex-col items-center gap-1 ${paymentMethod === 'MPESA' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            <Smartphone size={16} /> M-Pesa
+                        </button>
+                        <button 
+                            onClick={() => setPaymentMethod('CHEQUE')} 
+                            className={`p-2 text-[10px] font-bold uppercase border rounded flex flex-col items-center gap-1 ${paymentMethod === 'CHEQUE' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            <FileText size={16} /> Cheque
+                        </button>
+                    </div>
+
+                    {/* Reference Input */}
+                    {(paymentMethod === 'MPESA' || paymentMethod === 'CHEQUE') && (
+                        <div className="animate-fade-in">
+                            <input 
+                                type="text" 
+                                value={paymentReference}
+                                onChange={e => setPaymentReference(e.target.value.toUpperCase())}
+                                placeholder={paymentMethod === 'MPESA' ? "Enter Transaction Code (e.g. QW...)" : "Enter Cheque Number"}
+                                className="w-full p-2 border-2 border-masuma-orange rounded text-sm font-mono uppercase outline-none"
+                            />
+                        </div>
+                    )}
+
+                    <div className="flex justify-between text-lg font-bold text-masuma-dark pt-2">
                         <span>Total</span>
                         <span>KES {total.toLocaleString()}</span>
                     </div>
