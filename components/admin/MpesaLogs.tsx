@@ -16,10 +16,7 @@ const MpesaLogs: React.FC = () => {
             setLogs(res.data);
         } catch (error) {
             console.error('Failed to fetch logs', error);
-            // Mock Data Fallback
-            setLogs([
-                { id: '1', checkoutRequestID: 'MOCK_REQ_001', phoneNumber: '254700123456', amount: 4500, status: 'COMPLETED', mpesaReceiptNumber: 'MOCK_RCPT', date: 'Just Now', resultDesc: 'Offline Mock Success' }
-            ]);
+            setLogs([]);
         } finally {
             setIsLoading(false);
         }
@@ -27,7 +24,7 @@ const MpesaLogs: React.FC = () => {
 
     useEffect(() => {
         fetchLogs();
-        const interval = setInterval(fetchLogs, 10000); // Auto refresh every 10s
+        const interval = setInterval(fetchLogs, 10000); 
         return () => clearInterval(interval);
     }, []);
 

@@ -1,3 +1,4 @@
+
 import 'reflect-metadata';
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import cors from 'cors';
@@ -48,7 +49,8 @@ import { validate } from './middleware/validate';
 
 const app = express();
 
-// CRITICAL: Enable Trust Proxy for correct protocol detection in production (uploads)
+// CRITICAL: Enable Trust Proxy for correct protocol detection in production (uploads, rate limiting)
+// 'loopback' only trusts localhost, use '1' or boolean true if behind a single proxy like Nginx/Heroku
 app.set('trust proxy', 1);
 
 // Initialize Database
@@ -64,13 +66,13 @@ AppDataSource.initialize()
 // --- Security & Performance Middleware ---
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: config.NODE_ENV === 'production' ? undefined : false 
+  contentSecurityPolicy: false // Disabled for flexibility with external scripts/images in this demo
 }) as any); 
 app.use(compression() as any); 
 
 // FIX: CORS Configuration
 app.use(cors({ 
-  origin: true, 
+  origin: config.CORS_ORIGIN === '*' ? true : config.CORS_ORIGIN, 
   credentials: true 
 }) as any);
 
@@ -80,16 +82,17 @@ app.use(express.json() as any);
 app.use(httpLogger as any);
 
 // --- Static Files (MEDIA FOLDER) ---
+// Serve uploaded files
 app.use('/media', express.static(path.join((process as any).cwd(), 'media')) as any);
 
 // --- Rate Limiting Strategy ---
 const isProduction = config.NODE_ENV === 'production';
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: isProduction ? 100 : 20000,
+  max: isProduction ? 300 : 20000, // Increased limit for robust ERP usage
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req: any) => req.path.startsWith('/api/exchange-rates') || req.path.startsWith('/api/health'),
+  skip: (req: any) => req.path.startsWith('/api/exchange-rates') || req.path.startsWith('/api/health') || req.path.startsWith('/media'),
   message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api', limiter as any);
@@ -223,7 +226,8 @@ app.use((req: any, res: any) => {
 app.use(errorHandler as any);
 
 const PORT = config.PORT;
-const server = app.listen(PORT, () => {
+// BIND TO 0.0.0.0 to ensure Docker/Network access
+const server = app.listen(Number(PORT), '0.0.0.0', () => {
   logger.info(`🚀 Server running on port ${PORT} in ${config.NODE_ENV} mode`);
 });
 

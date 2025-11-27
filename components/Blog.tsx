@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Copy, Check, WifiOff, Database } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 
@@ -15,7 +15,6 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0, pages: 1 });
   const [copied, setCopied] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
       fetchPosts(1);
@@ -25,13 +24,12 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
       setIsLoading(true);
       try {
           const res = await apiClient.get(`/blog?page=${page}&limit=${pagination.limit}`);
-          setIsOffline(res.headers['x-datasource'] === 'mock');
 
           if (res.data && res.data.data) {
               setPosts(res.data.data);
               setPagination(res.data.meta);
           } else if (Array.isArray(res.data)) {
-              // Fallback for legacy API structure (just in case)
+              // Fallback for non-paginated API
               setPosts(res.data);
           }
       } catch (error) {
@@ -48,13 +46,11 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
       }
   };
 
-  // Fetch related products when viewing a post
   useEffect(() => {
       if (selectedPost) {
           const fetchRelated = async () => {
               try {
                   const res = await apiClient.get(`/products?category=${selectedPost.relatedProductCategory}`);
-                  // Handle potential paginated response for products
                   const productsData = res.data.data || res.data; 
                   setRelatedProducts(Array.isArray(productsData) ? productsData.slice(0, 4) : []);
               } catch (e) {
@@ -72,7 +68,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
     const shareData = {
         title: selectedPost.title,
         text: selectedPost.excerpt,
-        url: window.location.href // In a real router setup, this would be specific link
+        url: window.location.href 
     };
 
     if (navigator.share) {
@@ -82,7 +78,6 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
             console.log('Share canceled');
         }
     } else {
-        // Fallback for desktops without Web Share API
         try {
             await navigator.clipboard.writeText(window.location.href);
             setCopied(true);
@@ -96,7 +91,6 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   if (selectedPost) {
     return (
       <div className="animate-fade-in bg-white min-h-screen">
-        {/* Article Header */}
         <div className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden">
           <div className="absolute inset-0 bg-masuma-dark/50 z-10"></div>
           <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
@@ -121,16 +115,13 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
           </div>
         </div>
 
-        {/* Content Container */}
         <div className="max-w-screen-2xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
           
-          {/* Main Article */}
           <div className="lg:col-span-2">
              <div className="prose prose-lg prose-headings:font-display prose-headings:uppercase prose-headings:text-masuma-dark prose-a:text-masuma-orange max-w-none text-gray-600">
                 <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
              </div>
 
-             {/* Share Section */}
              <div className="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-bold text-masuma-dark uppercase text-sm">Share this article:</p>
                 <div className="flex items-center gap-4">
@@ -145,7 +136,6 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
              </div>
           </div>
 
-          {/* Sidebar / Related Products */}
           <div className="lg:col-span-1">
              <div className="sticky top-24">
                 <div className="bg-gray-50 p-6 border-t-4 border-masuma-orange shadow-lg rounded-sm">
@@ -187,7 +177,6 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
     );
   }
 
-  // Blog Grid View
   return (
     <div className="animate-fade-in bg-white min-h-screen">
       <div className="bg-masuma-dark text-white py-20 relative overflow-hidden">
@@ -199,17 +188,6 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
             <p className="text-gray-400 max-w-2xl mx-auto text-lg font-light">
                Technical advice, maintenance tips, and industry news from the engineers who know your car best.
             </p>
-            <div className="mt-6 flex justify-center">
-                {isOffline ? (
-                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold uppercase border border-red-500/50">
-                        <WifiOff size={14} /> Offline Mode
-                    </span>
-                ) : (
-                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-bold uppercase border border-green-500/50">
-                        <Database size={14} /> Live Database
-                    </span>
-                )}
-            </div>
          </div>
       </div>
 
@@ -261,25 +239,49 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
              </div>
              
              {/* Pagination Controls */}
-             <div className="mt-12 flex justify-center items-center gap-4">
-                <button 
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                    <ChevronLeft size={20} />
-                </button>
-                <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">
-                    Page {pagination.page} of {pagination.pages}
-                </span>
-                <button 
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.pages}
-                    className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                    <ChevronRight size={20} />
-                </button>
-             </div>
+             {pagination.pages > 1 && (
+                 <div className="mt-16 flex justify-center items-center gap-4">
+                    <button 
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page === 1}
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold text-xs uppercase tracking-wider text-gray-600"
+                    >
+                        <ChevronLeft size={16} /> Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                            let pNum = i + 1;
+                            // Adjust window if deeply paginated
+                            if (pagination.pages > 5) {
+                                if (pagination.page > 3) pNum = pagination.page - 2 + i;
+                                if (pNum > pagination.pages) pNum = pagination.pages - (4 - i);
+                            }
+                            return (
+                                <button
+                                    key={pNum}
+                                    onClick={() => handlePageChange(pNum)}
+                                    className={`w-8 h-8 flex items-center justify-center rounded text-xs font-bold transition ${
+                                        pagination.page === pNum 
+                                        ? 'bg-masuma-dark text-white' 
+                                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {pNum}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <button 
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={pagination.page === pagination.pages}
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold text-xs uppercase tracking-wider text-gray-600"
+                    >
+                        Next <ChevronRight size={16} />
+                    </button>
+                 </div>
+             )}
          </>
          )}
       </div>

@@ -1,9 +1,11 @@
+
 import { AppDataSource } from '../config/database';
 import { Sale } from '../entities/Sale';
 import { ProductStock } from '../entities/ProductStock';
 import { User } from '../entities/User';
 import { Branch } from '../entities/Branch';
 import { Customer } from '../entities/Customer';
+import { Order } from '../entities/Order';
 import { EtimsService } from './etimsService';
 
 interface SaleItemDto {
@@ -20,6 +22,7 @@ interface CreateSaleDto {
   branchId: string;
   cashierId: string;
   customerId?: string;
+  customerName?: string; // Added fallback name
   paymentDetails?: any;
 }
 
@@ -48,9 +51,15 @@ export class SaleService {
               sale.customer = customer;
               sale.customerName = customer.name; // Snapshot name for historical accuracy
           }
+      } else if (data.customerName) {
+          // Fallback if no Customer ID is found (e.g. Guest Order)
+          sale.customerName = data.customerName;
+      } else {
+          sale.customerName = "Walk-in Customer";
       }
       
       sale.itemsSnapshot = data.items;
+      sale.itemsCount = data.items.length;
       sale.totalAmount = data.totalAmount;
       sale.netAmount = parseFloat(netAmount.toFixed(2));
       sale.taxAmount = parseFloat(taxAmount.toFixed(2));
@@ -110,5 +119,62 @@ export class SaleService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // NEW METHOD: Converts an existing Order to a Sale (updating stats and inventory)
+  static async createSaleFromOrder(order: Order, cashierUser?: User) {
+    // Check if this order has already been processed into a sale (via paymentDetails reference check)
+    // This is a basic idempotency check.
+    const existingSale = await AppDataSource.getRepository(Sale).createQueryBuilder("sale")
+        .where("JSON_EXTRACT(sale.paymentDetails, '$.orderReference') = :orderRef", { orderRef: order.orderNumber })
+        .getOne();
+
+    if (existingSale) {
+        console.log(`Order ${order.orderNumber} already converted to Sale ${existingSale.receiptNumber}. Skipping.`);
+        return existingSale;
+    }
+
+    // Use the order's existing items to map to SaleItemDto
+    const defaultBranchId = (cashierUser?.branch?.id) || (await AppDataSource.getRepository(Branch).findOne({where: {code: 'NBI-HQ'}}))?.id;
+    
+    // Fallback system user if no cashier provided (e.g. M-Pesa auto-confirmation)
+    const systemUserId = cashierUser?.id || (await AppDataSource.getRepository(User).findOne({where: {role: 'ADMIN' as any}}))?.id;
+
+    if (!defaultBranchId || !systemUserId) {
+        throw new Error("Configuration Error: Cannot determine fulfillment branch or system user.");
+    }
+
+    // Map Order Items to Sale Items
+    // Note: order.items must be loaded with relations to Product
+    const saleItems: SaleItemDto[] = order.items.map(item => ({
+        productId: item.product.id,
+        name: item.product.name || 'Order Item',
+        quantity: item.quantity,
+        price: Number(item.price)
+    }));
+
+    // Look up customer
+    let customerId = undefined;
+    if (order.customerEmail || order.customerPhone) {
+        const customerRepo = AppDataSource.getRepository(Customer);
+        const existingCustomer = await customerRepo.findOne({
+            where: [
+                { email: order.customerEmail },
+                { phone: order.customerPhone }
+            ]
+        });
+        if (existingCustomer) customerId = existingCustomer.id;
+    }
+
+    return this.createSale({
+        items: saleItems,
+        totalAmount: Number(order.totalAmount), // Explicit Number cast
+        paymentMethod: 'ORDER_PAYMENT', // Differentiates from POS Cash
+        paymentDetails: { orderReference: order.orderNumber },
+        branchId: defaultBranchId,
+        cashierId: systemUserId,
+        customerId: customerId,
+        customerName: order.customerName // Explicitly pass order name as fallback
+    });
   }
 }

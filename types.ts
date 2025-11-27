@@ -18,7 +18,7 @@ export interface Product {
   name: string;
   sku: string; // Masuma Part Number
   oemNumbers: string[]; // Original Equipment Manufacturer Numbers
-  category: Category;
+  category: string; // Changed from Category enum to string to support dynamic DB categories
   price: number; // In KES
   wholesalePrice?: number;
   description: string;
@@ -42,7 +42,7 @@ export interface BlogPost {
   date: string;
   readTime: string;
   category: string;
-  relatedProductCategory: Category; // To link products to articles
+  relatedProductCategory: string; // Changed from Category enum to string
 }
 
 export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD';
@@ -173,6 +173,8 @@ export interface Quote {
     id: string;
     quoteNumber: string;
     customerName: string;
+    customerEmail?: string;
+    customerPhone?: string;
     date: string;
     total: number;
     status: QuoteStatus;

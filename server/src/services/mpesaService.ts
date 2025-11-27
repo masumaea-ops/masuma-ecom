@@ -6,6 +6,7 @@ import { Order, OrderStatus } from '../entities/Order';
 import { SystemSetting } from '../entities/SystemSetting';
 import { CacheService } from '../lib/cache';
 import { logger } from '../utils/logger';
+import { SaleService } from './saleService';
 
 export class MpesaService {
   private static transactionRepo = AppDataSource.getRepository(MpesaTransaction);
@@ -155,13 +156,30 @@ export class MpesaService {
           transaction.order.amountPaid = Number(paidAmount);
           transaction.order.balance = 0;
           logger.info(`✅ Payment Confirmed: ${receiptNumber} (KES ${paidAmount})`);
+          
+          await this.orderRepo.save(transaction.order);
+
+          // --- TRIGGER SALE CREATION ---
+          // Reload order with relations to create sale
+          const fullOrder = await this.orderRepo.findOne({
+              where: { id: transaction.order.id },
+              relations: ['items', 'items.product']
+          });
+          
+          if (fullOrder) {
+              try {
+                  await SaleService.createSaleFromOrder(fullOrder);
+              } catch (e) {
+                  logger.error('Failed to create Sale from M-Pesa order', e);
+              }
+          }
+
       } else {
           transaction.order.status = OrderStatus.PARTIALLY_PAID;
           transaction.order.amountPaid = Number(paidAmount || 0);
           logger.warn(`⚠️ Partial Payment: ${receiptNumber} (Paid: ${paidAmount}, Expected: ${transaction.amount})`);
+          await this.orderRepo.save(transaction.order);
       }
-      
-      await this.orderRepo.save(transaction.order);
       
     } else {
       transaction.status = 'FAILED';

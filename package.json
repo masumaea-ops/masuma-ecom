@@ -13,7 +13,9 @@
     "lucide-react": "^0.554.0",
     "axios": "^1.13.2",
     "recharts": "^2.15.0",
-    "@google/genai": "^1.30.0"
+    "@google/genai": "^1.30.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",

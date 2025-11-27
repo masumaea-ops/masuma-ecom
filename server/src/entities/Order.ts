@@ -4,6 +4,7 @@ import { OrderItem } from './OrderItem';
 import { MpesaTransaction } from './MpesaTransaction';
 import { Payment } from './Payment';
 import { Quote } from './Quote';
+import { ColumnNumericTransformer } from '../utils/transformer';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -21,13 +22,13 @@ export class Order {
   id!: string;
 
   @Column({ unique: true })
-  orderNumber!: string; // Added explicit column for Order Ref
+  orderNumber!: string;
 
   @Column()
   customerName!: string;
 
-  @Column()
-  customerEmail!: string;
+  @Column({ nullable: true })
+  customerEmail?: string;
 
   @Column()
   customerPhone!: string;
@@ -35,15 +36,17 @@ export class Order {
   @Column({ nullable: true })
   shippingAddress?: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
   totalAmount!: number;
 
-  // New Fields for Installments
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   amountPaid!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   balance!: number;
+
+  @Column({ default: 'MANUAL' })
+  paymentMethod!: string;
 
   @Column({
     type: 'enum',

@@ -123,9 +123,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><Mail size={12}/> Email</label>
+                                    <label className="text-xs font-bold text-masuma-dark uppercase flex items-center gap-1"><Mail size={12}/> Email (Optional)</label>
                                     <input 
-                                        required 
                                         type="email" 
                                         value={formData.email} 
                                         onChange={e => setFormData({...formData, email: e.target.value})} 

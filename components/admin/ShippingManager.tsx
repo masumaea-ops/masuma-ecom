@@ -52,7 +52,7 @@ const ShippingManager: React.FC = () => {
         setPrintShipment(shipment);
         setTimeout(() => {
             window.print();
-        }, 300);
+        }, 500); // 500ms delay to ensure rendering
     };
 
     const getStatusBadge = (status: string) => {

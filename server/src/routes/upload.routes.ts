@@ -12,8 +12,8 @@ router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), upload.single('i
     }
 
     // Construct URL dynamically based on the incoming request
-    // This ensures it works whether on localhost:3000 or a deployed domain
-    const protocol = req.protocol;
+    // Correctly handle Proxy forwarding (X-Forwarded-Proto) for SSL termination
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     
     // Note: 'media' directory is served statically at /media

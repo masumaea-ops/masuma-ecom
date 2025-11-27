@@ -1,8 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote } from 'lucide-react';
-import { Product, Customer } from '../../types';
+import { Product, Customer, Sale } from '../../types';
 import { apiClient } from '../../utils/apiClient';
+import InvoiceTemplate from './InvoiceTemplate';
 
 interface PosItem extends Product {
     qty: number;
@@ -15,7 +15,7 @@ const PosTerminal: React.FC = () => {
     const [cart, setCart] = useState<PosItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<Product[]>([]);
-    const [lastSale, setLastSale] = useState<any>(null);
+    const [lastSale, setLastSale] = useState<Sale | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     
@@ -29,6 +29,7 @@ const PosTerminal: React.FC = () => {
     const [foundCustomers, setFoundCustomers] = useState<Customer[]>([]);
     
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const printRef = useRef<HTMLDivElement>(null);
 
     const handleProductSearch = async (term: string) => {
         setSearchTerm(term);
@@ -40,7 +41,6 @@ const PosTerminal: React.FC = () => {
         setIsSearching(true);
         try {
             const res = await apiClient.get(`/products?q=${term}`);
-            // FIX: Unpack the data structure
             const products = res.data.data || res.data || [];
             setSearchResults(Array.isArray(products) ? products : []);
         } catch (error) {
@@ -101,7 +101,6 @@ const PosTerminal: React.FC = () => {
     };
 
     const handleCompleteSale = async () => {
-        // Validation
         if (paymentMethod === 'MPESA' && paymentReference.length < 5) {
             alert("Please enter a valid M-Pesa Transaction Code.");
             return;
@@ -141,11 +140,23 @@ const PosTerminal: React.FC = () => {
         }
     };
 
+    const handlePrintReceipt = () => {
+        // Delay print to allow React to render the hidden template
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    };
+
     const total = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
 
     if (lastSale) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-100px)] animate-scale-up">
+                {/* Hidden Print Container */}
+                <div className="hidden print-force-container">
+                    <InvoiceTemplate data={lastSale} type="RECEIPT" ref={printRef} />
+                </div>
+
                 <div className="bg-white p-8 rounded shadow-lg border border-gray-200 w-96 text-center">
                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} />
@@ -165,10 +176,10 @@ const PosTerminal: React.FC = () => {
                     </div>
 
                     <div className="flex gap-3">
-                        <button onClick={() => window.print()} className="flex-1 bg-gray-800 text-white py-2 rounded font-bold text-sm uppercase flex items-center justify-center gap-2">
+                        <button onClick={handlePrintReceipt} className="flex-1 bg-gray-800 text-white py-2 rounded font-bold text-sm uppercase flex items-center justify-center gap-2 hover:bg-gray-700">
                             <Printer size={16} /> Print
                         </button>
-                        <button onClick={() => setLastSale(null)} className="flex-1 bg-masuma-orange text-white py-2 rounded font-bold text-sm uppercase">
+                        <button onClick={() => setLastSale(null)} className="flex-1 bg-masuma-orange text-white py-2 rounded font-bold text-sm uppercase hover:bg-orange-600">
                             New Sale
                         </button>
                     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -168,7 +167,7 @@ function App() {
             onNavigate={setAdminModule} 
             onLogout={handleLogout}
           >
-            {adminModule === 'dashboard' && <DashboardHome />}
+            {adminModule === 'dashboard' && <DashboardHome onNavigate={setAdminModule} />}
             {adminModule === 'finance' && <FinanceManager />} 
             {adminModule === 'pos' && <PosTerminal />}
             {adminModule === 'products' && <ProductManager />}

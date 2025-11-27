@@ -91,16 +91,17 @@ h1, h2, h3, h4, h5, h6 {
   /* This targets the container wrapping InvoiceTemplate in modals */
   .print-force-container {
     visibility: visible !important;
-    position: absolute !important;
+    position: fixed !important; /* Fixed ensures it covers everything regardless of scroll */
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     z-index: 99999 !important; /* Maximum Z-Index to overlap everything */
     display: block !important;
+    overflow: visible !important;
   }
 
   /* 4. Show Children of Print Container */
@@ -109,7 +110,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   /* 5. Explicitly Hide Trouble Elements (Modals, Backdrops, Navs) */
-  #root, 
+  #root > div:not(.print-force-container), 
   nav, 
   header, 
   footer, 
@@ -131,7 +132,7 @@ h1, h2, h3, h4, h5, h6 {
   
   /* 7. Reset Page Margins */
   @page {
-    margin: 0.5cm;
+    margin: 0; /* Let component handle margins */
     size: auto;
   }
 }

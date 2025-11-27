@@ -1,3 +1,4 @@
+
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -7,6 +8,34 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        'jspdf': 'https://aistudiocdn.com/jspdf@^2.5.1',
+        'jspdf-autotable': 'https://aistudiocdn.com/jspdf-autotable@^3.8.2',
+      }
+    },
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:3000',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/media': {
+          target: 'http://127.0.0.1:3000',
+          changeOrigin: true,
+          secure: false,
+        }
+      }
+    },
+    optimizeDeps: {
+      exclude: ['jspdf', 'jspdf-autotable']
+    },
+    build: {
+      rollupOptions: {
+        external: ['jspdf', 'jspdf-autotable']
+      }
+    },
     define: {
       // Safely stringify env vars to prevent "process is not defined" errors
       'process.env': JSON.stringify({

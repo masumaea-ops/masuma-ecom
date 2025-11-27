@@ -31,10 +31,7 @@ const SalesHistory: React.FC = () => {
             }
         } catch (error) {
             console.error("Failed to fetch sales", error);
-            // Fallback mock if backend offline
-            setSales([
-               { id: '1', receiptNumber: 'RCP-OFFLINE-001', date: new Date().toISOString(), totalAmount: 4500, paymentMethod: 'CASH', cashierName: 'System', itemsCount: 2, kraControlCode: 'PENDING', itemsSnapshot: [] }
-            ]);
+            setSales([]);
         } finally {
             setIsLoading(false);
         }
@@ -47,9 +44,10 @@ const SalesHistory: React.FC = () => {
 
     const handlePrint = (sale: Sale) => {
         setPrintSale(sale);
+        // Increased timeout to ensure the InvoiceTemplate is fully rendered in the DOM before printing
         setTimeout(() => {
             window.print();
-        }, 100);
+        }, 500);
     };
 
     const handlePageChange = (newPage: number) => {
@@ -60,7 +58,7 @@ const SalesHistory: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col">
-            {/* Hidden Print Template - Uses print-force-container for absolute print visibility */}
+            {/* Hidden Print Template */}
             {printSale && (
                 <div className="hidden print-force-container">
                     <InvoiceTemplate data={printSale} type="TAX_INVOICE" ref={printRef} />

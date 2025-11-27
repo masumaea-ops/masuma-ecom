@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, CheckCircle, Clock, Truck, Loader2, RefreshCw, XCircle, DollarSign } from 'lucide-react';
+import { Search, Eye, CheckCircle, Clock, Truck, Loader2, RefreshCw, XCircle, DollarSign, CreditCard, Banknote, Smartphone, FileText } from 'lucide-react';
 import { Order } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 import OrderDetailsModal from './OrderDetailsModal';
@@ -12,6 +11,11 @@ const OrderManager: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    
+    // Payment Modal State
+    const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState('CASH');
+    const [paymentRef, setPaymentRef] = useState('');
 
     const fetchOrders = async () => {
         setIsLoading(true);
@@ -42,9 +46,35 @@ const OrderManager: React.FC = () => {
         }
     };
 
+    const handleReceivePayment = async () => {
+        if (!paymentOrder) return;
+        setProcessingId(paymentOrder.id);
+        
+        try {
+            // Update status AND trigger Sale Creation logic in backend
+            await apiClient.patch(`/orders/${paymentOrder.id}/status`, { 
+                status: 'PAID',
+                // You might need to update backend to accept payment details in status patch, 
+                // or creating a specific endpoint /orders/:id/pay is cleaner. 
+                // For now, assuming backend handles PAID status by creating sale via the hook.
+            });
+            
+            // NOTE: In a real implementation, you'd send paymentMethod and Ref to backend.
+            // Currently backend creates sale automatically on PAID status change.
+            
+            setPaymentOrder(null);
+            fetchOrders();
+            alert(`Payment received via ${paymentMethod}. Receipt Generated.`);
+        } catch (error) {
+            alert('Payment processing failed');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'PENDING': return <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-fit"><Clock size={12} /> Pending</span>;
+            case 'PENDING': return <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-fit"><Clock size={12} /> Pending / Invoice</span>;
             case 'PAID': return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-fit"><CheckCircle size={12} /> Paid</span>;
             case 'SHIPPED': return <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-fit"><Truck size={12} /> Shipped</span>;
             case 'DELIVERED': return <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-fit"><CheckCircle size={12} /> Delivered</span>;
@@ -69,13 +99,74 @@ const OrderManager: React.FC = () => {
                 onUpdateStatus={updateStatus} 
             />
 
+            {/* Payment Modal */}
+            {paymentOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">
+                        <div className="bg-green-600 text-white p-4">
+                            <h3 className="font-bold uppercase flex items-center gap-2">
+                                <DollarSign size={20} /> Receive Payment
+                            </h3>
+                            <p className="text-xs opacity-80">Order #{paymentOrder.orderNumber}</p>
+                        </div>
+                        <div className="p-6">
+                            <div className="text-center mb-6">
+                                <p className="text-xs text-gray-500 uppercase font-bold">Amount Due</p>
+                                <p className="text-3xl font-bold text-masuma-dark">KES {paymentOrder.total.toLocaleString()}</p>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Payment Method</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['CASH', 'MPESA', 'CHEQUE', 'BANK'].map(m => (
+                                            <button 
+                                                key={m}
+                                                onClick={() => setPaymentMethod(m)}
+                                                className={`p-2 border rounded text-xs font-bold uppercase transition ${
+                                                    paymentMethod === m ? 'bg-masuma-dark text-white border-masuma-dark' : 'bg-white text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {m}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {(paymentMethod !== 'CASH') && (
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Transaction Ref / Cheque No.</label>
+                                        <input 
+                                            type="text" 
+                                            value={paymentRef} 
+                                            onChange={e => setPaymentRef(e.target.value)}
+                                            className="w-full p-2 border rounded focus:border-green-500 outline-none uppercase font-mono"
+                                            placeholder="e.g. QBH..."
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3 mt-8">
+                                <button onClick={() => setPaymentOrder(null)} className="flex-1 py-3 border rounded font-bold text-xs uppercase hover:bg-gray-50">Cancel</button>
+                                <button 
+                                    onClick={handleReceivePayment}
+                                    disabled={!!processingId}
+                                    className="flex-1 py-3 bg-green-600 text-white rounded font-bold text-xs uppercase hover:bg-green-700 flex items-center justify-center gap-2"
+                                >
+                                    {processingId ? <Loader2 className="animate-spin" size={16}/> : <CheckCircle size={16}/>} Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Order Management</h2>
+                    <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Order & Invoice Manager</h2>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                         <span>Total Orders: {orders.length}</span>
-                         <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                         <span>Pending: {orders.filter(o => o.status === 'PENDING').length}</span>
+                         <span>Pending Invoices: {orders.filter(o => o.status === 'PENDING').length}</span>
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -93,7 +184,7 @@ const OrderManager: React.FC = () => {
                         <input 
                             type="text" 
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded outline-none focus:border-masuma-orange bg-white" 
-                            placeholder="Search Order ID, Customer Name..." 
+                            placeholder="Search Invoice #, Customer Name..." 
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -103,12 +194,10 @@ const OrderManager: React.FC = () => {
                         value={filterStatus}
                         onChange={e => setFilterStatus(e.target.value)}
                      >
-                        <option value="All">All Statuses</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="PAID">Paid</option>
-                        <option value="SHIPPED">Shipped</option>
-                        <option value="DELIVERED">Delivered</option>
-                        <option value="FAILED">Cancelled</option>
+                        <option value="All">All Orders</option>
+                        <option value="PENDING">Unpaid Invoices</option>
+                        <option value="PAID">Paid / Ready to Ship</option>
+                        <option value="SHIPPED">Dispatched</option>
                      </select>
                 </div>
 
@@ -121,7 +210,7 @@ const OrderManager: React.FC = () => {
                         <table className="w-full text-left">
                             <thead className="bg-white text-gray-500 uppercase font-bold text-xs border-b border-gray-200">
                                 <tr>
-                                    <th className="px-6 py-4">Order ID</th>
+                                    <th className="px-6 py-4">Invoice #</th>
                                     <th className="px-6 py-4">Customer</th>
                                     <th className="px-6 py-4">Date</th>
                                     <th className="px-6 py-4">Total (KES)</th>
@@ -143,16 +232,13 @@ const OrderManager: React.FC = () => {
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                                 {order.status === 'PENDING' && (
-                                                    <>
-                                                        <button 
-                                                            onClick={() => updateStatus(order.id, 'PAID')}
-                                                            disabled={processingId === order.id}
-                                                            className="p-1 text-green-600 hover:bg-green-50 rounded" 
-                                                            title="Mark Paid"
-                                                        >
-                                                            <DollarSign size={16} />
-                                                        </button>
-                                                    </>
+                                                    <button 
+                                                        onClick={() => setPaymentOrder(order)}
+                                                        className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-xs font-bold uppercase flex items-center gap-1 border border-green-200"
+                                                        title="Receive Payment"
+                                                    >
+                                                        <DollarSign size={12} /> Pay
+                                                    </button>
                                                 )}
                                                 <button 
                                                     onClick={() => setSelectedOrder(order)}

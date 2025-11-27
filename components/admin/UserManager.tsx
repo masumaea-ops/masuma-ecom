@@ -27,10 +27,7 @@ const UserManager: React.FC = () => {
             setUsers(res.data);
         } catch (error) {
             console.error(error);
-            // Fallback
-            setUsers([
-                { id: '1', fullName: 'Admin (Fallback)', email: 'admin@masuma.africa', role: 'ADMIN', isActive: true, createdAt: 'N/A' }
-            ]);
+            setUsers([]);
         } finally {
             setIsLoading(false);
         }

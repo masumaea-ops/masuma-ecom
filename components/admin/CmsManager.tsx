@@ -128,14 +128,17 @@ const CmsManager: React.FC = () => {
         uploadData.append('image', file);
 
         try {
-            // Fix: Removed manual Content-Type header
+            // Send FormData directly
             const res = await apiClient.post('/upload', uploadData);
-            updateSlide(slideId, field, res.data.url);
-        } catch (error) {
-            alert('Upload failed. Ensure file is < 50MB.');
+            if (res.data && res.data.url) {
+                updateSlide(slideId, field, res.data.url);
+            } else {
+                throw new Error("Invalid response");
+            }
+        } catch (error: any) {
+            alert('Upload failed: ' + (error.response?.data?.error || 'Unknown Error'));
         } finally {
             setIsUploading(false);
-            // Reset input
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };

@@ -5,6 +5,7 @@ import { OemNumber } from './OemNumber';
 import { Vehicle } from './Vehicle';
 import { OrderItem } from './OrderItem';
 import { ProductStock } from './ProductStock';
+import { ColumnNumericTransformer } from '../utils/transformer';
 
 @Entity('products')
 export class Product {
@@ -18,14 +19,14 @@ export class Product {
   @Column()
   sku!: string;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  costPrice!: number; // Buying Price (For COGS)
+  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  costPrice!: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  price!: number; // Selling Price
+  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
+  price!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
-  wholesalePrice?: number; // Added for B2B
+  @Column('decimal', { precision: 10, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
+  wholesalePrice?: number;
 
   @Column('text')
   description!: string;
@@ -38,8 +39,6 @@ export class Product {
 
   @Column({ nullable: true })
   videoUrl?: string;
-
-  // REMOVED: stockLevel (moved to ProductStock)
 
   @ManyToOne(() => Category, (category) => category.products)
   category!: Category;

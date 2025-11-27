@@ -1,3 +1,4 @@
+
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,6 +13,10 @@ import { OemNumber } from '../entities/OemNumber';
 import { Vehicle } from '../entities/Vehicle';
 import { BlogPost } from '../entities/BlogPost';
 import { SystemSetting } from '../entities/SystemSetting';
+import { Customer } from '../entities/Customer';
+import { Sale } from '../entities/Sale';
+import { Order, OrderStatus } from '../entities/Order';
+import { OrderItem } from '../entities/OrderItem';
 import { Security } from '../utils/security';
 
 // --- 10 Sample Masuma Products ---
@@ -21,6 +26,7 @@ const PRODUCTS_DATA = [
     sku: 'MFC-112',
     category: 'Filters',
     price: 850,
+    costPrice: 450,
     oems: ['90915-10001', '90915-YZZE1'],
     fits: [{ make: 'Toyota', model: 'Corolla' }, { make: 'Toyota', model: 'Vitz' }, { make: 'Toyota', model: 'Premio' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg'
@@ -30,6 +36,7 @@ const PRODUCTS_DATA = [
     sku: 'MS-2444',
     category: 'Brakes',
     price: 4500,
+    costPrice: 2800,
     oems: ['26296-SA031', '26296-FG010'],
     fits: [{ make: 'Subaru', model: 'Forester SG5' }, { make: 'Subaru', model: 'Impreza' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/MS-2444_1.jpg'
@@ -39,6 +46,7 @@ const PRODUCTS_DATA = [
     sku: 'MFA-1146',
     category: 'Filters',
     price: 2200,
+    costPrice: 1100,
     oems: ['17801-30040'],
     fits: [{ make: 'Toyota', model: 'Land Cruiser Prado' }, { make: 'Toyota', model: 'Hilux' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/MFA-1146_1.jpg'
@@ -48,6 +56,7 @@ const PRODUCTS_DATA = [
     sku: 'ML-3320',
     category: 'Suspension',
     price: 1800,
+    costPrice: 950,
     oems: ['48820-42020'],
     fits: [{ make: 'Toyota', model: 'RAV4' }, { make: 'Toyota', model: 'Vanguard' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/ML-3320_1.jpg'
@@ -57,6 +66,7 @@ const PRODUCTS_DATA = [
     sku: 'S-102',
     category: 'Engine & Ignition',
     price: 1200,
+    costPrice: 600,
     oems: ['90919-01210'],
     fits: [{ make: 'Toyota', model: 'Camry' }, { make: 'Lexus', model: 'RX' }, { make: 'Nissan', model: 'X-Trail' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/S-102_1.jpg'
@@ -66,6 +76,7 @@ const PRODUCTS_DATA = [
     sku: 'MU-026',
     category: 'Wiper Blades',
     price: 1500,
+    costPrice: 800,
     oems: ['85222-53070'],
     fits: [{ make: 'Toyota', model: 'Harrier' }, { make: 'Honda', model: 'CR-V' }, { make: 'Nissan', model: 'Murano' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/MU-026_1.jpg'
@@ -75,6 +86,7 @@ const PRODUCTS_DATA = [
     sku: 'MFF-T103',
     category: 'Filters',
     price: 3500,
+    costPrice: 1900,
     oems: ['23300-21010'],
     fits: [{ make: 'Toyota', model: 'NZE' }, { make: 'Toyota', model: 'Fielder' }, { make: 'Toyota', model: 'Runx' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/MFF-T103_1.jpg'
@@ -84,6 +96,7 @@ const PRODUCTS_DATA = [
     sku: 'RU-388',
     category: 'Suspension',
     price: 1200,
+    costPrice: 550,
     oems: ['48655-12170'],
     fits: [{ make: 'Toyota', model: 'Corolla AE100' }, { make: 'Toyota', model: 'Sprinter' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/RU-388_1.jpg'
@@ -93,6 +106,7 @@ const PRODUCTS_DATA = [
     sku: 'MIC-110',
     category: 'Engine & Ignition',
     price: 4800,
+    costPrice: 2400,
     oems: ['90919-02240'],
     fits: [{ make: 'Toyota', model: 'Vitz' }, { make: 'Toyota', model: 'Yaris' }, { make: 'Toyota', model: 'FunCargo' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/MIC-110_1.jpg'
@@ -102,6 +116,7 @@ const PRODUCTS_DATA = [
     sku: '5PK1100',
     category: 'Drive Belts',
     price: 1600,
+    costPrice: 750,
     oems: ['90916-02556'],
     fits: [{ make: 'Toyota', model: 'Premio' }, { make: 'Toyota', model: 'Allion' }],
     image: 'https://masuma.com/wp-content/uploads/2021/09/5PK1100_1.jpg'
@@ -221,10 +236,9 @@ const seed = async () => {
         await userRepo.save(admin);
         console.log(`Admin user created (${adminEmail} / ${defaultPassword}).`);
     } else {
-        // Force reset password to ensure login works
         admin.passwordHash = passwordHash;
         await userRepo.save(admin);
-        console.log(`Admin password reset to "${defaultPassword}" for existing user.`);
+        console.log(`Admin password reset to "${defaultPassword}".`);
     }
 
     // 2b. Create Mbaru Tech Admin
@@ -244,11 +258,10 @@ const seed = async () => {
         await userRepo.save(mbaruUser);
         console.log(`Second Admin user created: ${mbaruEmail}`);
     } else {
-        // FORCE UPDATE PASSWORD & ROLE
         mbaruUser.passwordHash = mbaruHash;
         mbaruUser.role = UserRole.ADMIN; 
         await userRepo.save(mbaruUser);
-        console.log(`Security credentials forcefully updated for: ${mbaruEmail}`);
+        console.log(`Security credentials updated for: ${mbaruEmail}`);
     }
 
     // 3. Create Categories & Products
@@ -256,6 +269,8 @@ const seed = async () => {
     const productRepo = AppDataSource.getRepository(Product);
     const stockRepo = AppDataSource.getRepository(ProductStock);
     const vehicleRepo = AppDataSource.getRepository(Vehicle);
+
+    const savedProducts: Product[] = [];
 
     for (const pData of PRODUCTS_DATA) {
         // Category
@@ -272,6 +287,7 @@ const seed = async () => {
             product.name = pData.name;
             product.sku = pData.sku;
             product.price = pData.price;
+            product.costPrice = pData.costPrice || 0;
             product.description = `Genuine Masuma ${pData.name}. Engineered for reliability.`;
             product.category = cat;
             product.imageUrl = pData.image;
@@ -308,6 +324,7 @@ const seed = async () => {
             
             console.log(`Created product: ${product.sku}`);
         }
+        savedProducts.push(product);
     }
 
     // 4. Create Blog Posts
@@ -330,6 +347,71 @@ const seed = async () => {
         setting.value = JSON.stringify(HERO_SLIDES_DATA);
         await settingsRepo.save(setting);
         console.log('Created Default Hero Slides');
+    }
+
+    // 6. Seed Customers (New)
+    const customerRepo = AppDataSource.getRepository(Customer);
+    const customers = [
+        { name: 'John Kamau', phone: '0722123456', email: 'john@gmail.com' },
+        { name: 'Alice Wanjiku', phone: '0733654321', email: 'alice@yahoo.com' },
+        { name: 'AutoExpress Garage', phone: '0711000000', email: 'procurement@autoexpress.co.ke', isWholesale: true }
+    ];
+
+    const savedCustomers = [];
+    for (const cData of customers) {
+        let customer = await customerRepo.findOneBy({ phone: cData.phone });
+        if (!customer) {
+            customer = customerRepo.create(cData);
+            await customerRepo.save(customer);
+            console.log(`Created customer: ${cData.name}`);
+        }
+        savedCustomers.push(customer);
+    }
+
+    // 7. Seed Sales and Orders (New)
+    // Create a few dummy sales for the dashboard
+    const saleRepo = AppDataSource.getRepository(Sale);
+    const orderRepo = AppDataSource.getRepository(Order);
+    
+    // Check if sales exist
+    const salesCount = await saleRepo.count();
+    if (salesCount === 0 && savedProducts.length > 0) {
+        console.log('Seeding initial sales data...');
+        
+        // Sale 1
+        const sale1 = new Sale();
+        sale1.receiptNumber = 'RCP-SEED-001';
+        sale1.branch = hq;
+        sale1.cashier = admin;
+        sale1.customer = savedCustomers[0];
+        sale1.customerName = savedCustomers[0].name;
+        sale1.paymentMethod = 'MPESA';
+        sale1.totalAmount = savedProducts[0].price * 2 + savedProducts[1].price;
+        sale1.netAmount = sale1.totalAmount / 1.16;
+        sale1.taxAmount = sale1.totalAmount - sale1.netAmount;
+        sale1.itemsCount = 2;
+        sale1.itemsSnapshot = [
+            { productId: savedProducts[0].id, name: savedProducts[0].name, quantity: 2, price: savedProducts[0].price },
+            { productId: savedProducts[1].id, name: savedProducts[1].name, quantity: 1, price: savedProducts[1].price }
+        ];
+        sale1.kraControlCode = 'KRA-SEED-001';
+        await saleRepo.save(sale1);
+
+        // Order 1 (Pending)
+        const order1 = new Order();
+        order1.orderNumber = 'ORD-SEED-001';
+        order1.customerName = 'David Odhiambo';
+        order1.customerEmail = 'david@gmail.com';
+        order1.customerPhone = '0700111222';
+        order1.status = OrderStatus.PENDING;
+        order1.totalAmount = savedProducts[2].price;
+        order1.shippingAddress = 'Westlands';
+        order1.items = [
+            { product: savedProducts[2], quantity: 1, price: savedProducts[2].price } as any
+        ];
+        await orderRepo.save(order1);
+
+        console.log('Sales and Orders seeded.');
     }
 
     console.log('Seeding complete.');

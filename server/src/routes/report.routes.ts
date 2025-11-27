@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { Sale } from '../entities/Sale';
@@ -22,25 +21,41 @@ router.get('/sales', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, 
     try {
         const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(0); // Epoch if no start
         const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
+        const format = req.query.format as string || 'csv';
         
         // Adjust end date to end of day
         endDate.setHours(23, 59, 59, 999);
 
         const salesRepo = AppDataSource.getRepository(Sale);
         
-        // Stream headers
+        const query = salesRepo.createQueryBuilder('sale')
+            .leftJoinAndSelect('sale.customer', 'customer')
+            .leftJoinAndSelect('sale.cashier', 'cashier')
+            .where('sale.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate })
+            .orderBy('sale.createdAt', 'DESC');
+
+        if (format === 'json') {
+            const sales = await query.getMany();
+            const jsonData = sales.map(sale => ({
+                receiptNumber: sale.receiptNumber,
+                date: new Date(sale.createdAt).toLocaleString(),
+                customer: sale.customerName || 'Walk-in',
+                paymentMethod: sale.paymentMethod,
+                itemsCount: sale.itemsCount || (sale.itemsSnapshot ? (sale.itemsSnapshot as any[]).length : 0),
+                totalAmount: Number(sale.totalAmount),
+                cashier: sale.cashier?.fullName || 'System',
+                kraStatus: sale.kraControlCode ? 'Signed' : 'Pending'
+            }));
+            return res.json(jsonData);
+        }
+
+        // Stream CSV
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="sales_report_${Date.now()}.csv"`);
         
         res.write('Receipt Number,Date,Customer,Payment Method,Items Count,Total Amount (KES),Cashier,KRA Status\n');
 
-        // Create a stream
-        const stream = await salesRepo.createQueryBuilder('sale')
-            .leftJoinAndSelect('sale.customer', 'customer')
-            .leftJoinAndSelect('sale.cashier', 'cashier')
-            .where('sale.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate })
-            .orderBy('sale.createdAt', 'DESC')
-            .stream();
+        const stream = await query.stream();
 
         for await (const sale of stream) {
             const row = [
@@ -67,17 +82,36 @@ router.get('/sales', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, 
 // GET /api/reports/inventory
 router.get('/inventory', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
+        const format = req.query.format as string || 'csv';
+
+        const query = AppDataSource.getRepository(ProductStock)
+            .createQueryBuilder('stock')
+            .leftJoinAndSelect('stock.product', 'product')
+            .leftJoinAndSelect('product.category', 'category')
+            .leftJoinAndSelect('stock.branch', 'branch');
+
+        if (format === 'json') {
+            const stocks = await query.getMany();
+            const jsonData = stocks.map(item => ({
+                productName: item.product.name,
+                sku: item.product.sku,
+                category: item.product.category?.name || 'Uncategorized',
+                branch: item.branch.name,
+                quantity: item.quantity,
+                unitPrice: Number(item.product.price),
+                totalValue: Number(item.quantity) * Number(item.product.price),
+                status: item.quantity <= item.lowStockThreshold ? 'LOW STOCK' : 'OK'
+            }));
+            return res.json(jsonData);
+        }
+
+        // CSV Stream
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="inventory_valuation_${Date.now()}.csv"`);
         
         res.write('Product Name,SKU,Category,Branch,Quantity,Unit Price,Total Value,Status\n');
 
-        const stockStream = await AppDataSource.getRepository(ProductStock)
-            .createQueryBuilder('stock')
-            .leftJoinAndSelect('stock.product', 'product')
-            .leftJoinAndSelect('product.category', 'category')
-            .leftJoinAndSelect('stock.branch', 'branch')
-            .stream();
+        const stockStream = await query.stream();
 
         for await (const item of stockStream) {
             const qty = item.stock_quantity;

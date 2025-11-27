@@ -1,11 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
-import { X, Check, Send, Printer, Save, Plus, Trash2, AlertCircle, Plane } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Check, Send, Printer, Save, Plus, Trash2, AlertCircle, Plane, FileText, Loader2 } from 'lucide-react';
 import { Quote, QuoteStatus } from '../../types';
 import { apiClient } from '../../utils/apiClient';
+import InvoiceTemplate from './InvoiceTemplate';
 
 interface QuoteDetailsModalProps {
-    quote: any; // Relaxing type slightly to accept backend expanded fields
+    quote: any; 
     isOpen: boolean;
     onClose: () => void;
     onUpdate: () => void;
@@ -14,6 +14,10 @@ interface QuoteDetailsModalProps {
 const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, onClose, onUpdate }) => {
     const [items, setItems] = useState<any[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [isConverting, setIsConverting] = useState(false);
+    
+    // Printing
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (quote) {
@@ -46,7 +50,7 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
 
             await apiClient.patch(`/quotes/${quote.id}`, payload);
             onUpdate();
-            if (newStatus) onClose(); // Close if status change
+            if (newStatus) onClose(); 
         } catch (error) {
             alert('Failed to save quote');
         } finally {
@@ -54,11 +58,37 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
         }
     };
 
+    const handleConvertToInvoice = async () => {
+        if (!confirm('Convert this Quote to an Invoice (Order)? This will finalize the items.')) return;
+        
+        setIsConverting(true);
+        try {
+            await apiClient.post(`/quotes/${quote.id}/convert`);
+            alert('Quote successfully converted to Invoice!');
+            onUpdate();
+            onClose();
+            // Optional: Redirect to OrderManager or open Order
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Failed to convert quote');
+        } finally {
+            setIsConverting(false);
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
     const isEditable = quote.status === QuoteStatus.DRAFT || quote.status === QuoteStatus.SENT;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-3xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
+            {/* Hidden Print Template */}
+            <div className="hidden print-force-container">
+                <InvoiceTemplate data={quote} type="QUOTE" ref={printRef} />
+            </div>
+
+            <div className="bg-white w-full max-w-3xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scale-up print:hidden">
                 {/* Header */}
                 <div className="bg-masuma-dark text-white p-6 flex justify-between items-start">
                     <div>
@@ -67,6 +97,11 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                             {quote.type === 'SOURCING' && (
                                 <span className="bg-purple-600 text-white text-[10px] px-2 py-1 rounded font-bold uppercase flex items-center gap-1">
                                     <Plane size={10} className="transform -rotate-45" /> Sourcing Request
+                                </span>
+                            )}
+                            {quote.status === QuoteStatus.CONVERTED && (
+                                <span className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold uppercase flex items-center gap-1">
+                                    <Check size={10} /> Converted
                                 </span>
                             )}
                         </div>
@@ -159,7 +194,10 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
 
                 {/* Actions */}
                 <div className="p-6 border-t border-gray-200 bg-white flex justify-between items-center">
-                    <button className="text-gray-500 hover:text-masuma-dark text-xs font-bold uppercase flex items-center gap-2">
+                    <button 
+                        onClick={handlePrint}
+                        className="text-gray-500 hover:text-masuma-dark text-xs font-bold uppercase flex items-center gap-2"
+                    >
                         <Printer size={16} /> Print Quote
                     </button>
                     
@@ -183,12 +221,15 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                              </button>
                         )}
 
-                        {quote.status === QuoteStatus.SENT && (
+                        {/* Graduation Flow */}
+                        {(quote.status === QuoteStatus.SENT || quote.status === QuoteStatus.ACCEPTED) && (
                              <button 
-                                onClick={() => handleSave(QuoteStatus.ACCEPTED)}
+                                onClick={handleConvertToInvoice}
+                                disabled={isConverting}
                                 className="bg-green-600 text-white px-4 py-2 rounded font-bold uppercase text-xs hover:bg-green-700 flex items-center gap-2"
                              >
-                                <Check size={16} /> Accept & Invoice
+                                {isConverting ? <Loader2 className="animate-spin" size={16}/> : <FileText size={16} />}
+                                Convert to Invoice
                              </button>
                         )}
                     </div>

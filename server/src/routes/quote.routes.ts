@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { Quote, QuoteStatus, QuoteType } from '../entities/Quote';
 import { Customer } from '../entities/Customer';
+import { Order, OrderStatus } from '../entities/Order';
+import { OrderItem } from '../entities/OrderItem';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -10,11 +12,12 @@ import { EmailService } from '../services/emailService';
 const router = Router();
 const quoteRepo = AppDataSource.getRepository(Quote);
 const customerRepo = AppDataSource.getRepository(Customer);
+const orderRepo = AppDataSource.getRepository(Order);
 
 // Schema
 const createQuoteSchema = z.object({
     name: z.string().min(2),
-    email: z.string().email(),
+    email: z.string().email().optional().or(z.literal('')),
     phone: z.string().min(10),
     message: z.string().optional(),
     
@@ -70,7 +73,6 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         const { name, email, phone, message, productId, productName, items, vin, partNumber, description, requestType } = req.body;
 
         // 1. Find or Create Customer
-        // This fixes the "Failed to send request" error by satisfying the foreign key constraint
         let customer = await customerRepo.findOne({
             where: [
                 { email: email },
@@ -81,7 +83,7 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         if (!customer) {
             customer = new Customer();
             customer.name = name;
-            customer.email = email;
+            customer.email = email || undefined;
             customer.phone = phone;
             customer.isWholesale = false;
             await customerRepo.save(customer);
@@ -92,11 +94,11 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         quote.quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
         quote.requestType = requestType as QuoteType;
         quote.vin = vin;
-        quote.customer = customer; // Link is now guaranteed
+        quote.customer = customer; 
 
         let quoteItems = items || [];
 
-        if (requestType === 'SOURCING') {
+        if (requestType === 'SOURCING' && quoteItems.length === 0) {
             const itemName = description || 'Special Order Part';
             const details = partNumber ? `${itemName} (PN: ${partNumber})` : itemName;
             
@@ -118,25 +120,28 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         }
 
         quote.items = quoteItems;
-        quote.subtotal = 0;
-        quote.tax = 0;
-        quote.total = 0;
+        quote.subtotal = quoteItems.reduce((acc: number, i: any) => acc + (Number(i.total) || 0), 0);
+        quote.tax = quote.subtotal * 0.16; // Approx
+        quote.total = quote.subtotal; // Usually inclusive in basic logic
         quote.status = QuoteStatus.DRAFT;
         
         await quoteRepo.save(quote);
 
         // 3. Send Notifications (Non-blocking)
-        const emailBody = requestType === 'SOURCING'
-            ? `Customer: ${name}\nVIN: ${vin}\nPart: ${partNumber || 'N/A'}\nDesc: ${description}`
-            : `Customer: ${name}\nProduct: ${productName}\nMessage: ${message}`;
+        // Only send if it was a public request, not an admin creation
+        if (!req.user) {
+            const emailBody = requestType === 'SOURCING'
+                ? `Customer: ${name}\nVIN: ${vin}\nPart: ${partNumber || 'N/A'}\nDesc: ${description}`
+                : `Customer: ${name}\nProduct: ${productName}\nMessage: ${message}`;
 
-        EmailService.sendEmail('QUOTE_REQUEST', {
-            name, email, phone,
-            message: emailBody,
-            productName: requestType === 'SOURCING' ? 'Special Sourcing' : quoteItems[0]?.name 
-        }).catch(err => console.error("Email dispatch error:", err));
+            EmailService.sendEmail('QUOTE_REQUEST', {
+                name, email, phone,
+                message: emailBody,
+                productName: requestType === 'SOURCING' ? 'Special Sourcing' : quoteItems[0]?.name 
+            }).catch(err => console.error("Email dispatch error:", err));
+        }
 
-        res.status(201).json({ message: 'Request received', quoteId: quote.id });
+        res.status(201).json({ message: 'Quote created', quoteId: quote.id });
     } catch (error) {
         console.error("Quote Error:", error);
         res.status(500).json({ error: 'Failed to submit quote' });
@@ -162,6 +167,53 @@ router.patch('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(upd
         res.json(quote);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update quote' });
+    }
+});
+
+// POST /api/quotes/:id/convert
+// Convert a Quote to an Order (Invoice)
+router.post('/:id/convert', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
+    try {
+        const quote = await quoteRepo.findOne({ 
+            where: { id: req.params.id },
+            relations: ['customer']
+        });
+
+        if (!quote) return res.status(404).json({ error: 'Quote not found' });
+        if (quote.status === QuoteStatus.CONVERTED) return res.status(400).json({ error: 'Quote already converted' });
+
+        // Create Order
+        const order = new Order();
+        order.orderNumber = `INV-${Date.now().toString().slice(-6)}`; // INV prefix for Invoices
+        order.customerName = quote.customer.name;
+        order.customerEmail = quote.customer.email || '';
+        order.customerPhone = quote.customer.phone || '';
+        order.shippingAddress = quote.customer.address || 'Pickup';
+        order.totalAmount = quote.total;
+        order.status = OrderStatus.PENDING; // Unpaid Invoice
+        order.sourceQuote = quote;
+
+        // Map Items
+        order.items = quote.items.map((qi: any) => {
+            const item = new OrderItem();
+            if (qi.productId) item.product = { id: qi.productId } as any;
+            item.quantity = qi.quantity;
+            item.price = qi.unitPrice;
+            // Fallback description logic if product link missing is handled in frontend view
+            return item;
+        });
+
+        await orderRepo.save(order);
+
+        // Update Quote
+        quote.status = QuoteStatus.CONVERTED;
+        quote.convertedOrder = order;
+        await quoteRepo.save(quote);
+
+        res.status(201).json({ message: 'Converted to Invoice', orderId: order.id });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Conversion failed' });
     }
 });
 

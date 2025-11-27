@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Save, Loader2, UploadCloud, Download, Upload, Package, Car, Image as ImageIcon, Star, Check } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Save, Loader2, UploadCloud, Download, Upload, Package, Car, Image as ImageIcon, Star, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -11,6 +11,9 @@ const ProductManager: React.FC = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Pagination State
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
+  
   // Editor State
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -20,16 +23,23 @@ const ProductManager: React.FC = () => {
   
   // Import/Export State
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Refs for file inputs
   const csvInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = 1) => {
     setIsLoading(true);
     try {
-        const res = await apiClient.get(`/products?q=${searchTerm}&limit=1000`);
-        setProducts(res.data.data || res.data);
+        const res = await apiClient.get(`/products?q=${searchTerm}&page=${page}&limit=${pagination.limit}`);
+        if (res.data && res.data.data) {
+            setProducts(res.data.data);
+            setPagination(res.data.meta);
+        } else {
+            // Fallback for non-paginated response
+            setProducts(res.data);
+        }
     } catch (error) {
         console.error('Failed to fetch products', error);
     } finally {
@@ -47,13 +57,19 @@ const ProductManager: React.FC = () => {
   };
 
   useEffect(() => {
-    const debounce = setTimeout(() => fetchProducts(), 500);
+    const debounce = setTimeout(() => fetchProducts(1), 500);
     return () => clearTimeout(debounce);
   }, [searchTerm]);
 
   useEffect(() => {
       fetchCategories();
   }, []);
+
+  const handlePageChange = (newPage: number) => {
+      if (newPage >= 1 && newPage <= pagination.pages) {
+          fetchProducts(newPage);
+      }
+  };
 
   const handleAddNew = () => {
     setFormData({
@@ -80,7 +96,7 @@ const ProductManager: React.FC = () => {
     
     try {
         await apiClient.delete(`/products/${id}`);
-        fetchProducts();
+        fetchProducts(pagination.page);
         alert('Product deleted successfully.');
     } catch (error: any) {
         alert(error.response?.data?.error || 'Failed to delete product.');
@@ -96,31 +112,32 @@ const ProductManager: React.FC = () => {
       uploadData.append('image', file);
 
       try {
-          // Removed manual Content-Type header
-          const res = await apiClient.post('/upload', uploadData);
-          const url = res.data.url;
+          // Explicitly unset Content-Type to let the browser set the correct boundary
+          const res = await apiClient.post('/upload', uploadData, {
+              headers: { 'Content-Type': undefined }
+          });
           
-          if (field === 'image') {
-              setFormData((prev: any) => {
-                  const currentImages = prev.images || [];
-                  // Add to gallery
-                  const updatedImages = [...currentImages, url];
-                  
-                  return {
-                      ...prev,
-                      // If no primary image exists, set this one as primary
-                      image: prev.image ? prev.image : url,
-                      images: updatedImages
-                  };
-              });
+          if (res.data && res.data.url) {
+              const url = res.data.url;
+              if (field === 'image') {
+                  setFormData((prev: any) => {
+                      const currentImages = prev.images || [];
+                      const updatedImages = [...currentImages, url];
+                      return {
+                          ...prev,
+                          image: prev.image ? prev.image : url,
+                          images: updatedImages
+                      };
+                  });
+              } else {
+                  setFormData((prev: any) => ({ ...prev, videoUrl: url }));
+              }
           } else {
-              setFormData((prev: any) => ({
-                  ...prev,
-                  videoUrl: url
-              }));
+              throw new Error('Invalid response from server');
           }
-      } catch (error) {
-          alert('Upload failed');
+      } catch (error: any) {
+          console.error("Upload Error:", error);
+          alert('Upload failed: ' + (error.response?.data?.error || error.message));
       } finally {
           setIsUploading(false);
           if (imageInputRef.current) imageInputRef.current.value = '';
@@ -174,7 +191,7 @@ const ProductManager: React.FC = () => {
         }
 
         setIsEditorOpen(false);
-        fetchProducts(); 
+        fetchProducts(pagination.page); 
     } catch (error: any) {
         alert(error.response?.data?.error || 'Failed to save product. Check inputs.');
         console.error(error);
@@ -185,29 +202,44 @@ const ProductManager: React.FC = () => {
 
   // --- CSV FUNCTIONS ---
 
-  const handleExport = () => {
-      const headers = ['SKU', 'Name', 'Category', 'Price (Retail)', 'Cost Price', 'Wholesale Price', 'Description', 'OEM Numbers', 'Compatible Vehicles', 'Image URL'];
-      
-      const rows = products.map((p: any) => [
-          p.sku,
-          `"${p.name.replace(/"/g, '""')}"`,
-          p.category,
-          p.price,
-          p.costPrice || 0,
-          p.wholesalePrice || 0,
-          `"${(p.description || '').replace(/"/g, '""')}"`,
-          `"${(p.oemNumbers || []).join('|')}"`,
-          `"${(p.compatibility || []).join('|')}"`,
-          p.image
-      ].join(','));
+  const handleExport = async () => {
+      setIsExporting(true);
+      try {
+          // Fetch all products for export (bypass pagination)
+          const res = await apiClient.get('/products?limit=100000');
+          const allProducts = res.data.data || res.data || [];
 
-      const csvContent = [headers.join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `products_catalog_${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
+          const headers = ['SKU', 'Name', 'Category', 'Price (Retail)', 'Quantity', 'Cost Price', 'Wholesale Price', 'Description', 'OEM Numbers', 'Compatible Vehicles', 'Image URL'];
+          
+          const rows = allProducts.map((p: any) => [
+              p.sku,
+              `"${p.name.replace(/"/g, '""')}"`,
+              p.category,
+              p.price,
+              p.quantity || 0, // Added Quantity
+              p.costPrice || 0,
+              p.wholesalePrice || 0,
+              `"${(p.description || '').replace(/"/g, '""')}"`,
+              `"${(p.oemNumbers || []).join('|')}"`,
+              `"${(p.compatibility || []).join('|')}"`,
+              p.image
+          ].join(','));
+
+          const csvContent = [headers.join(','), ...rows].join('\n');
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `masuma_inventory_export_${new Date().toISOString().slice(0,10)}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+      } catch (error) {
+          alert('Export failed. Please try again.');
+      } finally {
+          setIsExporting(false);
+      }
   };
 
   const handleImportClick = () => {
@@ -280,6 +312,7 @@ const ProductManager: React.FC = () => {
                       price: cleanNumber(getVal('retail') || getVal('price')),
                       costPrice: cleanNumber(getVal('cost')),
                       wholesalePrice: cleanNumber(getVal('wholesale')),
+                      // Explicitly looking for Quantity column
                       quantity: parseInt(String(cleanNumber(getVal('qty') || getVal('quantity')))),
                       description: getVal('desc'),
                       oemNumbers: getVal('oem'), 
@@ -306,7 +339,7 @@ const ProductManager: React.FC = () => {
               });
               
               alert(`Successfully processed ${importedProducts.length} products.`);
-              fetchProducts();
+              fetchProducts(1); // Reset to page 1
           } catch (error: any) {
               console.error(error);
               alert('Import failed: ' + (error.response?.data?.error || error.message));
@@ -320,7 +353,7 @@ const ProductManager: React.FC = () => {
   };
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full flex flex-col">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Product Inventory</h2>
@@ -337,9 +370,10 @@ const ProductManager: React.FC = () => {
             </button>
             <button 
                 onClick={handleExport}
+                disabled={isExporting}
                 className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded font-bold uppercase text-xs hover:bg-gray-50 transition flex items-center gap-2"
             >
-                <Download size={16} /> Export CSV
+                {isExporting ? <Loader2 size={16} className="animate-spin"/> : <Download size={16} />} Export CSV
             </button>
             <button 
             onClick={handleAddNew}
@@ -364,8 +398,8 @@ const ProductManager: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-x-auto">
           {isLoading ? (
               <div className="flex justify-center items-center h-64">
                   <Loader2 className="animate-spin text-masuma-orange" size={32} />
@@ -383,7 +417,7 @@ const ProductManager: React.FC = () => {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 text-sm">
               {products.map((product: any) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4">
@@ -392,7 +426,7 @@ const ProductManager: React.FC = () => {
                         <img src={product.image} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div>
-                        <div className="font-bold text-masuma-dark text-sm">{product.name}</div>
+                        <div className="font-bold text-masuma-dark text-sm line-clamp-1">{product.name}</div>
                         <div className="text-xs text-gray-500 font-mono">{product.sku}</div>
                       </div>
                     </div>
@@ -416,9 +450,35 @@ const ProductManager: React.FC = () => {
                   </td>
                 </tr>
               ))}
+              {products.length === 0 && (
+                  <tr><td colSpan={7} className="text-center py-10 text-gray-400">No products found.</td></tr>
+              )}
             </tbody>
           </table>
           )}
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+            <span className="text-xs text-gray-500 font-bold">
+                Page {pagination.page} of {pagination.pages} ({pagination.total} Items)
+            </span>
+            <div className="flex gap-2">
+                <button 
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
+                >
+                    <ChevronLeft size={16} />
+                </button>
+                <button 
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.pages}
+                    className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
+                >
+                    <ChevronRight size={16} />
+                </button>
+            </div>
         </div>
       </div>
 

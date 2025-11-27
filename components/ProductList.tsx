@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Category, Product } from '../types';
-import { Search, AlertCircle, Eye, ShoppingBag, RefreshCw, Plane, Loader2, Database, WifiOff, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Product } from '../types';
+import { Search, AlertCircle, Eye, ShoppingBag, Plane, ChevronLeft, ChevronRight } from 'lucide-react';
 import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
@@ -13,14 +13,16 @@ interface ProductListProps {
 }
 
 const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
-  const [selectedCategory, setSelectedCategory] = useState<Category>(Category.ALL);
+  // Replaced enum usage with dynamic string state
+  const [categories, setCategories] = useState<string[]>(['All']);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [vinFilter, setVinFilter] = useState('');
   const [error, setError] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
   
   const [isSourcingOpen, setIsSourcingOpen] = useState(false);
 
@@ -30,25 +32,38 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [totalProducts, setTotalProducts] = useState(0);
   const ITEMS_PER_PAGE = 12;
 
-  // Fetch Products with Server-Side Search and Pagination
+  // Fetch Categories on Mount
+  useEffect(() => {
+      const fetchCategories = async () => {
+          try {
+              const res = await apiClient.get('/categories');
+              if (res.data && Array.isArray(res.data)) {
+                  const catNames = res.data.map((c: any) => c.name);
+                  setCategories(['All', ...catNames]);
+              }
+          } catch (e) {
+              // Silently fallback to basics if API fails to prevent console noise
+              setCategories(['All', 'Filters', 'Brakes', 'Suspension']);
+          }
+      };
+      fetchCategories();
+  }, []);
+
   useEffect(() => {
     const fetchProducts = async () => {
         setIsLoading(true);
         setError(false);
         try {
-            // Construct query params
             const params = new URLSearchParams();
             params.append('page', currentPage.toString());
             params.append('limit', ITEMS_PER_PAGE.toString());
             if (searchQuery) params.append('q', searchQuery);
-            if (selectedCategory !== Category.ALL) params.append('category', selectedCategory);
+            
+            // Use dynamic category string
+            if (selectedCategory !== 'All') params.append('category', selectedCategory);
             
             const response = await apiClient.get(`/products?${params.toString()}`);
             
-            // Check for Mock Header to verify DB connection
-            setIsOffline(response.headers['x-datasource'] === 'mock');
-
-            // Handle paginated response structure { data: [...], meta: { ... } }
             const responseData = response.data;
             
             if (responseData.data && Array.isArray(responseData.data)) {
@@ -57,13 +72,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                     setTotalPages(responseData.meta.pages || 1);
                     setTotalProducts(responseData.meta.total || 0);
                 }
-            } else if (Array.isArray(responseData)) {
-                // Fallback for flat array responses (mostly mock mode)
-                setProducts(responseData);
-                setTotalPages(1);
-                setTotalProducts(responseData.length);
             } else {
-                console.warn("Unexpected API response format", response.data);
                 setProducts([]);
             }
         } catch (error) {
@@ -74,7 +83,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         }
     };
 
-    // Debounce the API call for search
     const timer = setTimeout(() => {
         fetchProducts();
     }, 500);
@@ -82,29 +90,23 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory, currentPage]); 
 
-  // Reset page when filters change
   useEffect(() => {
       setCurrentPage(1);
   }, [searchQuery, selectedCategory]);
 
-  // Client-side VIN Filtering (on top of server results for now)
-  // Note: For large datasets, VIN filtering should ideally move to the backend too.
   const displayProducts = useMemo(() => {
     let filtered = products;
-
     if (vinFilter) {
         filtered = filtered.filter(product => 
             product.compatibility.some(c => c.toLowerCase().includes(vinFilter.toLowerCase()) || vinFilter.toLowerCase().includes(c.toLowerCase()))
         );
     }
-
     return filtered;
   }, [vinFilter, products]);
 
   const handlePageChange = (newPage: number) => {
       if (newPage >= 1 && newPage <= totalPages) {
           setCurrentPage(newPage);
-          // Scroll to top of product list
           const listElement = document.getElementById('product-list-top');
           if (listElement) {
               listElement.scrollIntoView({ behavior: 'smooth' });
@@ -143,26 +145,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
             </p>
         </div>
-        <div className="mt-4 md:mt-0">
-            {isOffline ? (
-                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold uppercase border border-red-200">
-                    <WifiOff size={14} /> Offline Mode (Mock Data)
-                </span>
-            ) : (
-                <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-600 text-xs font-bold uppercase border border-green-200">
-                    <Database size={14} /> Live Database
-                </span>
-            )}
-        </div>
       </div>
 
-      {/* VIN Search Module */}
       <VinSearch onVehicleIdentified={setVinFilter} />
 
-      {/* Controls */}
       <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md p-4 shadow-lg border-t-4 border-masuma-orange mb-8 -mx-4 sm:mx-0 sm:rounded-lg transition-all">
         <div className="flex flex-col lg:flex-row gap-6 items-center">
-          {/* Search */}
           <div className="w-full lg:w-1/3 relative group">
             <input
               type="text"
@@ -174,10 +162,9 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             <Search className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={18} />
           </div>
 
-          {/* Filter */}
           <div className="w-full lg:w-2/3 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 pb-1">
-              {Object.values(Category).map((cat) => (
+              {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -195,7 +182,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         </div>
       </div>
 
-      {/* Error State */}
       {error && (
            <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="p-6 bg-red-50 rounded-full mb-4 text-red-500"><AlertCircle size={48} /></div>
@@ -205,7 +191,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
            </div>
       )}
 
-      {/* Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
            {[1,2,3,4,5,6,7,8,9,10].map(i => <ProductSkeleton key={i} />)}
@@ -223,7 +208,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
           
           <div className="flex gap-4">
               <button 
-                onClick={() => {setSearchQuery(''); setSelectedCategory(Category.ALL); setVinFilter('');}}
+                onClick={() => {setSearchQuery(''); setSelectedCategory('All'); setVinFilter('');}}
                 className="px-8 py-3 bg-white border border-gray-300 text-gray-600 font-bold uppercase tracking-widest text-xs hover:bg-gray-50 transition"
               >
                 Clear Filters
@@ -243,7 +228,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             {displayProducts.map((product) => (
                 <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
                 
-                {/* Image Area */}
                 <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
                     <img 
                     src={(product as any).images?.[0] || product.image} 
@@ -254,7 +238,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                     }}
                     />
                     
-                    {/* Floating Badges */}
                     <div className="absolute top-0 left-0 p-3 w-full flex justify-between items-start">
                         <span className="bg-white/90 backdrop-blur text-masuma-dark text-[10px] font-bold px-2 py-1 uppercase tracking-wider border border-gray-200 shadow-sm">
                             {product.category}
@@ -266,7 +249,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                         )}
                     </div>
 
-                    {/* Quick Actions Overlay */}
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
                         <button 
                             onClick={() => setSelectedProduct(product)}
@@ -277,7 +259,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                     </div>
                 </div>
 
-                {/* Details Area */}
                 <div className="p-6 flex-1 flex flex-col">
                     <div className="mb-4">
                     <div className="flex justify-between items-start mb-1">
@@ -321,7 +302,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             ))}
             </div>
 
-            {/* Pagination Controls */}
             {totalPages > 1 && (
                 <div className="mt-12 flex justify-center items-center gap-2">
                     <button 
@@ -332,10 +312,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                         <ChevronLeft size={20} />
                     </button>
                     
-                    {/* Simple Page Numbers Logic */}
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        // Logic to show windows around current page can be complex, simple approach:
-                        // Show first few pages or a sliding window
                         let pNum = i + 1;
                         if (totalPages > 5) {
                             if (currentPage > 3) pNum = currentPage - 2 + i;

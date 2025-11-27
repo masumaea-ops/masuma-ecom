@@ -8,18 +8,19 @@ interface HeroProps {
     setView: (view: ViewState) => void;
 }
 
+const DEFAULT_SLIDES: HeroSlide[] = [
+    {
+        id: 'default-1',
+        title: 'JAPANESE\nPRECISION.\nKENYAN GRIT.',
+        subtitle: 'Upgrade your ride with parts engineered to survive Nairobi\'s toughest roads.',
+        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
+        ctaText: 'Browse Catalog',
+        ctaLink: 'CATALOG'
+    }
+];
+
 const Hero: React.FC<HeroProps> = ({ setView }) => {
-  const [slides, setSlides] = useState<HeroSlide[]>([
-      {
-          id: 'default',
-          title: 'JAPANESE\nPRECISION.\nKENYAN GRIT.',
-          subtitle: 'Upgrade your ride with parts engineered to survive Nairobi\'s toughest roads.',
-          image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
-          mediaType: 'image',
-          ctaText: 'Browse Catalog',
-          ctaLink: 'CATALOG'
-      }
-  ]);
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [announcement, setAnnouncement] = useState('');
   const [announcementColor, setAnnouncementColor] = useState('#E0621B');
@@ -38,19 +39,14 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                           const parsed = JSON.parse(s.CMS_HERO_SLIDES);
                           if (Array.isArray(parsed) && parsed.length > 0) {
                               setSlides(parsed);
+                          } else {
+                              setSlides(DEFAULT_SLIDES);
                           }
-                      } catch (e) { console.error("Invalid slides JSON"); }
-                  } else if (s.CMS_HERO_TITLE) {
-                       // Legacy Support
-                       setSlides([{
-                           id: 'legacy',
-                           title: s.CMS_HERO_TITLE.replace(/\\n/g, '\n'),
-                           subtitle: s.CMS_HERO_SUBTITLE || '',
-                           image: s.CMS_HERO_IMAGE || '',
-                           mediaType: 'image',
-                           ctaText: 'Browse Catalog',
-                           ctaLink: 'CATALOG'
-                       }]);
+                      } catch (e) { 
+                          setSlides(DEFAULT_SLIDES);
+                      }
+                  } else {
+                      setSlides(DEFAULT_SLIDES);
                   }
 
                   // 2. Load Announcement
@@ -58,9 +54,12 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                       setAnnouncement(s.CMS_ANNOUNCEMENT_TEXT || '');
                       setAnnouncementColor(s.CMS_ANNOUNCEMENT_COLOR || '#E0621B');
                   }
+              } else {
+                  setSlides(DEFAULT_SLIDES);
               }
           } catch (error) {
-              // Use default
+              // Silent fail to default slides on network error to prevent console spam
+              setSlides(DEFAULT_SLIDES);
           }
       };
       fetchSettings();
@@ -76,7 +75,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
       if (slides.length > 1) {
         timeoutRef.current = setTimeout(() => {
             setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-        }, 8000); // 8 Seconds per slide (slower for video)
+        }, 8000); 
       }
       return () => resetTimeout();
   }, [currentSlide, slides]);
@@ -90,10 +89,20 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
   };
 
   const getYoutubeId = (url: string) => {
+      if (!url) return null;
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = url.match(regExp);
       return (match && match[2].length === 11) ? match[2] : null;
   };
+
+  if (slides.length === 0) {
+      // Immediate fallback if loading state persists too long or init fails
+      return (
+        <div className="h-[600px] md:h-[700px] bg-masuma-dark animate-pulse flex items-center justify-center">
+            <div className="text-gray-600 font-bold uppercase tracking-widest">Loading...</div>
+        </div>
+      );
+  }
 
   return (
     <>
@@ -102,10 +111,8 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
             {announcement}
         </div>
     )}
-    {/* Updated Height for Large Screens */}
     <div className="relative bg-masuma-dark overflow-hidden h-[600px] md:h-[700px] 2xl:h-[850px] group">
       
-      {/* Slides */}
       {slides.map((slide, index) => (
           <div 
             key={slide.id}
@@ -154,7 +161,6 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                             Official Distributor for East Africa
                         </div>
                         
-                        {/* Increased font size for 2XL screens */}
                         <h1 
                             className="text-5xl md:text-7xl 2xl:text-8xl font-bold text-white leading-[0.9] mb-8 font-display whitespace-pre-line drop-shadow-lg"
                             dangerouslySetInnerHTML={{ 
@@ -186,7 +192,6 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
           </div>
       ))}
 
-      {/* Controls */}
       {slides.length > 1 && (
           <>
             <div className="absolute bottom-32 right-0 md:right-20 flex gap-2 z-20 px-4">
@@ -215,7 +220,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
           </>
       )}
 
-      {/* Floating Features Banner */}
+      {/* Features Banner */}
       <div className="absolute bottom-0 left-0 right-0 z-20 hidden md:block">
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-white shadow-2xl grid grid-cols-3 divide-x divide-gray-100 border-b-4 border-masuma-orange">

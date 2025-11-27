@@ -14,15 +14,6 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-// Approximate fallback rates if server is offline
-const FALLBACK_RATES: Record<string, number> = {
-    KES: 1,
-    USD: 0.0076, // ~130 KES
-    UGX: 28.5,
-    TZS: 19.5,
-    RWF: 9.8
-};
-
 export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [currency, setCurrency] = useState<CurrencyCode>('KES');
     const [rates, setRates] = useState<Record<string, number>>({ KES: 1 });
@@ -35,16 +26,14 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
                     setRates(res.data);
                 }
             } catch (error) {
-                // Quietly fail to fallback rates
-                console.warn('Exchange Rate API unreachable. Using offline rates.');
-                setRates(FALLBACK_RATES);
+                console.warn('Exchange Rate API unreachable.');
             }
         };
         fetchRates();
     }, []);
 
     const convert = (amountInKes: number) => {
-        const rate = rates[currency] || FALLBACK_RATES[currency] || 1;
+        const rate = rates[currency] || 1;
         return amountInKes * rate;
     };
 

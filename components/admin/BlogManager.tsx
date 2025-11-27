@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Eye, Calendar, Image as ImageIcon, Save, X, Loader2, UploadCloud } from 'lucide-react';
-import { BlogPost, Category } from '../../types';
+import { Plus, Edit, Trash2, Calendar, Image as ImageIcon, Save, X, Loader2, UploadCloud, Bold, Italic, List, ListOrdered, Link as LinkIcon, Heading1, Quote, Code } from 'lucide-react';
+import { BlogPost } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
 const BlogManager: React.FC = () => {
     const [posts, setPosts] = useState<BlogPost[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -13,26 +14,33 @@ const BlogManager: React.FC = () => {
     
     const [formData, setFormData] = useState<Partial<BlogPost>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const contentRef = useRef<HTMLTextAreaElement>(null);
 
-    const fetchPosts = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            // For admin view, request a larger limit to see more posts at once without complex pagination UI for now
-            const res = await apiClient.get('/blog?limit=100');
-            if (res.data && res.data.data) {
-                setPosts(res.data.data);
+            // Fetch Posts
+            const postsRes = await apiClient.get('/blog?limit=100');
+            if (postsRes.data && postsRes.data.data) {
+                setPosts(postsRes.data.data);
             } else {
                 setPosts([]);
             }
+
+            // Fetch Categories
+            const catRes = await apiClient.get('/categories');
+            if (catRes.data) {
+                setCategories(catRes.data.map((c: any) => c.name));
+            }
         } catch (error) {
-            console.error('Failed to fetch posts', error);
+            console.error('Failed to fetch data', error);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchPosts();
+        fetchData();
     }, []);
 
     const handleAddNew = () => {
@@ -43,7 +51,7 @@ const BlogManager: React.FC = () => {
             image: '',
             content: '',
             excerpt: '',
-            relatedProductCategory: Category.FILTERS
+            relatedProductCategory: categories[0] || 'Filters'
         });
         setIsEditing(true);
     };
@@ -62,14 +70,53 @@ const BlogManager: React.FC = () => {
         uploadData.append('image', file);
 
         try {
-            // Fix: Removed manual Content-Type header
-            const res = await apiClient.post('/upload', uploadData);
-            setFormData(prev => ({ ...prev, image: res.data.url }));
-        } catch (error) {
-            alert('Upload failed');
+            const res = await apiClient.post('/upload', uploadData, {
+                headers: { 'Content-Type': undefined } // Let browser handle multipart
+            });
+            if (res.data && res.data.url) {
+                setFormData(prev => ({ ...prev, image: res.data.url }));
+            } else {
+                throw new Error('Invalid server response');
+            }
+        } catch (error: any) {
+            console.error(error);
+            alert('Upload failed: ' + (error.response?.data?.error || 'Unknown error'));
         } finally {
             setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
+    };
+
+    // --- Rich Text Logic ---
+    const insertFormat = (startTag: string, endTag: string = '') => {
+        const textarea = contentRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = formData.content || '';
+        const before = text.substring(0, start);
+        const selection = text.substring(start, end);
+        const after = text.substring(end);
+
+        // If link, ask for URL
+        let finalStartTag = startTag;
+        if (startTag === '<a href="') {
+            const url = prompt('Enter URL:', 'https://');
+            if (!url) return;
+            finalStartTag = `<a href="${url}" target="_blank" class="text-masuma-orange hover:underline">`;
+        }
+
+        const newText = `${before}${finalStartTag}${selection}${endTag}${after}`;
+        
+        // React state update
+        setFormData({ ...formData, content: newText });
+
+        // Restore focus
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + finalStartTag.length, end + finalStartTag.length);
+        }, 0);
     };
 
     const handleSave = async () => {
@@ -82,7 +129,7 @@ const BlogManager: React.FC = () => {
                 await apiClient.post('/blog', formData);
             }
             setIsEditing(false);
-            fetchPosts();
+            fetchData();
         } catch (error) {
             console.error('Failed to save post', error);
             alert('Failed to save post');
@@ -95,7 +142,7 @@ const BlogManager: React.FC = () => {
         if (!confirm('Are you sure?')) return;
         try {
             await apiClient.delete(`/blog/${id}`);
-            fetchPosts();
+            fetchData();
         } catch (error) {
             alert('Failed to delete');
         }
@@ -106,6 +153,7 @@ const BlogManager: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Content Studio</h2>
+                    <p className="text-sm text-gray-500">Manage blog posts and technical articles.</p>
                 </div>
                 <button 
                     onClick={handleAddNew}
@@ -156,10 +204,10 @@ const BlogManager: React.FC = () => {
                              <label className="text-xs font-bold uppercase text-gray-500">Related Product Category</label>
                              <select 
                                 value={formData.relatedProductCategory}
-                                onChange={e => setFormData({...formData, relatedProductCategory: e.target.value as Category})}
+                                onChange={e => setFormData({...formData, relatedProductCategory: e.target.value})}
                                 className="w-full p-3 border border-gray-200 rounded outline-none focus:border-masuma-orange bg-white"
                              >
-                                {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
+                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
                              </select>
                          </div>
 
@@ -201,12 +249,32 @@ const BlogManager: React.FC = () => {
                          </div>
 
                          <div className="space-y-2 h-full">
-                             <label className="text-xs font-bold uppercase text-gray-500">Content (HTML/Markdown)</label>
+                             <label className="text-xs font-bold uppercase text-gray-500 flex justify-between items-center">
+                                 <span>Body Content</span>
+                                 <span className="text-[10px] text-gray-400">HTML Supported</span>
+                             </label>
+                             
+                             {/* Rich Text Toolbar */}
+                             <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-t border border-gray-200 border-b-0 overflow-x-auto">
+                                 <button onClick={() => insertFormat('<b>', '</b>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Bold"><Bold size={16}/></button>
+                                 <button onClick={() => insertFormat('<i>', '</i>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Italic"><Italic size={16}/></button>
+                                 <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                                 <button onClick={() => insertFormat('<h3>', '</h3>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Heading"><Heading1 size={16}/></button>
+                                 <button onClick={() => insertFormat('<blockquote>', '</blockquote>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Quote"><Quote size={16}/></button>
+                                 <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                                 <button onClick={() => insertFormat('<ul>\n<li>', '</li>\n</ul>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Bullet List"><List size={16}/></button>
+                                 <button onClick={() => insertFormat('<ol>\n<li>', '</li>\n</ol>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Numbered List"><ListOrdered size={16}/></button>
+                                 <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                                 <button onClick={() => insertFormat('<a href="', '">Link</a>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Hyperlink"><LinkIcon size={16}/></button>
+                                 <button onClick={() => insertFormat('<p>', '</p>')} className="p-2 hover:bg-white hover:text-masuma-orange rounded transition" title="Paragraph"><Code size={16}/></button>
+                             </div>
+
                              <textarea 
+                                ref={contentRef}
                                 value={formData.content}
                                 onChange={e => setFormData({...formData, content: e.target.value})}
-                                className="w-full h-96 p-4 border border-gray-200 rounded outline-none focus:border-masuma-orange font-mono text-sm leading-relaxed resize-none" 
-                                placeholder="Write your story here (HTML supported)..."
+                                className="w-full h-96 p-4 border border-gray-200 rounded-b outline-none focus:border-masuma-orange font-mono text-sm leading-relaxed resize-none" 
+                                placeholder="Write your article here. Use the toolbar above to format text."
                              ></textarea>
                          </div>
 
@@ -224,21 +292,32 @@ const BlogManager: React.FC = () => {
                     </div>
 
                     {/* Live Preview Sidebar */}
-                    <div className="w-96 bg-gray-50 border-l border-gray-200 p-6 hidden lg:block">
-                        <h4 className="text-xs font-bold uppercase text-gray-400 mb-4">Card Preview</h4>
-                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md">
-                             <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-400 overflow-hidden">
-                                 {formData.image ? (
-                                     <img src={formData.image} className="w-full h-full object-cover" alt="" />
-                                 ) : (
-                                     <ImageIcon size={32} />
-                                 )}
-                             </div>
-                             <div className="p-4">
-                                 <span className="text-[10px] font-bold text-masuma-orange uppercase bg-orange-50 px-2 py-1 rounded">{formData.category || 'Category'}</span>
-                                 <h3 className="text-lg font-bold text-masuma-dark mt-2 leading-tight">{formData.title || 'Article Title'}</h3>
-                                 <p className="text-xs text-gray-500 mt-2 line-clamp-3">{formData.excerpt || 'Excerpt will appear here...'}</p>
-                             </div>
+                    <div className="w-full lg:w-[450px] bg-gray-50 border-l border-gray-200 flex flex-col h-[80vh] lg:h-auto">
+                        <h4 className="text-xs font-bold uppercase text-gray-400 p-4 bg-gray-100 border-b border-gray-200">Live Preview</h4>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md mb-6">
+                                 <div className="h-48 bg-gray-200 flex items-center justify-center text-gray-400 overflow-hidden">
+                                     {formData.image ? (
+                                         <img src={formData.image} className="w-full h-full object-cover" alt="" />
+                                     ) : (
+                                         <ImageIcon size={32} />
+                                     )}
+                                 </div>
+                                 <div className="p-4">
+                                     <span className="text-[10px] font-bold text-masuma-orange uppercase bg-orange-50 px-2 py-1 rounded">{formData.category || 'Category'}</span>
+                                     <h3 className="text-lg font-bold text-masuma-dark mt-2 leading-tight">{formData.title || 'Article Title'}</h3>
+                                     <p className="text-xs text-gray-500 mt-2 line-clamp-3">{formData.excerpt || 'Excerpt will appear here...'}</p>
+                                 </div>
+                            </div>
+
+                            {/* Content Body Preview */}
+                            <div className="prose prose-sm max-w-none text-gray-600 prose-headings:font-display prose-headings:uppercase prose-a:text-masuma-orange">
+                                {formData.content ? (
+                                    <div dangerouslySetInnerHTML={{ __html: formData.content }} />
+                                ) : (
+                                    <p className="italic text-gray-400">Start typing to see how your content will look on the website...</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

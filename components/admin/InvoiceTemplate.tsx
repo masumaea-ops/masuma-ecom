@@ -1,157 +1,205 @@
+
 import React, { forwardRef } from 'react';
-import { Sale, Order } from '../../types';
-import { QrCode } from 'lucide-react';
+import { Sale, Order, Quote } from '../../types';
+import { QrCode, Phone, Mail, MapPin } from 'lucide-react';
 
 interface InvoiceTemplateProps {
-  data: Sale | Order;
-  type: 'TAX_INVOICE' | 'RECEIPT' | 'WAYBILL';
+  data: Sale | Order | Quote;
+  type: 'TAX_INVOICE' | 'RECEIPT' | 'WAYBILL' | 'QUOTE';
 }
 
 const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data, type }, ref) => {
-  // Helper to check if it's a Sale or Order type
+  // Helpers
   const isSale = (d: any): d is Sale => 'receiptNumber' in d;
+  const isQuote = (d: any): d is Quote => 'quoteNumber' in d;
   
-  const docNumber = isSale(data) ? data.receiptNumber : data.orderNumber;
-  const date = isSale(data) ? data.date : data.date;
-  const customer = isSale(data) ? (data.customerName || 'Walk-in Customer') : data.customerName;
-  const address = !isSale(data) ? (data.shippingAddress || 'N/A') : 'N/A';
-  const phone = !isSale(data) ? (data.customerPhone || 'N/A') : 'N/A';
-  
-  // normalize items
-  const items = isSale(data) 
-    ? (data as any).itemsSnapshot || [] 
-    : data.items;
+  let docNumber, date, customer, address, phone, items, total, status;
 
-  const total = isSale(data) ? data.totalAmount : data.total;
-  const tax = total * 0.16; // Approx VAT included
-  const net = total - tax;
+  if (isSale(data)) {
+      docNumber = data.receiptNumber;
+      date = data.createdAt || data.date;
+      customer = data.customerName || 'Walk-in';
+      address = 'N/A';
+      phone = 'N/A'; // Sales typically don't store deep customer info unless linked
+      items = (data as any).itemsSnapshot || [];
+      total = data.totalAmount;
+      status = 'PAID';
+  } else if (isQuote(data)) {
+      docNumber = data.quoteNumber;
+      date = data.date || (data as any).createdAt;
+      customer = data.customerName;
+      address = 'N/A';
+      phone = data.customerPhone || 'N/A';
+      items = data.items || [];
+      total = data.total;
+      status = data.status;
+  } else {
+      // Order
+      docNumber = data.orderNumber;
+      date = data.date || (data as any).createdAt;
+      customer = data.customerName;
+      address = data.shippingAddress || 'N/A';
+      phone = data.customerPhone || 'N/A';
+      items = data.items || [];
+      total = data.total || (data as any).totalAmount;
+      status = data.status;
+  }
+
+  const tax = Number(total) * 0.16; // Approx VAT included
+  const net = Number(total) - tax;
+
+  const getTitle = () => {
+      switch(type) {
+          case 'TAX_INVOICE': return 'TAX INVOICE';
+          case 'RECEIPT': return 'OFFICIAL RECEIPT';
+          case 'WAYBILL': return 'WAYBILL / DELIVERY NOTE';
+          case 'QUOTE': return 'PROFORMA QUOTATION';
+          default: return 'DOCUMENT';
+      }
+  };
 
   return (
-    <div ref={ref} className="bg-white p-8 max-w-3xl mx-auto text-sm text-gray-900 font-mono leading-relaxed">
+    <div ref={ref} className="bg-white text-black font-sans w-full max-w-[210mm] mx-auto p-10 min-h-[297mm] relative">
+      
       {/* Header */}
-      <div className="text-center mb-6 border-b-2 border-black pb-4">
-        <h1 className="text-2xl font-bold uppercase tracking-widest mb-2">MASUMA AUTOPARTS E.A. LTD</h1>
-        <p>Godown 4, Enterprise Road, Industrial Area</p>
-        <p>P.O. Box 12345-00100, Nairobi, Kenya</p>
-        <p>Tel: +254 792 506 590 | Email: sales@masuma.africa</p>
-        <p className="font-bold mt-2">PIN: P051234567Z | VAT No: 0123456V</p>
-      </div>
-
-      {/* Title */}
-      <div className="flex justify-between items-end mb-6">
+      <div className="flex justify-between items-start border-b-4 border-masuma-orange pb-6 mb-8">
         <div>
-          <h2 className="text-xl font-bold uppercase underline mb-2">
-            {type === 'TAX_INVOICE' ? 'TAX INVOICE' : type === 'WAYBILL' ? 'DELIVERY NOTE / WAYBILL' : 'CASH RECEIPT'}
-          </h2>
-          <p>To: <span className="font-bold">{customer}</span></p>
-          {!isSale(data) && (
-              <>
-                <p>Phone: {phone}</p>
-                <p>Dest: {address}</p>
-              </>
-          )}
-          {type !== 'WAYBILL' && <p>PIN: _________________</p>}
+            <h1 className="text-4xl font-bold text-masuma-dark tracking-tighter mb-1 font-display">MASUMA</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-gray-500 mb-4">Autoparts East Africa Ltd</p>
+            
+            <div className="text-xs space-y-1 text-gray-600">
+                <p className="flex items-center gap-2"><MapPin size={10} className="text-masuma-orange"/> Godown 4, Enterprise Road, Ind. Area</p>
+                <p className="flex items-center gap-2"><Mail size={10} className="text-masuma-orange"/> sales@masuma.africa</p>
+                <p className="flex items-center gap-2"><Phone size={10} className="text-masuma-orange"/> +254 792 506 590</p>
+                <p className="mt-2 font-bold">PIN: P051234567Z | VAT: 0123456V</p>
+            </div>
         </div>
         <div className="text-right">
-          <p>Doc #: <span className="font-bold">{docNumber}</span></p>
-          <p>Date: <span>{new Date(date).toLocaleString()}</span></p>
-          {type !== 'WAYBILL' && <p>Currency: <span>KES</span></p>}
+            <h2 className="text-3xl font-bold text-gray-200 uppercase">{getTitle()}</h2>
+            <div className="mt-4">
+                <p className="text-sm text-gray-500 uppercase font-bold">Document No.</p>
+                <p className="text-xl font-bold text-masuma-dark font-mono">{docNumber}</p>
+            </div>
+            <div className="mt-2">
+                <p className="text-sm text-gray-500 uppercase font-bold">Date Issued</p>
+                <p className="text-md font-bold text-masuma-dark">{new Date(date).toLocaleDateString()}</p>
+            </div>
         </div>
       </div>
 
-      {/* Table */}
-      <table className="w-full mb-6 border-collapse">
-        <thead>
-          <tr className="border-t-2 border-b-2 border-black">
-            <th className="py-2 text-left w-12">#</th>
-            <th className="py-2 text-left">Description</th>
-            <th className="py-2 text-center w-20">Qty</th>
-            {type !== 'WAYBILL' && (
-                <>
-                    <th className="py-2 text-right w-32">Unit Price</th>
-                    <th className="py-2 text-right w-32">Total</th>
-                </>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item: any, idx: number) => (
-            <tr key={idx} className="border-b border-gray-300 border-dashed">
-              <td className="py-2">{idx + 1}</td>
-              <td className="py-2">
-                  {item.name}
-                  {item.sku && <span className="block text-[10px] text-gray-500">SKU: {item.sku}</span>}
-              </td>
-              <td className="py-2 text-center">{item.qty || item.quantity}</td>
-              {type !== 'WAYBILL' && (
-                  <>
-                    <td className="py-2 text-right">{(item.price || item.unitPrice || 0).toLocaleString()}</td>
-                    <td className="py-2 text-right">{((item.price || item.unitPrice || 0) * (item.qty || item.quantity)).toLocaleString()}</td>
-                  </>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Totals */}
-      {type !== 'WAYBILL' && (
-          <div className="flex justify-end mb-8">
-            <div className="w-64 space-y-2">
-              <div className="flex justify-between">
-                <span>Net Amount:</span>
-                <span>{net.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>VAT (16%):</span>
-                <span>{tax.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg border-t-2 border-black pt-2">
-                <span>TOTAL:</span>
-                <span>{total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
+      {/* Bill To / Ship To */}
+      <div className="flex justify-between mb-10 bg-gray-50 p-6 rounded-sm border border-gray-100">
+        <div>
+            <h3 className="text-xs font-bold text-masuma-orange uppercase mb-2">Billed To</h3>
+            <p className="font-bold text-lg text-gray-800">{customer}</p>
+            <p className="text-sm text-gray-600">{phone}</p>
+            <p className="text-sm text-gray-600">{address !== 'N/A' ? address : ''}</p>
+        </div>
+        {type === 'WAYBILL' && (
+            <div className="text-right">
+                <h3 className="text-xs font-bold text-masuma-orange uppercase mb-2">Ship To / Destination</h3>
+                <p className="font-bold text-lg text-gray-800">{address}</p>
+                <p className="text-sm text-gray-600">Attn: {customer}</p>
             </div>
+        )}
+      </div>
+
+      {/* Line Items */}
+      <div className="mb-8">
+        <table className="w-full text-left border-collapse">
+            <thead>
+                <tr className="bg-masuma-dark text-white text-xs uppercase tracking-wider">
+                    <th className="p-3 w-12 text-center">#</th>
+                    <th className="p-3">Description / Part No</th>
+                    <th className="p-3 text-center w-24">Qty</th>
+                    {type !== 'WAYBILL' && (
+                        <>
+                            <th className="p-3 text-right w-32">Unit Price</th>
+                            <th className="p-3 text-right w-32">Amount</th>
+                        </>
+                    )}
+                </tr>
+            </thead>
+            <tbody className="text-sm text-gray-700">
+                {items.map((item: any, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-200">
+                        <td className="p-3 text-center font-mono text-gray-400">{idx + 1}</td>
+                        <td className="p-3">
+                            <span className="font-bold block">{item.name}</span>
+                            {item.sku && <span className="text-xs font-mono text-gray-500">SKU: {item.sku}</span>}
+                        </td>
+                        <td className="p-3 text-center font-bold">{item.qty || item.quantity}</td>
+                        {type !== 'WAYBILL' && (
+                            <>
+                                <td className="p-3 text-right font-mono">{Number(item.price || item.unitPrice).toLocaleString()}</td>
+                                <td className="p-3 text-right font-mono font-bold">{(Number(item.price || item.unitPrice) * Number(item.qty || item.quantity)).toLocaleString()}</td>
+                            </>
+                        )}
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+      </div>
+
+      {/* Totals Section */}
+      {type !== 'WAYBILL' && (
+          <div className="flex justify-end mb-12">
+              <div className="w-1/2 md:w-1/3 space-y-3">
+                  <div className="flex justify-between text-sm text-gray-600 border-b border-gray-100 pb-2">
+                      <span>Subtotal (Excl. VAT)</span>
+                      <span className="font-mono">{net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-600 border-b border-gray-100 pb-2">
+                      <span>VAT (16%)</span>
+                      <span className="font-mono">{tax.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+                  <div className="flex justify-between text-xl font-bold text-masuma-dark pt-2 bg-gray-50 p-2 rounded">
+                      <span>Total (KES)</span>
+                      <span>{Number(total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  </div>
+              </div>
           </div>
       )}
 
-      {/* Footer */}
-      <div className="border-t-2 border-black pt-4">
-        {type === 'WAYBILL' ? (
-            <div className="grid grid-cols-2 gap-8 mt-8">
-                <div>
-                    <p className="font-bold border-b border-black mb-8">Dispatched By:</p>
-                    <p>Name: ___________________</p>
-                    <p>Sign: ___________________</p>
-                </div>
-                <div>
-                    <p className="font-bold border-b border-black mb-8">Received By:</p>
-                    <p>Name: ___________________</p>
-                    <p>ID No: ___________________</p>
-                    <p>Sign: ___________________</p>
-                </div>
-            </div>
-        ) : (
-            <div className="flex justify-between items-center">
-            <div>
-                <p className="font-bold uppercase mb-1">Fiscal Information:</p>
-                <p>CU Serial: KRA-VSCU-001-992</p>
-                <p>Control Code: {isSale(data) ? data.kraControlCode : 'PENDING'}</p>
-                <p>Date: {new Date().toLocaleString()}</p>
-            </div>
-            <div className="flex flex-col items-center">
-                <QrCode size={80} className="mb-1" />
-                <span className="text-[10px] uppercase">Scan to Verify</span>
-            </div>
-            </div>
-        )}
-        
-        <p className="text-center mt-8 italic text-xs">
-          {type === 'WAYBILL' 
-            ? 'Please verify goods upon delivery. Claims for damaged goods must be made immediately.' 
-            : 'Goods once sold are not returnable. Warranty valid for 12 months on manufacturer defects only.'
-          }
-        </p>
-        <p className="text-center font-bold mt-2">*** END OF DOCUMENT ***</p>
+      {/* Footer / Terms */}
+      <div className="absolute bottom-10 left-10 right-10">
+          <div className="grid grid-cols-2 gap-8 mb-8 border-t-2 border-gray-100 pt-6">
+              <div>
+                  {type !== 'QUOTE' && (
+                    <>
+                        <h4 className="font-bold text-xs uppercase text-masuma-dark mb-2">Fiscal Details</h4>
+                        <div className="flex items-center gap-4">
+                            <QrCode size={64} className="text-black" />
+                            <div className="text-[10px] text-gray-500 space-y-1">
+                                <p>Control Code: {isSale(data) ? (data.kraControlCode || 'PENDING') : 'N/A'}</p>
+                                <p>Device: KRA-VSCU-001</p>
+                                <p>Time: {new Date().toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+                    </>
+                  )}
+                  {type === 'QUOTE' && (
+                      <p className="text-xs text-gray-500 italic">
+                          This quotation is valid for 7 days. Prices subject to change without notice.
+                          <br/>Payment Terms: 100% Advance.
+                      </p>
+                  )}
+                  {type === 'WAYBILL' && (
+                      <div className="mt-4">
+                          <p className="font-bold text-xs uppercase border-b border-black w-2/3 mb-8">Received By (Sign & Stamp)</p>
+                          <p className="font-bold text-xs uppercase border-b border-black w-2/3">Date</p>
+                      </div>
+                  )}
+              </div>
+              <div className="text-right">
+                  <h4 className="font-bold text-xs uppercase text-masuma-dark mb-4">Authorized Signature</h4>
+                  <div className="h-16 border-b border-black mb-2"></div>
+                  <p className="text-xs text-gray-500">For Masuma Autoparts East Africa Ltd</p>
+              </div>
+          </div>
+          <div className="text-center text-[9px] text-gray-400 uppercase tracking-widest">
+              Generated by Masuma ERP System • {new Date().toISOString()}
+          </div>
       </div>
     </div>
   );
