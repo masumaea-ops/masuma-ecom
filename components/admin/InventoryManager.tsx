@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit, AlertTriangle, Package, Loader2, RefreshCw, Plus, Minus, Save, X, ArrowRightLeft, Truck, Upload, Download } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
@@ -23,9 +24,10 @@ const InventoryManager: React.FC = () => {
     const [branches, setBranches] = useState<Branch[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
-    const [adjustment, setAdjustment] = useState({ quantity: 0, operation: 'add' as 'add' | 'subtract' | 'set' });
+    // Allow quantity to be string or number for better typing experience
+    const [adjustment, setAdjustment] = useState<{quantity: string | number, operation: 'add' | 'subtract' | 'set'}>({ quantity: '', operation: 'add' });
     const [isTransferMode, setIsTransferMode] = useState(false);
-    const [transferData, setTransferData] = useState({ toBranchId: '', quantity: 0 });
+    const [transferData, setTransferData] = useState<{toBranchId: string, quantity: string | number}>({ toBranchId: '', quantity: '' });
     const [isSaving, setIsSaving] = useState(false);
     
     // Import States
@@ -55,23 +57,25 @@ const InventoryManager: React.FC = () => {
     const handleAdjust = (item: StockItem) => {
         setSelectedItem(item);
         setIsTransferMode(false);
-        setAdjustment({ quantity: 0, operation: 'add' });
+        setAdjustment({ quantity: '', operation: 'add' });
     };
 
     const handleTransfer = (item: StockItem) => {
         setSelectedItem(item);
         setIsTransferMode(true);
-        setTransferData({ toBranchId: '', quantity: 0 });
+        setTransferData({ toBranchId: '', quantity: '' });
     };
 
     const saveAdjustment = async () => {
-        if (!selectedItem || adjustment.quantity < 0) return;
+        if (!selectedItem) return;
+        const qty = Number(adjustment.quantity);
+        if (qty < 0) return;
         
         setIsSaving(true);
         try {
             await apiClient.patch(`/inventory/${selectedItem.product.id}`, {
                 branchId: selectedItem.branch.id,
-                quantity: Number(adjustment.quantity),
+                quantity: qty,
                 operation: adjustment.operation
             });
             setSelectedItem(null);
@@ -84,14 +88,17 @@ const InventoryManager: React.FC = () => {
     };
 
     const executeTransfer = async () => {
-        if (!selectedItem || transferData.quantity <= 0 || !transferData.toBranchId) return;
+        if (!selectedItem || !transferData.toBranchId) return;
+        const qty = Number(transferData.quantity);
+        if (qty <= 0) return;
+
         setIsSaving(true);
         try {
             await apiClient.post('/inventory/transfer', {
                 productId: selectedItem.product.id,
                 fromBranchId: selectedItem.branch.id,
                 toBranchId: transferData.toBranchId,
-                quantity: Number(transferData.quantity)
+                quantity: qty
             });
             setSelectedItem(null);
             alert('Transfer successful');
@@ -354,8 +361,9 @@ const InventoryManager: React.FC = () => {
                                             type="number" 
                                             min="0"
                                             value={adjustment.quantity}
-                                            onChange={e => setAdjustment({...adjustment, quantity: parseInt(e.target.value) || 0})}
+                                            onChange={e => setAdjustment({...adjustment, quantity: e.target.value})}
                                             className="w-full p-3 border-2 border-gray-200 rounded focus:border-masuma-orange outline-none text-xl font-bold text-center"
+                                            placeholder="0"
                                         />
                                     </div>
                                     <button onClick={saveAdjustment} disabled={isSaving} className="w-full bg-masuma-dark text-white py-3 rounded font-bold uppercase tracking-widest hover:bg-masuma-orange transition flex items-center justify-center gap-2">
@@ -385,8 +393,9 @@ const InventoryManager: React.FC = () => {
                                                 min="1"
                                                 max={selectedItem.quantity}
                                                 value={transferData.quantity}
-                                                onChange={e => setTransferData({...transferData, quantity: parseInt(e.target.value) || 0})}
+                                                onChange={e => setTransferData({...transferData, quantity: e.target.value})}
                                                 className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none"
+                                                placeholder="0"
                                             />
                                         </div>
                                     </div>

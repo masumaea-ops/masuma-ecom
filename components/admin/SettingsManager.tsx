@@ -53,7 +53,9 @@ const SettingsManager: React.FC = () => {
         setIsSaving(true);
         try {
             await apiClient.post('/settings', settings);
-            alert('Settings saved successfully. Some changes may require a service restart to take full effect.');
+            // Update Cache Immediately so Documents reflect changes without reload
+            localStorage.setItem('masuma_settings_cache', JSON.stringify(settings));
+            alert('Settings saved successfully. Receipts and Invoices updated.');
         } catch (error) {
             alert('Failed to save settings');
         } finally {

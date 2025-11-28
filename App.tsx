@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -28,12 +29,13 @@ import ShippingManager from './components/admin/ShippingManager';
 import Profile from './components/admin/Profile';
 import BranchManager from './components/admin/BranchManager';
 import CategoryManager from './components/admin/CategoryManager';
-import FinanceManager from './components/admin/FinanceManager'; // Added
+import FinanceManager from './components/admin/FinanceManager'; 
 import NotFound from './components/NotFound';
 import PartFinder from './components/PartFinder';
 import AdminLogin from './components/AdminLogin';
+import WarrantyPolicy from './components/WarrantyPolicy'; 
 import { CartItem, Product, ViewState } from './types';
-import { CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock, Loader2, MapPin, Send } from 'lucide-react';
+import { CheckCircle, MessageCircle, ArrowUp, Star, Quote, Package, Lock, Loader2, MapPin, Send, Shield, Settings, Globe, Users, PenTool, BarChart3, Target, Layers, Thermometer, Activity, Hammer } from 'lucide-react';
 import { apiClient } from './utils/apiClient';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 
@@ -281,26 +283,158 @@ function App() {
       case 'BLOG': return <Blog addToCart={addToCart} />;
       case 'ABOUT':
         return (
-            <div className="animate-fade-in">
-                <div className="relative bg-masuma-dark py-24">
-                    <div className="absolute inset-0 overflow-hidden"><img src="https://masuma.com/wp-content/uploads/2021/09/factory.jpg" className="w-full h-full object-cover opacity-20 mix-blend-luminosity" alt="Factory" /></div>
-                    <div className="max-w-4xl mx-auto px-4 text-center relative z-10"><h2 className="text-5xl font-bold text-white mb-6 font-display uppercase tracking-tight"><div className="h-1.5 w-24 bg-masuma-orange mx-auto mb-8"></div>Engineering Trust</h2><p className="text-xl text-gray-300 leading-relaxed">Masuma Autoparts East Africa Limited is the bridge between Japanese precision and African resilience.</p></div>
+            <div className="animate-fade-in bg-white">
+                {/* Hero Header */}
+                <div className="relative bg-masuma-dark py-24 lg:py-32 overflow-hidden">
+                    <div className="absolute inset-0">
+                        <img src="https://masuma.com/wp-content/uploads/2021/09/factory.jpg" className="w-full h-full object-cover opacity-20 mix-blend-luminosity" alt="Masuma Factory" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-masuma-dark via-transparent to-transparent"></div>
+                    </div>
+                    <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
+                        <span className="text-masuma-orange font-bold uppercase tracking-[0.2em] mb-4 block">The Masuma Story</span>
+                        <h2 className="text-5xl md:text-7xl font-bold text-white mb-8 font-display uppercase tracking-tight">Engineering <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-400">Reliability.</span></h2>
+                        <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto font-light">
+                            Masuma Autoparts East Africa Limited is the official bridge between Japanese precision engineering and the rugged resilience required for African roads.
+                        </p>
+                    </div>
                 </div>
-                <div className="max-w-4xl mx-auto px-4 py-20">
-                    <div className="grid md:grid-cols-2 gap-12">
-                        <div className="prose prose-lg text-gray-600"><h3 className="text-2xl font-bold text-masuma-dark uppercase">Our Story</h3><p>Founded in Nairobi's Industrial Area, we fill the gap between expensive dealer parts and unreliable counterfeits.</p></div>
-                        <div className="bg-gray-50 p-8 border-l-4 border-masuma-orange shadow-lg"><h3 className="text-xl font-bold mb-6 text-masuma-dark uppercase">The Masuma Promise</h3><ul className="space-y-4"><li className="flex gap-3"><CheckCircle className="text-masuma-orange shrink-0" /><span className="text-gray-700">Defect rate below 0.02%.</span></li><li className="flex gap-3"><CheckCircle className="text-masuma-orange shrink-0" /><span className="text-gray-700">Tested for high-dust environments.</span></li></ul></div>
+
+                {/* The 4 Elements Section - Enriched */}
+                <div className="bg-gray-50 py-20 border-b border-gray-200">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="text-center mb-16">
+                            <h3 className="text-3xl font-bold text-masuma-dark font-display uppercase">The Elements of Quality</h3>
+                            <div className="h-1 w-24 bg-masuma-orange mx-auto mt-4"></div>
+                            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+                                Every Masuma part is the result of four critical elements working in harmony to ensure safety and longevity.
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {[
+                                { 
+                                    icon: Layers, 
+                                    title: "Material", 
+                                    desc: "We use only virgin rubber, high-grade steel, and ceramic compounds. No recycled fillers, ensuring bushings don't crack and brakes don't fade." 
+                                },
+                                { 
+                                    icon: Settings, 
+                                    title: "Engineering", 
+                                    desc: "Designed in Tokyo with strict adherence to OEM geometric specifications. Every part fits exactly like the original, guaranteeing easy installation." 
+                                },
+                                { 
+                                    icon: Thermometer, 
+                                    title: "Resilience", 
+                                    desc: "Our 'Tropical Spec' parts feature enhanced heat resistance and dust sealing, specifically adapted for the harsh East African environment." 
+                                },
+                                { 
+                                    icon: Activity, 
+                                    title: "Testing", 
+                                    desc: "Rigorous lifecycle testing simulates over 50,000km of driving conditions before any batch is approved for shipment to Nairobi." 
+                                }
+                            ].map((item, i) => (
+                                <div key={i} className="bg-white p-8 rounded-lg shadow-sm border-t-4 border-masuma-orange hover:-translate-y-2 transition duration-300 group">
+                                    <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-6 group-hover:bg-masuma-dark transition">
+                                        <item.icon size={28} className="text-masuma-dark group-hover:text-masuma-orange transition" />
+                                    </div>
+                                    <h4 className="text-lg font-bold text-masuma-dark uppercase mb-3">{item.title}</h4>
+                                    <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mission Section */}
+                <div className="max-w-7xl mx-auto px-4 py-24">
+                    <div className="grid md:grid-cols-2 gap-16 items-center">
+                        <div className="relative">
+                            <div className="absolute -top-4 -left-4 w-24 h-24 bg-masuma-orange/10 rounded-full blur-2xl"></div>
+                            <img 
+                                src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=800&q=80" 
+                                alt="Engine Parts" 
+                                className="rounded-lg shadow-2xl relative z-10"
+                            />
+                            <div className="absolute -bottom-6 -right-6 bg-white p-6 shadow-xl rounded-lg border-l-4 border-masuma-orange z-20 hidden md:block">
+                                <p className="font-display font-bold text-4xl text-masuma-dark mb-1">20,000+</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider">SKUs in Catalog</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-3xl font-bold text-masuma-dark uppercase font-display mb-6">Our Mission</h3>
+                            <div className="prose prose-lg text-gray-600">
+                                <p className="mb-4">
+                                    For too long, car owners in East Africa have faced a difficult choice: buy expensive dealer parts or risk their safety with unreliable counterfeits.
+                                </p>
+                                <p className="mb-6">
+                                    <strong>Masuma exists to eliminate that compromise.</strong>
+                                </p>
+                                <p className="mb-6">
+                                    We provide parts that match or exceed OEM performance at a price that makes sense for the market. By controlling the entire supply chain from our factories to our Nairobi distribution center, we guarantee authenticity and eliminate the middleman markup.
+                                </p>
+                                <ul className="space-y-3 mb-8">
+                                    <li className="flex items-center gap-3">
+                                        <CheckCircle className="text-green-600 shrink-0" size={20} />
+                                        <span className="font-bold text-gray-800">Defect rate below 0.02%</span>
+                                    </li>
+                                    <li className="flex items-center gap-3">
+                                        <CheckCircle className="text-green-600 shrink-0" size={20} />
+                                        <span className="font-bold text-gray-800">12-Month Unlimited Mileage Warranty</span>
+                                    </li>
+                                    <li className="flex items-center gap-3">
+                                        <CheckCircle className="text-green-600 shrink-0" size={20} />
+                                        <span className="font-bold text-gray-800">Direct technical support from experts</span>
+                                    </li>
+                                </ul>
+                                <button 
+                                    onClick={() => setCurrentView('CATALOG')}
+                                    className="bg-masuma-dark text-white px-8 py-3 font-bold uppercase tracking-widest hover:bg-masuma-orange transition inline-flex items-center gap-2"
+                                >
+                                    View Our Catalog <ArrowUp className="rotate-45" size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Statistics Banner */}
+                <div className="bg-masuma-dark text-white py-16">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/10">
+                            <div>
+                                <PenTool size={32} className="text-masuma-orange mx-auto mb-4" />
+                                <div className="text-4xl font-bold font-display mb-2">45</div>
+                                <div className="text-xs uppercase tracking-widest text-gray-400">Product Categories</div>
+                            </div>
+                            <div>
+                                <Target size={32} className="text-masuma-orange mx-auto mb-4" />
+                                <div className="text-4xl font-bold font-display mb-2">99%</div>
+                                <div className="text-xs uppercase tracking-widest text-gray-400">Fitment Accuracy</div>
+                            </div>
+                            <div>
+                                <Users size={32} className="text-masuma-orange mx-auto mb-4" />
+                                <div className="text-4xl font-bold font-display mb-2">500+</div>
+                                <div className="text-xs uppercase tracking-widest text-gray-400">Partner Garages</div>
+                            </div>
+                            <div>
+                                <BarChart3 size={32} className="text-masuma-orange mx-auto mb-4" />
+                                <div className="text-4xl font-bold font-display mb-2">12M</div>
+                                <div className="text-xs uppercase tracking-widest text-gray-400">Warranty (Months)</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         );
+      case 'WARRANTY': // New View
+        return <WarrantyPolicy />;
       case 'CONTACT':
         return (
             <div className="animate-fade-in bg-white min-h-screen">
                 <div className="bg-masuma-dark text-white py-16"><div className="max-w-7xl mx-auto px-4"><h2 className="text-4xl font-bold font-display uppercase">Contact Us</h2></div></div>
                 <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-10">
                     <div className="grid md:grid-cols-3 gap-8 mb-12">
-                         <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MapPin size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Visit Us</h4><p className="text-gray-500 text-sm">Godown 4, Enterprise Road<br/>Industrial Area, Nairobi</p></div>
+                         <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MapPin size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Visit Us</h4><p className="text-gray-500 text-sm">Ruby Mall, Shop FF25 First Floor<br/>Behind NCBA Bank Accra Road</p></div>
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-dark text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Call Us</h4><p className="text-gray-500 text-sm">+254 700 123 456</p></div>
                          <div className="bg-white p-8 shadow-xl border-t-4 border-masuma-orange text-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6"><MessageCircle size={32} /></div><h4 className="font-bold text-masuma-dark uppercase mb-2">Email Us</h4><p className="text-gray-500 text-sm">sales@masuma.africa</p></div>
                     </div>
@@ -372,7 +506,7 @@ function App() {
         <div className="flex flex-col min-h-screen font-sans bg-white">
         <Navbar cartCount={cartCount} setView={setCurrentView} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
         <main className="flex-grow">{renderView()}</main>
-        <Footer />
+        <Footer setView={setCurrentView} /> 
         <button onClick={scrollToTop} className={`fixed bottom-6 right-6 z-40 p-3 bg-masuma-orange text-white shadow-xl transition-all duration-300 hover:bg-masuma-dark ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`} title="Back to Top"><ArrowUp size={24} /></button>
         <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={removeFromCart} onCheckout={handleOrderSuccess} updateQuantity={updateCartQuantity} />
         <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Edit2, Trash2, Plus, Loader2, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Customer } from '../../types';
-import { apiClient } from '../../utils/apiClient';
+import { apiClient, formatCurrency } from '../../utils/apiClient';
 
 const CustomerManager: React.FC = () => {
     const [customers, setCustomers] = useState<Customer[]>([]);
@@ -122,8 +122,8 @@ const CustomerManager: React.FC = () => {
                                     <th className="px-6 py-4">Customer</th>
                                     <th className="px-6 py-4">Contact Info</th>
                                     <th className="px-6 py-4">Account Type</th>
-                                    <th className="px-6 py-4">KRA PIN</th>
-                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4">Total Spend</th>
+                                    <th className="px-6 py-4">Last Visit</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -149,11 +149,11 @@ const CustomerManager: React.FC = () => {
                                                 <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Retail</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 font-mono text-xs text-gray-600">{c.kraPin || 'N/A'}</td>
-                                        <td className="px-6 py-4">
-                                            <span className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase">
-                                                <CheckCircle size={12} /> Active
-                                            </span>
+                                        <td className="px-6 py-4 font-bold text-masuma-dark">
+                                            {formatCurrency(c.totalSpend || 0)}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs text-gray-500">
+                                            {c.lastVisit || 'Never'}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, FileText, CheckCircle, XCircle, MoreHorizontal, ArrowRight, DollarSign, RefreshCw, Loader2, Send, Eye, Plane, ShoppingBag, Plus, User, Trash2, Save, X } from 'lucide-react';
 import { Quote, QuoteStatus, Product, Customer } from '../../types';
@@ -60,7 +61,9 @@ const QuoteManager: React.FC = () => {
                 name: product.name,
                 quantity: 1,
                 unitPrice: product.price,
-                total: product.price
+                total: product.price,
+                sku: product.sku,
+                oem: product.oemNumbers?.[0] || ''
             }]
         }));
         setProductSearch('');
@@ -72,7 +75,12 @@ const QuoteManager: React.FC = () => {
         setNewQuoteData(prev => {
             const items = [...prev.items];
             items[index] = { ...items[index], [field]: value };
-            items[index].total = items[index].quantity * items[index].unitPrice;
+            
+            // Recalc total safely
+            const qty = Number(items[index].quantity) || 0;
+            const price = Number(items[index].unitPrice) || 0;
+            items[index].total = qty * price;
+            
             return { ...prev, items };
         });
     };
@@ -89,8 +97,16 @@ const QuoteManager: React.FC = () => {
             return alert('Please fill in customer details and add at least one item.');
         }
         try {
+            // Sanitize items before sending
+            const sanitizedItems = newQuoteData.items.map(item => ({
+                ...item,
+                quantity: Number(item.quantity) || 1,
+                unitPrice: Number(item.unitPrice) || 0
+            }));
+
             await apiClient.post('/quotes', {
                 ...newQuoteData,
+                items: sanitizedItems,
                 requestType: 'STANDARD'
             });
             setIsCreating(false);
@@ -121,7 +137,7 @@ const QuoteManager: React.FC = () => {
         return matchesTab && matchesSearch;
     });
 
-    const newQuoteTotal = newQuoteData.items.reduce((sum, i) => sum + i.total, 0);
+    const newQuoteTotal = newQuoteData.items.reduce((sum, i) => sum + (Number(i.total) || 0), 0);
 
     return (
         <div className="h-full flex flex-col">
@@ -206,8 +222,8 @@ const QuoteManager: React.FC = () => {
                                         {newQuoteData.items.map((item, idx) => (
                                             <tr key={idx} className="border-b border-gray-200">
                                                 <td className="p-2">{item.name}</td>
-                                                <td className="p-2"><input type="number" className="w-full p-1 border rounded" value={item.quantity} onChange={e => updateNewItem(idx, 'quantity', Number(e.target.value))} /></td>
-                                                <td className="p-2"><input type="number" className="w-full p-1 border rounded" value={item.unitPrice} onChange={e => updateNewItem(idx, 'unitPrice', Number(e.target.value))} /></td>
+                                                <td className="p-2"><input type="number" className="w-full p-1 border rounded" value={item.quantity} onChange={e => updateNewItem(idx, 'quantity', e.target.value)} /></td>
+                                                <td className="p-2"><input type="number" className="w-full p-1 border rounded" value={item.unitPrice} onChange={e => updateNewItem(idx, 'unitPrice', e.target.value)} /></td>
                                                 <td className="p-2 text-right font-bold"><Price amount={item.total} /></td>
                                                 <td className="p-2"><button onClick={() => removeNewItem(idx)} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash2 size={12} /></button></td>
                                             </tr>

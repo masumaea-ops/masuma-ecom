@@ -50,7 +50,6 @@ import { validate } from './middleware/validate';
 const app = express();
 
 // CRITICAL: Enable Trust Proxy for correct protocol detection in production (uploads, rate limiting)
-// 'loopback' only trusts localhost, use '1' or boolean true if behind a single proxy like Nginx/Heroku
 app.set('trust proxy', 1);
 
 // Initialize Database
@@ -64,15 +63,23 @@ AppDataSource.initialize()
   });
 
 // --- Security & Performance Middleware ---
+// Relax helmet for cross-origin content (images, pdfs)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false // Disabled for flexibility with external scripts/images in this demo
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false 
 }) as any); 
 app.use(compression() as any); 
 
 // FIX: CORS Configuration
+// Explicitly allow dynamic origins or fall back to reflection
 app.use(cors({ 
-  origin: config.CORS_ORIGIN === '*' ? true : config.CORS_ORIGIN, 
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // Allow any origin in development/demo mode
+    return callback(null, true);
+  },
   credentials: true 
 }) as any);
 

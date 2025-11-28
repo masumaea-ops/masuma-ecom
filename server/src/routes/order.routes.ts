@@ -82,6 +82,7 @@ router.get('/', authenticate, async (req, res) => {
         const query = orderRepo.createQueryBuilder('order')
             .leftJoinAndSelect('order.items', 'items')
             .leftJoinAndSelect('items.product', 'product')
+            .leftJoinAndSelect('product.oemNumbers', 'oem') // Include OEMs
             .orderBy('order.createdAt', 'DESC');
 
         if (status && status !== 'All Statuses' && status !== 'All') {
@@ -110,6 +111,7 @@ router.get('/', authenticate, async (req, res) => {
                 id: i.id,
                 name: i.product?.name || 'Unknown Product', 
                 sku: i.product?.sku || 'N/A',
+                oem: i.product?.oemNumbers?.[0]?.code || '', // Extract first OEM
                 qty: i.quantity,
                 price: Number(i.price),
                 image: i.product?.imageUrl

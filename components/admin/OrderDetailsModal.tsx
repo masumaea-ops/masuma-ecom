@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { X, Printer, Mail, MapPin, Phone, User, CreditCard, Package } from 'lucide-react';
 import { Order } from '../../types';
@@ -16,7 +17,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, isOpen, on
     if (!isOpen || !order) return null;
 
     const handlePrint = () => {
-        window.print();
+        setTimeout(() => {
+            window.print();
+        }, 500);
     };
 
     const getStatusColor = (status: string) => {

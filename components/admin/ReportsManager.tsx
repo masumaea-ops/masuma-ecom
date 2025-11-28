@@ -13,69 +13,63 @@ const ReportsManager: React.FC = () => {
     const handleExport = async (reportType: string, format: 'csv' | 'pdf') => {
         setIsDownloading(true);
         try {
+            // Determine Endpoint
             let endpoint = '';
-            const params = new URLSearchParams();
-            
-            if (reportType === 'Sales_Summary') {
-                endpoint = '/reports/sales';
-                params.append('startDate', '2023-01-01'); 
-            } else if (reportType === 'Inventory_Valuation') {
-                endpoint = '/reports/inventory';
-            } else {
+            if (reportType === 'Sales_Summary') endpoint = 'reports/sales';
+            else if (reportType === 'Inventory_Valuation') endpoint = 'reports/inventory';
+            else {
                 alert('This report type is currently being engineered.');
                 setIsDownloading(false);
                 return;
             }
+
+            const params = new URLSearchParams();
+            if (reportType === 'Sales_Summary') params.append('startDate', '2023-01-01');
 
             // CSV Download
             if (format === 'csv') {
                 params.append('format', 'csv');
                 const token = localStorage.getItem('masuma_auth_token');
                 
-                // Construct robust absolute URL for fetch
+                // Robust URL Construction
                 const apiBase = apiClient.defaults.baseURL || '/api';
-                let requestUrl = '';
-
-                if (apiBase.startsWith('http')) {
-                    // Absolute URL (e.g. Production Env Var)
-                    const safeBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
-                    const safeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-                    requestUrl = `${safeBase}${safeEndpoint}`;
-                } else {
-                    // Relative URL (e.g. /api for Proxy)
-                    const safeBase = apiBase.startsWith('/') ? apiBase : `/${apiBase}`;
-                    const safeEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-                    requestUrl = `${window.location.origin}${safeBase}${safeEndpoint}`;
-                }
-
-                // Append params
-                const fullUrl = new URL(`${requestUrl}?${params.toString()}`).toString();
+                
+                // Determine the absolute base URL
+                const baseUrl = apiBase.startsWith('http') 
+                    ? apiBase 
+                    : `${window.location.origin}${apiBase.startsWith('/') ? '' : '/'}${apiBase}`;
+                
+                // Construct full URL safely handling slashes
+                const url = new URL(endpoint, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+                
+                // Append query parameters
+                params.forEach((value, key) => url.searchParams.append(key, value));
 
                 const headers: HeadersInit = {};
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;
                 }
 
-                const response = await fetch(fullUrl, {
+                const response = await fetch(url.toString(), {
                     headers: headers
                 });
 
                 if (!response.ok) throw new Error('Download failed');
 
                 const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
+                const blobUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = blobUrl;
                 a.download = `${reportType}_${new Date().toISOString().slice(0,10)}.csv`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(blobUrl);
             } 
             // PDF Generation
             else if (format === 'pdf') {
                 params.append('format', 'json');
-                const res = await apiClient.get(`${endpoint}?${params.toString()}`);
+                const res = await apiClient.get(`/${endpoint}?${params.toString()}`);
                 const data = res.data;
 
                 if (!Array.isArray(data) || data.length === 0) {
@@ -87,8 +81,8 @@ const ReportsManager: React.FC = () => {
             }
 
         } catch (error) {
+            console.error("Report Generation Error:", error);
             alert('Failed to generate report. Please try again.');
-            console.error(error);
         } finally {
             setIsDownloading(false);
         }

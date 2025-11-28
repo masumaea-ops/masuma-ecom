@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Check, Send, Printer, Save, Plus, Trash2, AlertCircle, Plane, FileText, Loader2 } from 'lucide-react';
 import { Quote, QuoteStatus } from '../../types';
@@ -76,7 +77,10 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
     };
 
     const handlePrint = () => {
-        window.print();
+        // Wait for render
+        setTimeout(() => {
+            window.print();
+        }, 500);
     };
 
     const isEditable = quote.status === QuoteStatus.DRAFT || quote.status === QuoteStatus.SENT;

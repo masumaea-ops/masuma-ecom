@@ -1,5 +1,6 @@
 
 
+
 export enum Category {
   ALL = 'All',
   FILTERS = 'Filters',
@@ -21,12 +22,14 @@ export interface Product {
   category: string; // Changed from Category enum to string to support dynamic DB categories
   price: number; // In KES
   wholesalePrice?: number;
+  costPrice?: number;
   description: string;
   compatibility: string[]; // e.g., ["Toyota Vitz", "Corolla"]
   image: string;
   images?: string[];
   videoUrl?: string;
   stock: boolean; // Frontend derived flag
+  quantity?: number;
 }
 
 export interface CartItem extends Product {
@@ -45,7 +48,7 @@ export interface BlogPost {
   relatedProductCategory: string; // Changed from Category enum to string
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY';
 
 export interface ChatMessage {
   role: 'user' | 'model';

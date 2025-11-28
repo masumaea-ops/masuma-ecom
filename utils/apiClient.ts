@@ -1,12 +1,11 @@
 
 import axios from 'axios';
 
-// In production, this would be your deployed backend URL. 
-// In development, we use the relative path '/api' to leverage the Vite proxy defined in vite.config.ts.
+// Robust base URL detection
 const getBaseUrl = () => {
-  // Cast import.meta to any to avoid TypeScript errors if Vite types aren't loaded globally
   try {
-      const metaEnv = (import.meta as any).env;
+      // @ts-ignore - Vite specific
+      const metaEnv = import.meta.env;
       if (metaEnv && metaEnv.VITE_API_URL) {
         return metaEnv.VITE_API_URL;
       }
@@ -20,7 +19,7 @@ export const apiClient = axios.create({
   baseURL: getBaseUrl(),
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json', // RESTORED: Required for backend to parse JSON bodies
+    'Content-Type': 'application/json', 
   }
 });
 
@@ -29,7 +28,7 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('masuma_auth_token');
     if (token) {
-      config.headers = config.headers || {}; // Ensure headers object exists
+      config.headers = config.headers || {}; 
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -48,6 +47,7 @@ apiClient.interceptors.response.use(
         
         if (!isLoginRequest && !isHealthCheck) {
             localStorage.removeItem('masuma_auth_token');
+            // Only redirect if not already on login/home to avoid loops
             if (window.location.pathname !== '/' && !window.location.pathname.includes('login')) {
                  window.location.href = '/';
             }

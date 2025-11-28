@@ -22,15 +22,45 @@ const customerSchema = z.object({
 router.get('/', authenticate, async (req, res) => {
     try {
         const search = req.query.search as string;
-        const query = customerRepo.createQueryBuilder('customer');
+        
+        // Use QueryBuilder to calculate Total Spend and Last Visit dynamically
+        const query = customerRepo.createQueryBuilder('customer')
+            .leftJoin('customer.sales', 'sale')
+            .select('customer.id', 'id')
+            .addSelect('customer.name', 'name')
+            .addSelect('customer.email', 'email')
+            .addSelect('customer.phone', 'phone')
+            .addSelect('customer.kraPin', 'kraPin')
+            .addSelect('customer.address', 'address')
+            .addSelect('customer.isWholesale', 'isWholesale')
+            .addSelect('customer.createdAt', 'createdAt')
+            .addSelect('COALESCE(SUM(sale.totalAmount), 0)', 'totalSpend')
+            .addSelect('MAX(sale.createdAt)', 'lastVisit')
+            .groupBy('customer.id');
 
         if (search) {
             query.where('customer.name LIKE :search OR customer.phone LIKE :search', { search: `%${search}%` });
         }
         
-        const customers = await query.take(50).getMany();
+        const results = await query.getRawMany();
+        
+        // Map raw results to clean JSON objects
+        const customers = results.map(r => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            phone: r.phone,
+            kraPin: r.kraPin,
+            address: r.address,
+            isWholesale: !!r.isWholesale, // Convert 1/0 to boolean
+            createdAt: r.createdAt,
+            totalSpend: Number(r.totalSpend),
+            lastVisit: r.lastVisit ? new Date(r.lastVisit).toLocaleDateString() : 'Never'
+        }));
+
         res.json(customers);
     } catch (error) {
+        console.error('Fetch Customers Error:', error);
         res.status(500).json({ error: 'Error fetching customers' });
     }
 });

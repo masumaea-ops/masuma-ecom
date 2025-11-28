@@ -2,11 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, ArrowRight } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
+import { ViewState } from '../types';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+    setView?: (view: ViewState) => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ setView }) => {
   const [info, setInfo] = useState({
       about: 'Masuma Autoparts East Africa Limited. The official distributor of certified Masuma components. Engineering you can trust for the African road.',
-      address: 'Godown 4, Enterprise Road, Industrial Area, Nairobi',
+      address: 'Ruby Mall, Shop FF25 First Floor Behind NCBA Bank Accra Road',
       phone: '+254 792 506 590',
       email: 'sales@masuma.africa'
   });
@@ -54,8 +59,8 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold mb-4 text-white font-display uppercase tracking-wide">Quick Links</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-masuma-orange transition">Search Parts</a></li>
-              <li><a href="#" className="hover:text-masuma-orange transition">Warranty Policy</a></li>
+              <li><button onClick={() => setView?.('PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</button></li>
+              <li><button onClick={() => setView?.('WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</button></li>
               <li><a href="#" className="hover:text-masuma-orange transition">Distributor Portal</a></li>
               <li><a href="#" className="hover:text-masuma-orange transition">Download Catalog (PDF)</a></li>
             </ul>

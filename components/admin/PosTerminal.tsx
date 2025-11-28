@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote } from 'lucide-react';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote, AlertTriangle } from 'lucide-react';
 import { Product, Customer, Sale } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 import InvoiceTemplate from './InvoiceTemplate';
@@ -31,6 +32,12 @@ const PosTerminal: React.FC = () => {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const printRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        if (isCustomerSearchOpen) {
+            handleSearchCustomer('');
+        }
+    }, [isCustomerSearchOpen]);
+
     const handleProductSearch = async (term: string) => {
         setSearchTerm(term);
         if (term.length < 2) {
@@ -52,6 +59,20 @@ const PosTerminal: React.FC = () => {
     };
 
     const addToCart = (product: Product) => {
+        // Validation: Check Stock
+        const currentQty = cart.find(p => p.id === product.id)?.qty || 0;
+        const maxStock = product.quantity || 0;
+
+        if (maxStock <= 0) {
+            alert('Item is Out of Stock!');
+            return;
+        }
+
+        if (currentQty >= maxStock) {
+            alert(`Cannot add more. Only ${maxStock} in stock.`);
+            return;
+        }
+
         setCart(prev => {
             const exists = prev.find(p => p.id === product.id);
             if (exists) {
@@ -70,7 +91,16 @@ const PosTerminal: React.FC = () => {
 
     const updateQty = (id: string, delta: number) => {
         setCart(prev => prev.map(p => {
-            if (p.id === id) return { ...p, qty: Math.max(1, p.qty + delta) };
+            if (p.id === id) {
+                const newQty = p.qty + delta;
+                const maxStock = p.quantity || 9999;
+                
+                if (newQty > maxStock) {
+                    alert(`Maximum stock reached (${maxStock})`);
+                    return p;
+                }
+                return { ...p, qty: Math.max(1, newQty) };
+            }
             return p;
         }));
     };
@@ -81,13 +111,11 @@ const PosTerminal: React.FC = () => {
 
     const handleSearchCustomer = async (term: string) => {
         setCustomerSearchTerm(term);
-        if (term.length > 2) {
-            try {
-                const res = await apiClient.get(`/customers?search=${term}`);
-                setFoundCustomers(res.data);
-            } catch (err) {
-                setFoundCustomers([]);
-            }
+        try {
+            const res = await apiClient.get(`/customers?search=${term}`);
+            setFoundCustomers(res.data);
+        } catch (err) {
+            setFoundCustomers([]);
         }
     };
 
@@ -98,6 +126,19 @@ const PosTerminal: React.FC = () => {
             ...item,
             appliedPrice: (c.isWholesale && item.wholesalePrice) ? item.wholesalePrice : item.price
         })));
+    };
+
+    const handleUseCustomCustomer = () => {
+        if (!customerSearchTerm.trim()) return;
+        const guestCustomer: Customer = {
+            id: 'GUEST', 
+            name: customerSearchTerm,
+            phone: 'N/A',
+            isWholesale: false,
+            totalSpend: 0,
+            lastVisit: new Date().toISOString()
+        };
+        selectCustomer(guestCustomer);
     };
 
     const handleCompleteSale = async () => {
@@ -119,12 +160,15 @@ const PosTerminal: React.FC = () => {
                     productId: i.id, 
                     name: i.name, 
                     quantity: i.qty, 
-                    price: i.appliedPrice 
+                    price: i.appliedPrice,
+                    sku: i.sku,
+                    oem: (i.oemNumbers && i.oemNumbers.length > 0) ? i.oemNumbers[0] : ''
                 })),
                 totalAmount,
                 paymentMethod,
                 paymentDetails: { reference: paymentReference },
-                customerId: customer?.id
+                customerId: customer?.id === 'GUEST' ? undefined : customer?.id,
+                customerName: customer?.name
             };
 
             const response = await apiClient.post('/sales', payload);
@@ -133,15 +177,14 @@ const PosTerminal: React.FC = () => {
             setCustomer(null);
             setPaymentMethod('CASH');
             setPaymentReference('');
-        } catch (error) {
-            alert('Sale Failed: Network Error');
+        } catch (error: any) {
+            alert('Sale Failed: ' + (error.response?.data?.error || 'Network Error'));
         } finally {
             setIsProcessing(false);
         }
     };
 
     const handlePrintReceipt = () => {
-        // Delay print to allow React to render the hidden template
         setTimeout(() => {
             window.print();
         }, 500);
@@ -152,7 +195,7 @@ const PosTerminal: React.FC = () => {
     if (lastSale) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-100px)] animate-scale-up">
-                {/* Hidden Print Container */}
+                {/* Hidden Print Container - Forces 80mm Receipt layout */}
                 <div className="hidden print-force-container">
                     <InvoiceTemplate data={lastSale} type="RECEIPT" ref={printRef} />
                 </div>
@@ -172,12 +215,11 @@ const PosTerminal: React.FC = () => {
                         <div className="flex justify-center py-2">
                              <QrCode size={64} className="text-masuma-dark" />
                         </div>
-                        <p className="text-[9px] text-center text-gray-400">Scan to verify on iTax</p>
                     </div>
 
                     <div className="flex gap-3">
                         <button onClick={handlePrintReceipt} className="flex-1 bg-gray-800 text-white py-2 rounded font-bold text-sm uppercase flex items-center justify-center gap-2 hover:bg-gray-700">
-                            <Printer size={16} /> Print
+                            <Printer size={16} /> Print Receipt
                         </button>
                         <button onClick={() => setLastSale(null)} className="flex-1 bg-masuma-orange text-white py-2 rounded font-bold text-sm uppercase hover:bg-orange-600">
                             New Sale
@@ -212,17 +254,34 @@ const PosTerminal: React.FC = () => {
                          <div className="flex justify-center pt-10"><Loader2 className="animate-spin text-masuma-orange"/></div>
                     ) : searchTerm ? (
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                            {searchResults.map(p => (
-                                <div 
-                                    key={p.id} 
-                                    onClick={() => addToCart(p)}
-                                    className="p-3 border border-gray-200 hover:border-masuma-orange cursor-pointer rounded bg-gray-50 hover:bg-white transition group"
-                                >
-                                    <div className="text-xs font-bold text-gray-500 mb-1">{p.sku}</div>
-                                    <div className="font-bold text-sm text-masuma-dark line-clamp-2 h-10 leading-tight">{p.name}</div>
-                                    <div className="mt-2 text-masuma-orange font-bold">KES {p.price.toLocaleString()}</div>
-                                </div>
-                            ))}
+                            {searchResults.map(p => {
+                                const isOutOfStock = (p.quantity || 0) <= 0;
+                                return (
+                                    <div 
+                                        key={p.id} 
+                                        onClick={() => !isOutOfStock && addToCart(p)}
+                                        className={`p-3 border rounded transition group relative ${
+                                            isOutOfStock 
+                                                ? 'border-red-100 bg-red-50 cursor-not-allowed opacity-80' 
+                                                : 'border-gray-200 hover:border-masuma-orange cursor-pointer bg-gray-50 hover:bg-white'
+                                        }`}
+                                    >
+                                        <div className="flex justify-between items-start mb-1">
+                                            <div className="text-xs font-bold text-gray-500">{p.sku}</div>
+                                            {isOutOfStock && (
+                                                <span className="bg-red-600 text-white text-[9px] font-bold px-1.5 rounded uppercase flex items-center gap-1">
+                                                    <AlertTriangle size={8} /> Sold Out
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="font-bold text-sm text-masuma-dark line-clamp-2 h-10 leading-tight">{p.name}</div>
+                                        <div className="mt-2 flex justify-between items-end">
+                                            <div className="text-masuma-orange font-bold">KES {p.price.toLocaleString()}</div>
+                                            <div className="text-[10px] text-gray-400 font-bold">{p.quantity} left</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                             {searchResults.length === 0 && <div className="col-span-3 text-center text-gray-400">No products found</div>}
                         </div>
                     ) : (
@@ -253,7 +312,11 @@ const PosTerminal: React.FC = () => {
                         <div className="flex justify-between items-center bg-white border border-gray-200 p-2 rounded">
                              <div className="flex flex-col">
                                  <span className="text-xs font-bold text-masuma-dark">{customer.name}</span>
-                                 {customer.isWholesale && <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded w-fit font-bold uppercase">Wholesale</span>}
+                                 {customer.isWholesale ? (
+                                     <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded w-fit font-bold uppercase">Wholesale</span>
+                                 ) : (
+                                     <span className="text-[9px] text-gray-400 uppercase">Retail / Walk-in</span>
+                                 )}
                              </div>
                              <button onClick={() => { setCustomer(null); setIsCustomerSearchOpen(false); }} className="text-gray-400 hover:text-red-500"><X size={16} /></button>
                         </div>
@@ -275,15 +338,27 @@ const PosTerminal: React.FC = () => {
                                 <div 
                                     key={c.id} 
                                     onClick={() => selectCustomer(c)}
-                                    className="p-2 hover:bg-gray-100 cursor-pointer rounded text-sm flex justify-between"
+                                    className="p-2 hover:bg-gray-100 cursor-pointer rounded text-sm flex justify-between items-center"
                                 >
-                                    <span>{c.name}</span>
-                                    {c.isWholesale && <span className="text-purple-600 text-xs font-bold">B2B</span>}
+                                    <span className="font-bold text-gray-700">{c.name}</span>
+                                    {c.isWholesale && <span className="text-purple-600 text-xs font-bold bg-purple-50 px-1 rounded">B2B</span>}
                                 </div>
                             ))}
-                            {foundCustomers.length === 0 && <p className="text-xs text-gray-400 text-center p-2">No results</p>}
+                            
+                            {/* Option to use custom name without DB */}
+                            {customerSearchTerm && (
+                                <div 
+                                    onClick={handleUseCustomCustomer}
+                                    className="p-2 hover:bg-orange-50 cursor-pointer rounded text-sm flex items-center gap-2 text-masuma-orange border-t border-gray-100 mt-1"
+                                >
+                                    <Plus size={14} />
+                                    <span className="font-bold">Use "{customerSearchTerm}" (Walk-in)</span>
+                                </div>
+                            )}
+
+                            {foundCustomers.length === 0 && !customerSearchTerm && <p className="text-xs text-gray-400 text-center p-2">Start typing to search...</p>}
                         </div>
-                        <button onClick={() => setIsCustomerSearchOpen(false)} className="w-full text-center text-xs text-red-500 mt-2 py-1 hover:bg-red-50">Close</button>
+                        <button onClick={() => setIsCustomerSearchOpen(false)} className="w-full text-center text-xs text-red-500 mt-2 py-1 hover:bg-red-50 font-bold uppercase">Cancel</button>
                     </div>
                 )}
 

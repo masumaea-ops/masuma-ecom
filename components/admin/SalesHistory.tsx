@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Eye, Printer, FileText, Filter, Download, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, Printer, FileText, Filter, Download, Loader2, ChevronLeft, ChevronRight, X, Receipt } from 'lucide-react';
 import { Sale } from '../../types';
 import InvoiceTemplate from './InvoiceTemplate';
 import { apiClient } from '../../utils/apiClient';
@@ -11,7 +12,10 @@ const SalesHistory: React.FC = () => {
     const [filterDate, setFilterDate] = useState('');
     const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
     
+    // Print & View State
     const [printSale, setPrintSale] = useState<Sale | null>(null);
+    const [printType, setPrintType] = useState<'TAX_INVOICE' | 'RECEIPT'>('TAX_INVOICE');
+    const [viewSale, setViewSale] = useState<Sale | null>(null);
     const printRef = useRef<HTMLDivElement>(null);
 
     const fetchSales = async (page = 1) => {
@@ -42,9 +46,9 @@ const SalesHistory: React.FC = () => {
         return () => clearTimeout(delay);
     }, [searchTerm, filterDate]);
 
-    const handlePrint = (sale: Sale) => {
+    const handlePrint = (sale: Sale, type: 'TAX_INVOICE' | 'RECEIPT' = 'TAX_INVOICE') => {
         setPrintSale(sale);
-        // Increased timeout to ensure the InvoiceTemplate is fully rendered in the DOM before printing
+        setPrintType(type);
         setTimeout(() => {
             window.print();
         }, 500);
@@ -61,7 +65,32 @@ const SalesHistory: React.FC = () => {
             {/* Hidden Print Template */}
             {printSale && (
                 <div className="hidden print-force-container">
-                    <InvoiceTemplate data={printSale} type="TAX_INVOICE" ref={printRef} />
+                    <InvoiceTemplate data={printSale} type={printType} ref={printRef} />
+                </div>
+            )}
+
+            {/* View Modal - Z-Index 110 */}
+            {viewSale && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setViewSale(null)}>
+                    <div className="bg-white h-[90vh] w-full max-w-4xl overflow-hidden rounded shadow-2xl flex flex-col animate-scale-up" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+                            <h3 className="font-bold text-lg text-masuma-dark uppercase">Receipt Details</h3>
+                            <button onClick={() => setViewSale(null)} className="text-gray-500 hover:text-red-500"><X size={24}/></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto bg-gray-100 p-8 flex justify-center">
+                             <div className="transform scale-90 origin-top">
+                                <InvoiceTemplate data={viewSale} type="RECEIPT" />
+                             </div>
+                        </div>
+                        <div className="p-4 border-t bg-white flex justify-end gap-3">
+                            <button onClick={() => handlePrint(viewSale, 'RECEIPT')} className="px-4 py-2 border border-gray-300 rounded font-bold uppercase text-xs hover:bg-gray-50 flex items-center gap-2">
+                                <Receipt size={16}/> Print Thermal (80mm)
+                            </button>
+                            <button onClick={() => handlePrint(viewSale, 'TAX_INVOICE')} className="px-6 py-2 bg-masuma-dark text-white rounded font-bold uppercase text-xs hover:bg-masuma-orange flex items-center gap-2">
+                                <FileText size={16}/> Print Invoice (A4)
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -123,7 +152,7 @@ const SalesHistory: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
                                 {sales.map(sale => (
-                                    <tr key={sale.id} className="hover:bg-gray-50 transition">
+                                    <tr key={sale.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setViewSale(sale)}>
                                         <td className="px-6 py-4 font-mono font-bold text-masuma-dark">{sale.receiptNumber}</td>
                                         <td className="px-6 py-4 text-gray-500">{new Date(sale.createdAt || sale.date).toLocaleString()}</td>
                                         <td className="px-6 py-4">
@@ -153,8 +182,14 @@ const SalesHistory: React.FC = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button className="p-2 text-gray-400 hover:text-masuma-orange" title="View Details"><Eye size={16} /></button>
+                                            <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                                <button 
+                                                    onClick={() => setViewSale(sale)}
+                                                    className="p-2 text-gray-400 hover:text-masuma-orange" 
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
                                                 <button 
                                                     onClick={() => handlePrint(sale)}
                                                     className="p-2 text-gray-400 hover:text-masuma-dark" 

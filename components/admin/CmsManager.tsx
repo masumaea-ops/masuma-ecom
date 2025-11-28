@@ -21,7 +21,7 @@ const CmsManager: React.FC = () => {
         CMS_ANNOUNCEMENT_COLOR: '#E0621B',
         CMS_HEADER_PHONE: '+254 792 506 590',
         CMS_FOOTER_ABOUT: 'Masuma Autoparts East Africa Limited. The official distributor of certified Masuma components. Engineering you can trust for the African road.',
-        CMS_CONTACT_ADDRESS: 'Godown 4, Enterprise Road, Industrial Area, Nairobi',
+        CMS_CONTACT_ADDRESS: 'Ruby Mall, Shop FF25 First Floor Behind NCBA Bank Accra Road',
         CMS_CONTACT_EMAIL: 'sales@masuma.africa',
         CMS_CONTACT_PHONE: '+254 792 506 590'
     });

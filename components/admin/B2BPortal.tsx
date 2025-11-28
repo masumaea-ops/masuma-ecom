@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Package, ShoppingCart, Upload, FileText, Plus, Trash2, Download, Loader2, CheckCircle } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 
 const B2BPortal: React.FC = () => {
-    const [orderItems, setOrderItems] = useState<{sku: string, qty: number}[]>([{ sku: '', qty: 1 }]);
+    const [orderItems, setOrderItems] = useState<{sku: string, qty: string | number}[]>([{ sku: '', qty: 1 }]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
@@ -19,13 +20,17 @@ const B2BPortal: React.FC = () => {
 
     const updateItem = (index: number, field: 'sku' | 'qty', value: string | number) => {
         const newItems = [...orderItems];
-        if (field === 'qty') newItems[index].qty = Number(value);
+        if (field === 'qty') newItems[index].qty = value; // Allow string directly
         else newItems[index].sku = String(value).toUpperCase();
         setOrderItems(newItems);
     };
 
     const handlePlaceOrder = async () => {
-        const validItems = orderItems.filter(i => i.sku && i.qty > 0);
+        // Filter and sanitize
+        const validItems = orderItems
+            .map(i => ({ sku: i.sku, qty: Number(i.qty) || 0 }))
+            .filter(i => i.sku && i.qty > 0);
+
         if (validItems.length === 0) return alert("Please add at least one valid item.");
 
         setIsSubmitting(true);
@@ -35,7 +40,6 @@ const B2BPortal: React.FC = () => {
             for (const item of validItems) {
                 try {
                     const res = await apiClient.get(`/products?q=${item.sku}`);
-                    // FIX: Handle pagination
                     const products = res.data.data || res.data || [];
                     
                     // Find exact match

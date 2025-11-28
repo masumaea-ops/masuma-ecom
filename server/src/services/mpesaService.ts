@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import { AppDataSource } from '../config/database';
@@ -27,6 +28,12 @@ export class MpesaService {
         p = '254' + p;
     }
     return p;
+  }
+
+  // PII Masking for Logs
+  private static maskPhone(phone: string): string {
+      if (phone.length < 6) return '***';
+      return phone.substring(0, 5) + '******' + phone.substring(phone.length - 2);
   }
 
   private static async getAccessToken(): Promise<string> {
@@ -66,8 +73,11 @@ export class MpesaService {
         const passkey = await this.getSetting('MPESA_PASSKEY', 'MPESA_PASSKEY');
         const callbackUrl = await this.getSetting('MPESA_CALLBACK_URL', 'MPESA_CALLBACK_URL');
         
-        // Support Till Numbers (Buy Goods) vs Paybills via config, default to PayBill
+        // Support Till Numbers (Buy Goods) vs Paybills
+        // If MPESA_STORE_NUMBER is configured, use it for PartyB (Buy Goods), otherwise use shortcode (Paybill)
         const txType = await this.getSetting('MPESA_TRANSACTION_TYPE') || 'CustomerPayBillOnline'; 
+        const storeNumber = await this.getSetting('MPESA_STORE_NUMBER');
+        const partyB = storeNumber || shortcode;
         
         const env = process.env.MPESA_ENV || 'sandbox';
         const baseUrl = env === 'production' ? 'https://api.safaricom.co.ke' : 'https://sandbox.safaricom.co.ke';
@@ -85,14 +95,14 @@ export class MpesaService {
             TransactionType: txType, 
             Amount: Math.ceil(amount),
             PartyA: formattedPhone,
-            PartyB: shortcode,
+            PartyB: partyB,
             PhoneNumber: formattedPhone,
             CallBackURL: callbackUrl,
             AccountReference: `ORD${orderId.slice(0, 5)}`,
             TransactionDesc: `Payment for Order ${orderId.slice(0, 5)}`
         };
 
-        logger.info(`Initiating STK Push to ${formattedPhone} for KES ${amount}`);
+        logger.info(`Initiating STK Push to ${this.maskPhone(formattedPhone)} for KES ${amount}`);
 
         const response = await axios.post(`${baseUrl}/mpesa/stkpush/v1/processrequest`, payload, {
             headers: { Authorization: `Bearer ${token}` },
@@ -137,6 +147,13 @@ export class MpesaService {
       return;
     }
 
+    // IDEMPOTENCY CHECK
+    // Prevents double-processing if Safaricom sends duplicate callbacks
+    if (transaction.status === 'COMPLETED' || transaction.status === 'FAILED') {
+        logger.info(`Callback ignored: Transaction ${CheckoutRequestID} already processed as ${transaction.status}`);
+        return;
+    }
+
     if (ResultCode === 0) {
       const items = CallbackMetadata.Item;
       const receiptItem = items.find((i: any) => i.Name === 'MpesaReceiptNumber');
@@ -145,22 +162,23 @@ export class MpesaService {
       const receiptNumber = receiptItem?.Value;
       const paidAmount = amountItem?.Value;
 
-      transaction.status = 'COMPLETED';
+      // Update Transaction
       transaction.mpesaReceiptNumber = receiptNumber;
       transaction.resultDesc = 'Success';
-      await this.transactionRepo.save(transaction);
+      transaction.amount = Number(paidAmount); // Update actual amount paid
 
-      // CRITICAL: Verify Amount before marking Paid
-      if (paidAmount && Number(paidAmount) >= Number(transaction.amount)) {
+      // Verify Amount
+      if (paidAmount && Number(paidAmount) >= (Number(transaction.order.totalAmount) - 1)) { // Allow 1 KES variance
+          transaction.status = 'COMPLETED';
           transaction.order.status = OrderStatus.PAID;
           transaction.order.amountPaid = Number(paidAmount);
           transaction.order.balance = 0;
           logger.info(`✅ Payment Confirmed: ${receiptNumber} (KES ${paidAmount})`);
           
+          await this.transactionRepo.save(transaction);
           await this.orderRepo.save(transaction.order);
 
           // --- TRIGGER SALE CREATION ---
-          // Reload order with relations to create sale
           const fullOrder = await this.orderRepo.findOne({
               where: { id: transaction.order.id },
               relations: ['items', 'items.product']
@@ -175,9 +193,15 @@ export class MpesaService {
           }
 
       } else {
+          // Underpayment or Fraud Risk
+          transaction.status = 'COMPLETED'; // Transaction technically succeeded
           transaction.order.status = OrderStatus.PARTIALLY_PAID;
           transaction.order.amountPaid = Number(paidAmount || 0);
-          logger.warn(`⚠️ Partial Payment: ${receiptNumber} (Paid: ${paidAmount}, Expected: ${transaction.amount})`);
+          transaction.order.balance = Number(transaction.order.totalAmount) - Number(paidAmount || 0);
+          
+          logger.warn(`⚠️ Partial/Mismatch Payment: ${receiptNumber} (Paid: ${paidAmount}, Expected: ${transaction.order.totalAmount})`);
+          
+          await this.transactionRepo.save(transaction);
           await this.orderRepo.save(transaction.order);
       }
       
@@ -185,7 +209,7 @@ export class MpesaService {
       transaction.status = 'FAILED';
       transaction.resultDesc = ResultDesc;
       await this.transactionRepo.save(transaction);
-      logger.warn(`❌ Payment Failed: ${ResultDesc}`);
+      logger.warn(`❌ Payment Failed: ${ResultDesc} (${this.maskPhone(transaction.phoneNumber)})`);
     }
   }
 }

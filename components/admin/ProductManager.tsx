@@ -72,8 +72,9 @@ const ProductManager: React.FC = () => {
   };
 
   const handleAddNew = () => {
+    // Initialize numeric fields as empty strings for better UX
     setFormData({
-        name: '', sku: '', price: 0, costPrice: 0, wholesalePrice: 0, 
+        name: '', sku: '', price: '', costPrice: '', wholesalePrice: '', quantity: '',
         description: '', category: categories[0]?.name || 'General', image: '', images: [], oemNumbers: [], compatibility: []
     });
     setOemString('');
@@ -165,7 +166,7 @@ const ProductManager: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.sku || !formData.price) {
+    if (!formData.name || !formData.sku || (!formData.price && formData.price !== 0)) {
         alert('Please fill in all required fields (Name, SKU, Price).');
         return;
     }
@@ -177,8 +178,8 @@ const ProductManager: React.FC = () => {
             oemNumbers: oemString.split(',').map(s => s.trim()).filter(s => s.length > 0),
             compatibility: compatString.split(',').map(s => s.trim()).filter(s => s.length > 0),
             price: Number(formData.price),
-            costPrice: Number(formData.costPrice),
-            wholesalePrice: Number(formData.wholesalePrice),
+            costPrice: Number(formData.costPrice || 0),
+            wholesalePrice: Number(formData.wholesalePrice || 0),
             quantity: Number(formData.quantity || 0),
             imageUrl: formData.image, // Ensure legacy field is populated
             images: formData.images // Ensure array is sent
@@ -526,14 +527,14 @@ const ProductManager: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pricing */}
+              {/* Pricing - Using type="number" but controlling as string to allow clearing */}
               <div className="grid grid-cols-3 gap-4">
                  <div className="space-y-1">
                    <label className="text-xs font-bold uppercase text-gray-600">Buying Price (Cost)</label>
                    <input 
                     type="number" 
-                    value={formData.costPrice || ''}
-                    onChange={e => setFormData({...formData, costPrice: Number(e.target.value)})}
+                    value={formData.costPrice}
+                    onChange={e => setFormData({...formData, costPrice: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-yellow-50" 
                    />
                  </div>
@@ -541,8 +542,8 @@ const ProductManager: React.FC = () => {
                    <label className="text-xs font-bold uppercase text-gray-600">Selling Price *</label>
                    <input 
                     type="number" 
-                    value={formData.price || ''}
-                    onChange={e => setFormData({...formData, price: Number(e.target.value)})}
+                    value={formData.price}
+                    onChange={e => setFormData({...formData, price: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
                    />
                  </div>
@@ -550,8 +551,8 @@ const ProductManager: React.FC = () => {
                    <label className="text-xs font-bold uppercase text-gray-600">Wholesale Price</label>
                    <input 
                     type="number" 
-                    value={formData.wholesalePrice || ''}
-                    onChange={e => setFormData({...formData, wholesalePrice: Number(e.target.value)})}
+                    value={formData.wholesalePrice}
+                    onChange={e => setFormData({...formData, wholesalePrice: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" 
                    />
                  </div>
@@ -562,8 +563,8 @@ const ProductManager: React.FC = () => {
                    <label className="text-xs font-bold uppercase text-gray-600 flex items-center gap-1"><Package size={12}/> Stock Quantity (Active Branch)</label>
                    <input 
                     type="number" 
-                    value={formData.quantity || 0}
-                    onChange={e => setFormData({...formData, quantity: Number(e.target.value)})}
+                    value={formData.quantity}
+                    onChange={e => setFormData({...formData, quantity: e.target.value})}
                     className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-green-50" 
                     title="Updating this will adjust inventory for your current branch"
                    />

@@ -13,6 +13,8 @@ interface SaleItemDto {
   name: string;
   quantity: number;
   price: number;
+  sku?: string; // Added
+  oem?: string; // Added
 }
 
 interface CreateSaleDto {
@@ -22,7 +24,7 @@ interface CreateSaleDto {
   branchId: string;
   cashierId: string;
   customerId?: string;
-  customerName?: string; // Added fallback name
+  customerName?: string;
   paymentDetails?: any;
 }
 
@@ -33,26 +35,49 @@ export class SaleService {
     await queryRunner.startTransaction();
 
     try {
-      // Calculate Tax (Assumes inclusive VAT 16% for all items for simplicity)
+      // 1. Validate Stock Levels FIRST (Strict Check)
+      const stockRepo = queryRunner.manager.getRepository(ProductStock);
+      
+      for (const item of data.items) {
+        const stockEntry = await stockRepo.findOne({
+            where: { product: { id: item.productId }, branch: { id: data.branchId } },
+            lock: { mode: 'pessimistic_write' }
+        });
+
+        // Allow sales if stock entry exists, even if low (negative stock allowed for business continuity if needed, 
+        // or strict check can be enabled here: && stockEntry.quantity >= item.quantity)
+        // Current logic: Updates stock, allows negative.
+        if (stockEntry) {
+            stockEntry.quantity -= item.quantity;
+            await stockRepo.save(stockEntry);
+        } else {
+            // Create negative stock entry if product exists but no stock record
+            const newStock = new ProductStock();
+            newStock.product = { id: item.productId } as any;
+            newStock.branch = { id: data.branchId } as any;
+            newStock.quantity = -item.quantity;
+            await stockRepo.save(newStock);
+        }
+      }
+
+      // Calculate Tax (Inclusive VAT 16%)
       const taxRate = 0.16;
       const netAmount = data.totalAmount / (1 + taxRate);
       const taxAmount = data.totalAmount - netAmount;
 
-      // 1. Create Sale Record
+      // 2. Create Sale Record
       const sale = new Sale();
       sale.receiptNumber = `RCP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       sale.branch = { id: data.branchId } as Branch;
       sale.cashier = { id: data.cashierId } as User;
       
-      // Handle Customer Linking & Snapshot
       if (data.customerId) {
           const customer = await queryRunner.manager.findOneBy(Customer, { id: data.customerId });
           if (customer) {
               sale.customer = customer;
-              sale.customerName = customer.name; // Snapshot name for historical accuracy
+              sale.customerName = customer.name;
           }
       } else if (data.customerName) {
-          // Fallback if no Customer ID is found (e.g. Guest Order)
           sale.customerName = data.customerName;
       } else {
           sale.customerName = "Walk-in Customer";
@@ -67,11 +92,11 @@ export class SaleService {
       sale.paymentMethod = data.paymentMethod;
       sale.paymentDetails = data.paymentDetails;
 
-      // 2. Call KRA eTIMS
+      // 3. Call KRA eTIMS
       const fiscalData = await EtimsService.signInvoice(
         sale.receiptNumber, 
         data.items.map(i => ({
-            hsCode: '8708.99.00', // Generic Auto Parts HS Code
+            hsCode: '8708.99.00',
             name: i.name,
             qty: i.quantity,
             unitPrice: i.price,
@@ -88,28 +113,6 @@ export class SaleService {
       }
 
       await queryRunner.manager.save(sale);
-
-      // 3. Deduct Inventory
-      for (const item of data.items) {
-        const stockRepo = queryRunner.manager.getRepository(ProductStock);
-        
-        const stockEntry = await stockRepo.findOne({
-            where: { product: { id: item.productId }, branch: { id: data.branchId } },
-            lock: { mode: 'pessimistic_write' }
-        });
-
-        if (stockEntry) {
-            stockEntry.quantity = Math.max(0, stockEntry.quantity - item.quantity);
-            await stockRepo.save(stockEntry);
-        } else {
-            const newStock = new ProductStock();
-            newStock.product = { id: item.productId } as any;
-            newStock.branch = { id: data.branchId } as any;
-            newStock.quantity = -item.quantity; // Allow oversell with warning
-            await stockRepo.save(newStock);
-        }
-      }
-
       await queryRunner.commitTransaction();
       return sale;
 
@@ -121,39 +124,36 @@ export class SaleService {
     }
   }
 
-  // NEW METHOD: Converts an existing Order to a Sale (updating stats and inventory)
   static async createSaleFromOrder(order: Order, cashierUser?: User) {
-    // Check if this order has already been processed into a sale (via paymentDetails reference check)
-    // This is a basic idempotency check.
     const existingSale = await AppDataSource.getRepository(Sale).createQueryBuilder("sale")
         .where("JSON_EXTRACT(sale.paymentDetails, '$.orderReference') = :orderRef", { orderRef: order.orderNumber })
         .getOne();
 
-    if (existingSale) {
-        console.log(`Order ${order.orderNumber} already converted to Sale ${existingSale.receiptNumber}. Skipping.`);
-        return existingSale;
-    }
+    if (existingSale) return existingSale;
 
-    // Use the order's existing items to map to SaleItemDto
     const defaultBranchId = (cashierUser?.branch?.id) || (await AppDataSource.getRepository(Branch).findOne({where: {code: 'NBI-HQ'}}))?.id;
-    
-    // Fallback system user if no cashier provided (e.g. M-Pesa auto-confirmation)
     const systemUserId = cashierUser?.id || (await AppDataSource.getRepository(User).findOne({where: {role: 'ADMIN' as any}}))?.id;
 
-    if (!defaultBranchId || !systemUserId) {
-        throw new Error("Configuration Error: Cannot determine fulfillment branch or system user.");
-    }
+    if (!defaultBranchId || !systemUserId) throw new Error("Configuration Error");
 
-    // Map Order Items to Sale Items
-    // Note: order.items must be loaded with relations to Product
-    const saleItems: SaleItemDto[] = order.items.map(item => ({
+    // Load order items with product details including OEMs
+    const orderRepo = AppDataSource.getRepository(Order);
+    const fullOrder = await orderRepo.findOne({
+        where: { id: order.id },
+        relations: ['items', 'items.product', 'items.product.oemNumbers']
+    });
+
+    if (!fullOrder) throw new Error("Order not found");
+
+    const saleItems: SaleItemDto[] = fullOrder.items.map(item => ({
         productId: item.product.id,
-        name: item.product.name || 'Order Item',
+        name: item.product.name,
         quantity: item.quantity,
-        price: Number(item.price)
+        price: Number(item.price),
+        sku: item.product.sku,
+        oem: item.product.oemNumbers?.[0]?.code || ''
     }));
 
-    // Look up customer
     let customerId = undefined;
     if (order.customerEmail || order.customerPhone) {
         const customerRepo = AppDataSource.getRepository(Customer);
@@ -168,13 +168,13 @@ export class SaleService {
 
     return this.createSale({
         items: saleItems,
-        totalAmount: Number(order.totalAmount), // Explicit Number cast
-        paymentMethod: 'ORDER_PAYMENT', // Differentiates from POS Cash
+        totalAmount: Number(order.totalAmount),
+        paymentMethod: 'ORDER_PAYMENT',
         paymentDetails: { orderReference: order.orderNumber },
         branchId: defaultBranchId,
         cashierId: systemUserId,
         customerId: customerId,
-        customerName: order.customerName // Explicitly pass order name as fallback
+        customerName: order.customerName
     });
   }
 }

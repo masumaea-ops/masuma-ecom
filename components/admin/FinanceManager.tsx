@@ -16,9 +16,9 @@ const FinanceManager: React.FC = () => {
         end: new Date().toISOString().slice(0, 10)
     });
 
-    const [newExpense, setNewExpense] = useState({
+    const [newExpense, setNewExpense] = useState<{title: string, amount: string | number, category: string, date: string, notes: string}>({
         title: '',
-        amount: 0,
+        amount: '',
         category: 'OTHER',
         date: new Date().toISOString().slice(0, 10),
         notes: ''
@@ -47,9 +47,12 @@ const FinanceManager: React.FC = () => {
     const handleAddExpense = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await apiClient.post('/finance/expenses', newExpense);
+            await apiClient.post('/finance/expenses', {
+                ...newExpense,
+                amount: Number(newExpense.amount)
+            });
             setIsAddingExpense(false);
-            setNewExpense({ title: '', amount: 0, category: 'OTHER', date: new Date().toISOString().slice(0, 10), notes: '' });
+            setNewExpense({ title: '', amount: '', category: 'OTHER', date: new Date().toISOString().slice(0, 10), notes: '' });
             fetchData();
             alert('Expense recorded successfully');
         } catch (error) {
@@ -94,7 +97,7 @@ const FinanceManager: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Amount</label>
-                            <input required type="number" className="w-full p-2 border rounded" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: Number(e.target.value)})} />
+                            <input required type="number" className="w-full p-2 border rounded" placeholder="0.00" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} />
                         </div>
                         <div>
                             <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Category</label>
