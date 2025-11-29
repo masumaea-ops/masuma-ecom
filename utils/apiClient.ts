@@ -18,9 +18,7 @@ const getBaseUrl = () => {
 export const apiClient = axios.create({
   baseURL: getBaseUrl(),
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json', 
-  }
+  // Removed hardcoded Content-Type to allow Axios to auto-detect (JSON vs FormData)
 });
 
 // Request Interceptor
@@ -28,8 +26,10 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('masuma_auth_token');
     if (token) {
-      config.headers = config.headers || {}; 
-      config.headers.Authorization = `Bearer ${token}`;
+      if (!config.headers) {
+        config.headers = {} as any;
+      }
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
     return config;
   },

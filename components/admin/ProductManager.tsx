@@ -113,10 +113,8 @@ const ProductManager: React.FC = () => {
       uploadData.append('image', file);
 
       try {
-          // Explicitly unset Content-Type to let the browser set the correct boundary
-          const res = await apiClient.post('/upload', uploadData, {
-              headers: { 'Content-Type': undefined }
-          });
+          // Simplified call: apiClient (axios) will auto-detect FormData and set header
+          const res = await apiClient.post('/upload', uploadData);
           
           if (res.data && res.data.url) {
               const url = res.data.url;

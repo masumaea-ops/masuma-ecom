@@ -70,9 +70,8 @@ const BlogManager: React.FC = () => {
         uploadData.append('image', file);
 
         try {
-            const res = await apiClient.post('/upload', uploadData, {
-                headers: { 'Content-Type': undefined } // Let browser handle multipart
-            });
+            // Simplified upload call (no manual headers)
+            const res = await apiClient.post('/upload', uploadData);
             if (res.data && res.data.url) {
                 setFormData(prev => ({ ...prev, image: res.data.url }));
             } else {

@@ -128,7 +128,7 @@ const CmsManager: React.FC = () => {
         uploadData.append('image', file);
 
         try {
-            // Send FormData directly
+            // Simplified call (no manual headers)
             const res = await apiClient.post('/upload', uploadData);
             if (res.data && res.data.url) {
                 updateSlide(slideId, field, res.data.url);

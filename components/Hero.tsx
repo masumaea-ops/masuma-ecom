@@ -95,6 +95,14 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
       return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const getYoutubeEmbedUrl = (url: string) => {
+      const id = getYoutubeId(url);
+      if (!id) return '';
+      // Fix for Error 153: Pass origin to allow embedding on restricted domains
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&enablejsapi=1&origin=${origin}`;
+  };
+
   if (slides.length === 0) {
       // Immediate fallback if loading state persists too long or init fails
       return (
@@ -123,7 +131,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                  {slide.mediaType === 'youtube' && slide.videoUrl ? (
                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
                         <iframe 
-                            src={`https://www.youtube.com/embed/${getYoutubeId(slide.videoUrl)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${getYoutubeId(slide.videoUrl)}&showinfo=0`} 
+                            src={getYoutubeEmbedUrl(slide.videoUrl)} 
                             className="w-[300%] h-[300%] -ml-[100%] -mt-[100%] md:w-full md:h-full md:ml-0 md:mt-0 object-cover opacity-60"
                             allow="autoplay; encrypted-media"
                             title="Background Video"
