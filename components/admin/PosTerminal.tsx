@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote, AlertTriangle } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote, AlertTriangle, Send } from 'lucide-react';
 import { Product, Customer, Sale } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 import InvoiceTemplate from './InvoiceTemplate';
@@ -23,6 +23,12 @@ const PosTerminal: React.FC = () => {
     // Payment State
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
     const [paymentReference, setPaymentReference] = useState('');
+    
+    // M-Pesa Specific State
+    const [mpesaPhone, setMpesaPhone] = useState('');
+    const [pollingOrderId, setPollingOrderId] = useState<string | null>(null);
+    const [pollingOrderNumber, setPollingOrderNumber] = useState<string | null>(null);
+    const [waitingForPayment, setWaitingForPayment] = useState(false);
 
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
@@ -32,11 +38,60 @@ const PosTerminal: React.FC = () => {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const printRef = useRef<HTMLDivElement>(null);
 
+    // Initial load
     useEffect(() => {
         if (isCustomerSearchOpen) {
             handleSearchCustomer('');
         }
     }, [isCustomerSearchOpen]);
+
+    // Pre-fill phone if customer selected
+    useEffect(() => {
+        if (customer && customer.phone) {
+            setMpesaPhone(customer.phone);
+        } else {
+            setMpesaPhone('');
+        }
+    }, [customer]);
+
+    // Polling Logic for M-Pesa
+    useEffect(() => {
+        let interval: any;
+        if (waitingForPayment && pollingOrderId && pollingOrderNumber) {
+            interval = setInterval(async () => {
+                try {
+                    // Check order status
+                    const statusRes = await apiClient.get(`/orders/${pollingOrderId}/status`);
+                    if (statusRes.data.status === 'PAID') {
+                        clearInterval(interval);
+                        
+                        // Give backend a moment to generate the Sale record from the Order
+                        setTimeout(async () => {
+                            try {
+                                const saleRes = await apiClient.get(`/sales/order/${pollingOrderNumber}`);
+                                setLastSale(saleRes.data);
+                                setCart([]);
+                                setCustomer(null);
+                                setPollingOrderId(null);
+                                setPollingOrderNumber(null);
+                                setWaitingForPayment(false);
+                                
+                                // Auto Print Receipt
+                                setTimeout(() => window.print(), 800);
+                            } catch (e) {
+                                console.error("Could not fetch generated sale", e);
+                                alert("Payment confirmed, but receipt generation is delayed. Please check Sales History.");
+                                setWaitingForPayment(false);
+                            }
+                        }, 1500); // Wait 1.5s for backend transaction to commit
+                    }
+                } catch (err) {
+                    console.error("Polling error", err);
+                }
+            }, 3000); // Poll every 3 seconds
+        }
+        return () => clearInterval(interval);
+    }, [waitingForPayment, pollingOrderId, pollingOrderNumber]);
 
     const handleProductSearch = async (term: string) => {
         setSearchTerm(term);
@@ -59,7 +114,6 @@ const PosTerminal: React.FC = () => {
     };
 
     const addToCart = (product: Product) => {
-        // Validation: Check Stock
         const currentQty = cart.find(p => p.id === product.id)?.qty || 0;
         const maxStock = product.quantity || 0;
 
@@ -141,10 +195,43 @@ const PosTerminal: React.FC = () => {
         selectCustomer(guestCustomer);
     };
 
-    const handleCompleteSale = async () => {
-        if (paymentMethod === 'MPESA' && paymentReference.length < 5) {
-            alert("Please enter a valid M-Pesa Transaction Code.");
+    const handleInitiateStkPush = async () => {
+        if (!mpesaPhone || mpesaPhone.length < 10) {
+            alert("Please enter a valid phone number for STK Push");
             return;
+        }
+
+        setIsProcessing(true);
+        try {
+            // Create Order & Trigger STK
+            const res = await apiClient.post('/mpesa/pay', {
+                customerName: customer?.name || 'Walk-in Customer',
+                customerEmail: customer?.email || '',
+                customerPhone: mpesaPhone,
+                shippingAddress: 'POS Transaction',
+                items: cart.map(i => ({ 
+                    productId: i.id, 
+                    quantity: i.qty, 
+                    price: i.appliedPrice 
+                }))
+            });
+
+            setPollingOrderId(res.data.orderId);
+            setPollingOrderNumber(res.data.orderNumber); 
+            setWaitingForPayment(true);
+        } catch (error: any) {
+            alert("Failed to initiate M-Pesa: " + (error.response?.data?.error || error.message));
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleCompleteSale = async () => {
+        if (paymentMethod === 'MPESA') {
+            if (paymentReference.length < 5) {
+                alert("Please enter a valid M-Pesa Transaction Code.");
+                return;
+            }
         }
         if (paymentMethod === 'CHEQUE' && paymentReference.length < 3) {
             alert("Please enter the Cheque Number.");
@@ -177,6 +264,9 @@ const PosTerminal: React.FC = () => {
             setCustomer(null);
             setPaymentMethod('CASH');
             setPaymentReference('');
+            
+            // Auto Print
+            setTimeout(() => window.print(), 500);
         } catch (error: any) {
             alert('Sale Failed: ' + (error.response?.data?.error || 'Network Error'));
         } finally {
@@ -191,6 +281,36 @@ const PosTerminal: React.FC = () => {
     };
 
     const total = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
+
+    // Modal: Waiting for M-Pesa
+    if (waitingForPayment) {
+        return (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+                <div className="bg-white p-8 rounded-lg shadow-2xl text-center max-w-sm w-full border-t-4 border-green-500">
+                    <div className="relative w-20 h-20 mx-auto mb-6">
+                        <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-green-500 rounded-full border-t-transparent animate-spin"></div>
+                        <Smartphone className="absolute inset-0 m-auto text-gray-400" size={32} />
+                    </div>
+                    <h2 className="text-xl font-bold text-masuma-dark mb-2">Waiting for Payment</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                        Prompt sent to <strong>{mpesaPhone}</strong>.<br/>
+                        Ask customer to enter PIN.
+                    </p>
+                    <div className="bg-gray-100 p-3 rounded mb-6">
+                        <p className="text-xs font-bold text-gray-500 uppercase">Amount Due</p>
+                        <p className="text-2xl font-bold text-masuma-dark">KES {total.toLocaleString()}</p>
+                    </div>
+                    <button 
+                        onClick={() => setWaitingForPayment(false)}
+                        className="text-red-500 font-bold text-sm uppercase hover:underline"
+                    >
+                        Cancel & Return
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (lastSale) {
         return (
@@ -219,7 +339,7 @@ const PosTerminal: React.FC = () => {
 
                     <div className="flex gap-3">
                         <button onClick={handlePrintReceipt} className="flex-1 bg-gray-800 text-white py-2 rounded font-bold text-sm uppercase flex items-center justify-center gap-2 hover:bg-gray-700">
-                            <Printer size={16} /> Print Receipt
+                            <Printer size={16} /> Print Again
                         </button>
                         <button onClick={() => setLastSale(null)} className="flex-1 bg-masuma-orange text-white py-2 rounded font-bold text-sm uppercase hover:bg-orange-600">
                             New Sale
@@ -405,14 +525,48 @@ const PosTerminal: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Reference Input */}
-                    {(paymentMethod === 'MPESA' || paymentMethod === 'CHEQUE') && (
+                    {/* M-Pesa Automation Inputs */}
+                    {paymentMethod === 'MPESA' && (
+                        <div className="animate-fade-in bg-green-50 p-2 rounded border border-green-100">
+                            <div className="flex gap-2">
+                                <input 
+                                    type="tel" 
+                                    value={mpesaPhone}
+                                    onChange={e => setMpesaPhone(e.target.value)}
+                                    placeholder="Enter Phone Number (07...)"
+                                    className="flex-1 p-2 border border-green-200 rounded text-sm outline-none focus:border-green-500"
+                                />
+                                <button 
+                                    onClick={handleInitiateStkPush}
+                                    disabled={isProcessing || cart.length === 0}
+                                    className="bg-green-600 text-white px-3 py-2 rounded font-bold text-xs uppercase hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
+                                >
+                                    {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} STK Push
+                                </button>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                                <div className="h-px bg-green-200 flex-1"></div>
+                                <span className="text-[10px] text-green-700 font-bold uppercase">OR Manual Code</span>
+                                <div className="h-px bg-green-200 flex-1"></div>
+                            </div>
+                            <input 
+                                type="text" 
+                                value={paymentReference}
+                                onChange={e => setPaymentReference(e.target.value.toUpperCase())}
+                                placeholder="Enter Transaction Code"
+                                className="w-full p-2 border border-green-200 rounded text-sm font-mono uppercase outline-none mt-2"
+                            />
+                        </div>
+                    )}
+
+                    {/* Cheque / Manual Inputs */}
+                    {paymentMethod === 'CHEQUE' && (
                         <div className="animate-fade-in">
                             <input 
                                 type="text" 
                                 value={paymentReference}
                                 onChange={e => setPaymentReference(e.target.value.toUpperCase())}
-                                placeholder={paymentMethod === 'MPESA' ? "Enter Transaction Code (e.g. QW...)" : "Enter Cheque Number"}
+                                placeholder="Enter Cheque Number"
                                 className="w-full p-2 border-2 border-masuma-orange rounded text-sm font-mono uppercase outline-none"
                             />
                         </div>
@@ -427,7 +581,7 @@ const PosTerminal: React.FC = () => {
                         disabled={cart.length === 0 || isProcessing}
                         className="w-full flex items-center justify-center gap-2 bg-masuma-orange text-white py-4 rounded font-bold hover:bg-orange-600 uppercase tracking-widest shadow-lg disabled:opacity-50"
                     >
-                        {isProcessing ? 'Processing KRA...' : <><Printer size={20} /> Complete Sale</>}
+                        {isProcessing ? 'Processing...' : <><Printer size={20} /> Complete Sale</>}
                     </button>
                 </div>
             </div>

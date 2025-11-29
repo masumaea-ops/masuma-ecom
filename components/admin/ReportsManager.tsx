@@ -113,7 +113,7 @@ const ReportsManager: React.FC = () => {
                 autoTable(doc, {
                     startY: 45,
                     head: [headers],
-                    body: rows,
+                    body: rows as any[],
                     theme: 'grid',
                     headStyles: { fillColor: [224, 98, 27] },
                     styles: { fontSize: 8, cellPadding: 2 },

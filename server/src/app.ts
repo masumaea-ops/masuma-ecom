@@ -1,4 +1,3 @@
-
 import 'reflect-metadata';
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import cors from 'cors';
@@ -8,6 +7,7 @@ declare const require: any;
 const compression = require('compression'); 
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import fs from 'fs'; // Added fs for path checking
 import { redis } from './config/redis';
 import { AppDataSource } from './config/database';
 import { config } from './config/env'; 
@@ -132,7 +132,8 @@ app.use('/api/finance', financeRoutes as any);
 // Legacy M-Pesa Route
 const mpesaOrderSchema = z.object({
   customerName: z.string().min(2),
-  customerEmail: z.string().email(),
+  // Relaxed email validation: Allow valid email OR empty string OR null/undefined
+  customerEmail: z.union([z.string().email(), z.string(), z.null(), z.undefined()]).optional(),
   customerPhone: z.string().min(10),
   shippingAddress: z.string().optional(),
   items: z.array(z.object({ 
@@ -151,7 +152,7 @@ app.post('/api/mpesa/pay', validate(mpesaOrderSchema) as any, async (req: any, r
     const order = new Order();
     order.orderNumber = `ORD-${Date.now()}`;
     order.customerName = customerName;
-    order.customerEmail = customerEmail;
+    order.customerEmail = (customerEmail && customerEmail.trim() !== '') ? customerEmail : undefined;
     order.customerPhone = customerPhone;
     order.shippingAddress = shippingAddress || 'Walk-in / Pickup';
     order.totalAmount = totalAmount;
@@ -168,8 +169,12 @@ app.post('/api/mpesa/pay', validate(mpesaOrderSchema) as any, async (req: any, r
     
     try {
         await MpesaService.initiateStkPush(order.id, customerPhone, totalAmount);
-        // Success
-        res.status(201).json({ message: 'STK Push initiated', orderId: order.id });
+        // Success: Return orderId AND orderNumber for polling
+        res.status(201).json({ 
+            message: 'STK Push initiated', 
+            orderId: order.id,
+            orderNumber: order.orderNumber
+        });
     } catch (mpesaError: any) {
         logger.error('STK Error:', mpesaError.message);
         // CRITICAL FIX: Return 500 status code so frontend detects failure immediately
@@ -224,9 +229,49 @@ app.get('/sitemap.xml', async (req: any, res: any) => {
   }
 });
 
-// 404 Handler
-app.use((req: any, res: any) => {
+// --- SERVE FRONTEND STATIC FILES ---
+// Robust Path Resolution for CloudPanel / Production
+const cwd = (process as any).cwd();
+const possibleFrontendPaths = [
+    path.join(cwd, '../dist'),           // Standard structure (server/.. -> dist/)
+    path.join(cwd, 'dist'),              // Nested dist (server/dist)
+    path.join(cwd, 'public'),            // Public folder
+    path.join(__dirname, '../../dist'),  // compiled: server/dist/app.js -> root/dist
+    path.join('/home/kemasuma/htdocs/masuma.africa/dist') // Hardcoded fallback for CloudPanel user
+];
+
+let frontendPath = possibleFrontendPaths.find(p => fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html')));
+
+if (!frontendPath) {
+    logger.warn('⚠️ Frontend build not found in standard locations. Searching...', { checked: possibleFrontendPaths });
+    // Default to the standard relative path even if not found, to show 404 properly instead of crash
+    frontendPath = path.join(cwd, '../dist');
+} else {
+    logger.info(`✅ Serving frontend from: ${frontendPath}`);
+}
+
+app.use(express.static(frontendPath) as any);
+
+// API 404 Handler (Only for /api routes)
+app.use('/api/*', (req: any, res: any) => {
     res.status(404).json({ error: 'Route not found' });
+});
+
+// SPA Catch-All Handler
+// Any request not matching API or Static files returns index.html (for React Router)
+app.get('*', (req: any, res: any) => {
+    const indexPath = path.join(frontendPath!, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        logger.error(`❌ Index.html not found at: ${indexPath}`);
+        res.status(404).send(`
+            <h1>404 - Frontend Not Found</h1>
+            <p>The server could not locate the React build files.</p>
+            <p>Expected path: ${frontendPath}</p>
+            <p>Current directory: ${cwd}</p>
+        `);
+    }
 });
 
 // Global Error Handler (Registers Logger)

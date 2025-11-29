@@ -8,16 +8,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "lucide-react": "^0.554.0",
     "axios": "^1.13.2",
     "recharts": "^2.15.0",
     "@google/genai": "^1.30.0",
     "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.2"
-  },
-  "devDependencies": {
+    "jspdf-autotable": "^3.8.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/node": "^20.12.12",
     "@vitejs/plugin-react": "^4.2.0",
     "typescript": "^5.7.4",
     "vite": "^5.0.0",

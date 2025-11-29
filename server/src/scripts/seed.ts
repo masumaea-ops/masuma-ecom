@@ -201,6 +201,9 @@ const HERO_SLIDES_DATA = [
 
 const seed = async () => {
   try {
+    // FORCE SYNC: Override production setting to create tables
+    AppDataSource.setOptions({ synchronize: true });
+
     await AppDataSource.initialize();
     console.log('Database connected. Starting seed...');
 
@@ -209,9 +212,9 @@ const seed = async () => {
     let hq = await branchRepo.findOneBy({ code: 'NBI-HQ' });
     if (!hq) {
         hq = branchRepo.create({
-            name: 'Nairobi Industrial HQ',
+            name: 'Ruby Mall Branch',
             code: 'NBI-HQ',
-            address: 'Godown 4, Enterprise Road',
+            address: 'Ruby Mall, Shop FF25 First Floor Behind NCBA Bank Accra Road',
             phone: '+254 792 506 590'
         });
         await branchRepo.save(hq);
