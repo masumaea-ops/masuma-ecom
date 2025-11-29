@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Lock, Loader2, ArrowLeft } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
@@ -32,6 +33,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border-t-4 border-masuma-orange animate-scale-up">
         <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-masuma-orange rounded-md flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="font-display font-bold text-4xl text-black">M</span>
+          </div>
           <h2 className="text-3xl font-bold font-display text-masuma-dark">MASUMA ERP</h2>
           <p className="text-sm text-gray-500 uppercase tracking-widest">Staff Access Portal</p>
         </div>

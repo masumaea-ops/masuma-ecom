@@ -98,9 +98,9 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
   const getYoutubeEmbedUrl = (url: string) => {
       const id = getYoutubeId(url);
       if (!id) return '';
-      // Fix for Error 153: Pass origin to allow embedding on restricted domains
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&enablejsapi=1&origin=${origin}`;
+      // Fixed: Removed 'origin' and 'enablejsapi' to prevent Error 153 on restricted domains/localips.
+      // Removed 'playlist' redundancy which sometimes breaks loops on single videos.
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1`;
   };
 
   if (slides.length === 0) {
@@ -135,6 +135,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                             className="w-[300%] h-[300%] -ml-[100%] -mt-[100%] md:w-full md:h-full md:ml-0 md:mt-0 object-cover opacity-60"
                             allow="autoplay; encrypted-media"
                             title="Background Video"
+                            sandbox="allow-scripts allow-same-origin allow-presentation"
                         ></iframe>
                      </div>
                  ) : slide.mediaType === 'video' && slide.videoUrl ? (

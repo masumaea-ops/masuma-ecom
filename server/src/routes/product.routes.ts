@@ -103,14 +103,15 @@ const bulkImportSchema = z.object({
         sku: z.string(),
         name: z.string(),
         category: z.string(),
-        price: z.number(),
-        costPrice: z.number().optional(),
-        wholesalePrice: z.number().optional(),
+        // Explicitly check for finite numbers to reject NaN
+        price: z.number().finite(),
+        costPrice: z.number().finite().optional(),
+        wholesalePrice: z.number().finite().optional(),
         description: z.string().optional(),
         oemNumbers: z.string().optional(), 
         compatibility: z.string().optional(),
-        quantity: z.number().optional(),
-        lowStockThreshold: z.number().optional(),
+        quantity: z.number().finite().optional(),
+        lowStockThreshold: z.number().finite().optional(),
         imageUrl: z.string().optional()
     }))
 });

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ShieldCheck, MapPin, Users, PenTool as Tool, ArrowRight, Star } from 'lucide-react';
+import { ShieldCheck, Cog, Activity, CheckCircle, Star } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface AboutProps {
@@ -11,138 +11,151 @@ const About: React.FC<AboutProps> = ({ setView }) => {
   return (
     <div className="animate-fade-in bg-white min-h-screen">
       {/* Hero Section */}
-      <div className="relative bg-masuma-dark text-white py-24 overflow-hidden">
-        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-masuma-dark via-masuma-dark/90 to-transparent"></div>
+      <div className="relative bg-masuma-dark text-white py-32 overflow-hidden">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1498887960847-2a5e46312788?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-masuma-dark via-masuma-dark/95 to-masuma-dark/60"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 flex flex-col justify-center h-full">
-            <span className="text-masuma-orange font-bold uppercase tracking-[0.2em] text-sm mb-4">Our Story</span>
-            <h1 className="text-5xl md:text-6xl font-bold font-display uppercase leading-none mb-6">
-                Japanese Precision.<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-400">African Resilience.</span>
+        <div className="relative max-w-7xl mx-auto px-6 flex flex-col justify-center h-full">
+            <span className="text-masuma-orange font-bold uppercase tracking-[0.3em] text-xs mb-6 pl-1">The Masuma Story</span>
+            <h1 className="text-6xl md:text-7xl font-bold font-display uppercase leading-[0.9] mb-8">
+                Engineering.<br />
+                <span className="text-white">Reliability.</span>
             </h1>
-            <p className="text-gray-300 max-w-2xl text-lg leading-relaxed">
-                Masuma Autoparts East Africa Limited is the exclusive distributor of Masuma automotive components. We bridge the gap between Japanese engineering excellence and the rugged demands of East African roads.
+            <div className="h-1 w-24 bg-masuma-orange mb-8"></div>
+            <p className="text-gray-300 max-w-2xl text-xl leading-relaxed font-light">
+                Masuma Autoparts East Africa Limited is the official bridge between Japanese precision engineering and the rugged resilience required for African roads.
             </p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-                <h2 className="text-3xl font-bold text-masuma-dark font-display uppercase mb-6">The Fight Against <span className="text-masuma-orange">Counterfeits</span></h2>
-                <div className="space-y-4 text-gray-600 leading-relaxed">
-                    <p>
-                        For years, the Kenyan market has been flooded with substandard, counterfeit spare parts wrapped in branded boxes. These fake parts not only fail prematurely but endanger lives and destroy engines.
-                    </p>
-                    <p>
-                        <strong>Masuma East Africa</strong> was founded with a single mission: to provide a reliable, transparent source of high-quality parts. When you buy Masuma, you aren't just buying a filter or a brake pad; you are buying the assurance that it was engineered in Japan, tested rigorously, and imported directly from the manufacturer.
-                    </p>
-                    <p>
-                        We cover 45 product groups and over 10,000 items, focusing on the core "wear and tear" parts: chassis, engine, suspension, and filtration.
-                    </p>
-                </div>
-                
-                <div className="mt-8 flex gap-4">
-                    <button 
-                        onClick={() => setView('CATALOG')}
-                        className="bg-masuma-dark text-white px-8 py-3 font-bold uppercase tracking-widest text-sm hover:bg-masuma-orange transition flex items-center gap-2"
-                    >
-                        Browse Catalog <ArrowRight size={16} />
-                    </button>
-                    <button 
-                        onClick={() => setView('CONTACT')}
-                        className="border-2 border-gray-200 text-gray-600 px-8 py-3 font-bold uppercase tracking-widest text-sm hover:border-masuma-dark hover:text-masuma-dark transition"
-                    >
-                        Visit Us
-                    </button>
-                </div>
+      {/* Elements of Quality Grid */}
+      <div className="bg-white py-24">
+        <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-20">
+                <h2 className="text-4xl font-bold text-masuma-dark font-display uppercase tracking-tight">The Elements of Quality</h2>
+                <p className="text-gray-500 mt-4 max-w-2xl mx-auto">Every Masuma part is the result of four critical elements working in harmony to ensure safety and longevity.</p>
             </div>
-            
-            <div className="relative">
-                <div className="absolute top-0 right-0 w-3/4 h-full bg-gray-100 rounded-lg -z-10 transform translate-x-4 translate-y-4"></div>
-                <img 
-                    src="https://masuma.com/wp-content/uploads/2021/09/chassis-parts.jpg" 
-                    alt="Masuma Suspension Parts" 
-                    className="rounded-lg shadow-xl w-full object-cover"
-                />
-                <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-lg shadow-lg border-l-4 border-masuma-orange max-w-xs">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Star className="text-masuma-orange fill-current" size={20} />
-                        <Star className="text-masuma-orange fill-current" size={20} />
-                        <Star className="text-masuma-orange fill-current" size={20} />
-                        <Star className="text-masuma-orange fill-current" size={20} />
-                        <Star className="text-masuma-orange fill-current" size={20} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                {[
+                    { 
+                        title: "Material", 
+                        icon: Star, 
+                        text: "We use only virgin rubber, high-grade steel, and ceramic compounds. No recycled fillers, ensuring bushings don't crack and brakes don't fade." 
+                    },
+                    { 
+                        title: "Engineering", 
+                        icon: Cog, 
+                        text: "Designed in Tokyo with strict adherence to OEM geometric specifications. Every part fits exactly like the original, guaranteeing easy installation." 
+                    },
+                    { 
+                        title: "Resilience", 
+                        icon: ShieldCheck, 
+                        text: "Our 'Tropical Spec' parts feature enhanced heat resistance and dust sealing, specifically adapted for the harsh East African environment." 
+                    },
+                    { 
+                        title: "Testing", 
+                        icon: Activity, 
+                        text: "Rigorous lifecycle testing simulates over 50,000km of driving conditions before any batch is approved for shipment to Nairobi." 
+                    }
+                ].map((item, idx) => (
+                    <div key={idx} className="group">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-masuma-orange mb-6 group-hover:bg-masuma-orange group-hover:text-white transition duration-500">
+                            <item.icon size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-masuma-dark uppercase mb-4 font-display">{item.title}</h3>
+                        <p className="text-gray-600 text-sm leading-7">
+                            {item.text}
+                        </p>
                     </div>
-                    <p className="text-sm font-bold text-gray-800">"Finally, suspension bushes that survive Nairobi potholes. Highly recommended."</p>
-                    <p className="text-xs text-gray-500 mt-2">— John K., Taxi Fleet Owner</p>
-                </div>
+                ))}
             </div>
         </div>
       </div>
 
-      {/* Values Section */}
-      <div className="bg-gray-50 py-20 border-y border-gray-200">
-          <div className="max-w-7xl mx-auto px-4">
-              <div className="text-center mb-16">
-                  <h2 className="text-3xl font-bold text-masuma-dark font-display uppercase">Why Choose Masuma?</h2>
-                  <div className="h-1 w-16 bg-masuma-orange mx-auto mt-4"></div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:-translate-y-1 transition duration-300">
-                      <div className="w-14 h-14 bg-masuma-orange/10 rounded-full flex items-center justify-center text-masuma-orange mb-6">
-                          <ShieldCheck size={32} />
+      {/* Mission Section with Dark Background */}
+      <div className="bg-masuma-dark text-white py-24 relative overflow-hidden">
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+          
+          <div className="max-w-7xl mx-auto px-6 relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                  <div>
+                      <span className="text-masuma-orange font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Our Mission</span>
+                      <h2 className="text-4xl md:text-5xl font-bold font-display uppercase leading-tight mb-8">
+                          Eliminating the <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-500">Compromise.</span>
+                      </h2>
+                      <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-light">
+                          <p>
+                              For too long, car owners in East Africa have faced a difficult choice: buy expensive dealer parts or risk their safety with unreliable counterfeits.
+                          </p>
+                          <p className="text-white font-medium">
+                              Masuma exists to eliminate that compromise.
+                          </p>
+                          <p>
+                              We provide parts that match or exceed OEM performance at a price that makes sense for the market. By controlling the entire supply chain from our factories to our Nairobi distribution center, we guarantee authenticity and eliminate the middleman markup.
+                          </p>
                       </div>
-                      <h3 className="font-bold text-lg text-masuma-dark uppercase mb-3">12-Month Warranty</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                          We stand behind our quality. If a part fails due to a manufacturing defect within 12 months, we replace it. No excuses.
-                      </p>
+
+                      <div className="mt-10 space-y-4">
+                          {[
+                              "Defect rate below 0.02%",
+                              "12-Month Unlimited Mileage Warranty",
+                              "Direct technical support from experts"
+                          ].map((feat, i) => (
+                              <div key={i} className="flex items-center gap-4">
+                                  <CheckCircle className="text-masuma-orange shrink-0" size={20} />
+                                  <span className="text-gray-300">{feat}</span>
+                              </div>
+                          ))}
+                      </div>
+
+                      <div className="mt-12">
+                        <button 
+                            onClick={() => setView('CATALOG')}
+                            className="bg-masuma-orange text-white px-10 py-4 font-bold uppercase tracking-widest text-sm hover:bg-white hover:text-masuma-orange transition duration-300"
+                        >
+                            View Our Catalog
+                        </button>
+                      </div>
                   </div>
 
-                  <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:-translate-y-1 transition duration-300">
-                      <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-6">
-                          <Tool size={32} />
+                  <div className="relative h-[600px] bg-gray-800 rounded-sm overflow-hidden border border-gray-700 group">
+                      <img 
+                          src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
+                          alt="Masuma Engine Parts" 
+                          className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition duration-700 transform group-hover:scale-105" 
+                      />
+                      <div className="absolute bottom-0 left-0 p-8 w-full bg-gradient-to-t from-black via-black/80 to-transparent">
+                          <div className="flex items-end justify-between">
+                              <div>
+                                  <p className="text-masuma-orange font-bold uppercase tracking-widest text-xs mb-1">Engine Parts</p>
+                                  <p className="text-4xl font-bold font-display">20,000+</p>
+                              </div>
+                              <div className="text-right">
+                                  <p className="text-gray-400 text-xs uppercase tracking-widest">SKUs in Catalog</p>
+                              </div>
+                          </div>
                       </div>
-                      <h3 className="font-bold text-lg text-masuma-dark uppercase mb-3">OEM Specification</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                          Masuma parts are built to match or exceed Original Equipment Manufacturer (OEM) specifications. Perfect fit, every time.
-                      </p>
-                  </div>
-
-                  <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:-translate-y-1 transition duration-300">
-                      <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-6">
-                          <Users size={32} />
-                      </div>
-                      <h3 className="font-bold text-lg text-masuma-dark uppercase mb-3">Technical Support</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                          Our team isn't just sales staff; they are technical experts. We help you find the exact part for your chassis number.
-                      </p>
                   </div>
               </div>
           </div>
       </div>
 
-      {/* Stats */}
-      <div className="bg-masuma-dark text-white py-16">
-          <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div>
-                  <div className="text-4xl font-bold font-display text-masuma-orange mb-2">45+</div>
-                  <div className="text-xs uppercase tracking-widest text-gray-400">Product Categories</div>
-              </div>
-              <div>
-                  <div className="text-4xl font-bold font-display text-masuma-orange mb-2">10k+</div>
-                  <div className="text-xs uppercase tracking-widest text-gray-400">Parts in Stock</div>
-              </div>
-              <div>
-                  <div className="text-4xl font-bold font-display text-masuma-orange mb-2">100%</div>
-                  <div className="text-xs uppercase tracking-widest text-gray-400">Genuine Guarantee</div>
-              </div>
-              <div>
-                  <div className="text-4xl font-bold font-display text-masuma-orange mb-2">24h</div>
-                  <div className="text-xs uppercase tracking-widest text-gray-400">Delivery Countrywide</div>
-              </div>
+      {/* Stats Section */}
+      <div className="bg-gray-50 py-20 border-t border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+              {[
+                  { label: "Product Categories", value: "45" },
+                  { label: "Fitment Accuracy", value: "99%" },
+                  { label: "Partner Garages", value: "500+" },
+                  { label: "Warranty (Months)", value: "12M" },
+              ].map((stat, idx) => (
+                  <div key={idx}>
+                      <div className="text-5xl md:text-6xl font-bold font-display text-masuma-orange mb-4">{stat.value}</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-gray-500 font-bold">{stat.label}</div>
+                  </div>
+              ))}
           </div>
       </div>
     </div>

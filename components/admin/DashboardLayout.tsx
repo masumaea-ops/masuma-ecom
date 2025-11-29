@@ -60,12 +60,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-800">
           {isSidebarOpen ? (
-             <div className="flex flex-col items-center">
-                <span className="font-display font-bold text-xl tracking-wider text-masuma-orange">MASUMA</span>
-                <span className="text-[9px] text-gray-400 tracking-widest uppercase">Enterprise ERP</span>
+             <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-masuma-orange rounded-sm flex items-center justify-center shrink-0">
+                    <span className="font-display font-bold text-xl text-black">M</span>
+                </div>
+                <div className="flex flex-col">
+                    <span className="font-display font-bold text-xl tracking-wider text-white">MASUMA</span>
+                    <span className="text-[8px] text-gray-400 tracking-widest uppercase">Enterprise ERP</span>
+                </div>
              </div>
           ) : (
-             <span className="font-display font-bold text-xl text-masuma-orange">M</span>
+             <div className="w-10 h-10 bg-masuma-orange rounded-sm flex items-center justify-center">
+                <span className="font-display font-bold text-2xl text-black">M</span>
+             </div>
           )}
         </div>
 

@@ -191,8 +191,8 @@ const App: React.FC = () => {
                             <li className="flex items-start gap-4"><div className="bg-masuma-orange/20 p-2 rounded-full text-masuma-orange"><CheckCircle size={24} /></div><div><h4 className="font-bold text-white uppercase">Locally Stocked</h4><p className="text-sm text-gray-400">Immediate availability.</p></div></li>
                         </ul>
                     </div>
-                    <div className="h-[400px] rounded-lg overflow-hidden relative shadow-2xl border-4 border-white/10 group bg-white">
-                        <img src="https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg" alt="Masuma Oil Filter" className="w-full h-full object-cover transition duration-700 group-hover:scale-105 group-hover:opacity-75" />
+                    <div className="h-[400px] rounded-lg overflow-hidden relative shadow-2xl border-4 border-white/10 group bg-white flex items-center justify-center">
+                        <img src="https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg" alt="Masuma Oil Filter" className="w-full h-full object-contain p-8 transition duration-700 group-hover:scale-105 group-hover:opacity-90" />
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500">
                             <h4 className="text-2xl font-display font-bold text-white mb-4 uppercase">Need Advice?</h4>
                             <button onClick={() => setIsAiOpen(true)} className="bg-masuma-orange text-white px-8 py-3 font-bold uppercase tracking-widest hover:bg-white hover:text-masuma-orange transition"><div className="flex items-center gap-2"><MessageCircle size={20} /> Chat Now</div></button>

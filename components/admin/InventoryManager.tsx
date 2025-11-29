@@ -131,11 +131,12 @@ const InventoryManager: React.FC = () => {
         return result;
     };
 
-    const cleanNumber = (str: string) => {
-        if (!str) return 0;
-        const clean = str.replace(/[^\d.-]/g, '');
+    const cleanNumber = (str: any) => {
+        if (str === null || str === undefined || str === '') return 0;
+        const clean = String(str).replace(/[^\d.-]/g, '');
+        if (clean === '') return 0;
         const num = parseFloat(clean);
-        return isNaN(num) ? 0 : num;
+        return (typeof num === 'number' && isFinite(num)) ? num : 0;
     };
 
     const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,7 +202,7 @@ const InventoryManager: React.FC = () => {
 
                     // Quantity
                     const qtyStr = getRawValue(['qty', 'quantity', 'stock', 'count', 'inventory', 'on hand']);
-                    const quantity = parseInt(String(cleanNumber(qtyStr)));
+                    const quantity = Math.floor(cleanNumber(qtyStr));
 
                     // OEM
                     const oemNumbers = getRawValue(['oem', 'cross', 'ref', 'original']);
@@ -227,187 +228,196 @@ const InventoryManager: React.FC = () => {
                     throw new Error("No valid products found in CSV. Check headers (SKU is required).");
                 }
 
+                // Use the product manager bulk endpoint since it handles stock creation too
                 await apiClient.post('/products/bulk', {
                     branchId: targetBranchId,
                     products
                 });
-                alert(`Successfully processed ${products.length} items.`);
+
+                alert("Stock Import Successful!");
                 fetchData();
             } catch (error: any) {
-                alert('Import failed: ' + (error.response?.data?.error || error.message));
+                console.error(error);
+                alert('Import Failed: ' + (error.response?.data?.error || error.message));
             } finally {
                 setIsImporting(false);
                 if (fileInputRef.current) fileInputRef.current.value = '';
             }
         };
-        
         reader.readAsText(file);
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col relative">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-masuma-dark flex items-center gap-2 uppercase font-display">
-                    <Package className="text-masuma-orange" />
-                    Inventory Management
-                </h2>
+        <div className="h-full flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">Stock Management</h2>
+                    <p className="text-sm text-gray-500">Monitor stock levels, transfer items, and perform audits.</p>
+                </div>
                 <div className="flex gap-2">
-                    <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleImportFile} />
-                    <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isImporting}
-                        className="px-4 py-2 border border-gray-300 rounded font-bold uppercase text-xs hover:bg-gray-50 text-gray-600 flex items-center gap-2"
-                    >
-                        {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} Import CSV
-                    </button>
-                    <button onClick={fetchData} className="p-2 bg-gray-100 rounded hover:bg-gray-200" title="Refresh">
-                        <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                    <div className="relative">
+                        <input 
+                            type="file" 
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleImportFile}
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isImporting}
+                            className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded font-bold uppercase text-xs hover:bg-gray-50 flex items-center gap-2"
+                        >
+                            {isImporting ? <Loader2 className="animate-spin" size={16}/> : <Upload size={16} />} Import Stock
+                        </button>
+                    </div>
+                    <button onClick={fetchData} className="text-masuma-orange hover:bg-orange-50 px-4 py-2 rounded font-bold text-sm flex items-center gap-2 transition">
+                        <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} /> Refresh
                     </button>
                 </div>
             </div>
-            
-            <div className="flex-1 overflow-x-auto">
-                {isLoading && stockItems.length === 0 ? (
-                    <div className="flex justify-center items-center h-64">
-                        <Loader2 className="animate-spin text-masuma-orange" size={32} />
-                    </div>
-                ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs">
-                            <tr>
-                                <th className="px-6 py-4">Product</th>
-                                <th className="px-6 py-4">SKU</th>
-                                <th className="px-6 py-4">Branch</th>
-                                <th className="px-6 py-4">Quantity</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {stockItems.map((item, index) => (
-                                <tr key={item.id || index} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-bold text-gray-800">{item.product.name}</td>
-                                    <td className="px-6 py-4 font-mono text-gray-500">{item.product.sku}</td>
-                                    <td className="px-6 py-4">{item.branch.name}</td>
-                                    <td className="px-6 py-4 font-bold">{item.quantity}</td>
-                                    <td className="px-6 py-4">
-                                        {item.quantity <= item.lowStockThreshold ? (
-                                            <span className="inline-flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded text-[10px] font-bold uppercase">
-                                                <AlertTriangle size={12} /> Low Stock
-                                            </span>
-                                        ) : (
-                                            <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-[10px] font-bold uppercase">Good</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button 
-                                                onClick={() => handleAdjust(item)}
-                                                className="text-gray-600 hover:text-masuma-dark font-bold uppercase text-[10px] bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
-                                            >
-                                                <Edit size={12} /> Adjust
-                                            </button>
-                                            <button 
-                                                onClick={() => handleTransfer(item)}
-                                                className="text-masuma-orange hover:text-white hover:bg-masuma-orange font-bold uppercase text-[10px] border border-masuma-orange px-2 py-1 rounded flex items-center gap-1 transition"
-                                            >
-                                                <ArrowRightLeft size={12} /> Transfer
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {stockItems.length === 0 && !isLoading && (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No inventory records found.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                )}
-            </div>
 
-            {/* Modal */}
+            {/* Modals */}
             {selectedItem && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-lg shadow-2xl w-96 overflow-hidden animate-scale-up">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-scale-up">
                         <div className="bg-masuma-dark text-white p-4 flex justify-between items-center">
-                            <h3 className="font-bold uppercase tracking-wider">{isTransferMode ? 'Transfer Stock' : 'Adjust Stock'}</h3>
-                            <button onClick={() => setSelectedItem(null)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+                            <h3 className="font-bold uppercase tracking-wider">
+                                {isTransferMode ? 'Transfer Stock' : 'Adjust Stock'}
+                            </h3>
+                            <button onClick={() => setSelectedItem(null)} className="text-gray-400 hover:text-white"><X size={24} /></button>
                         </div>
                         <div className="p-6">
-                            <div className="mb-4 text-center">
-                                <h4 className="font-bold text-lg text-masuma-dark">{selectedItem.product.name}</h4>
-                                <p className="text-sm text-gray-500 mb-2">Current: <span className="font-bold text-black">{selectedItem.quantity}</span> units at {selectedItem.branch.name}</p>
+                            <div className="mb-4">
+                                <p className="text-xs text-gray-500 uppercase font-bold">Product</p>
+                                <p className="font-bold text-lg text-masuma-dark">{selectedItem.product.name}</p>
+                                <p className="text-xs font-mono text-gray-500">{selectedItem.product.sku}</p>
                             </div>
                             
-                            {!isTransferMode ? (
-                                <>
-                                    <div className="flex gap-2 mb-4 bg-gray-100 p-1 rounded">
-                                        {['add', 'subtract', 'set'].map(op => (
-                                            <button 
-                                                key={op}
-                                                onClick={() => setAdjustment({...adjustment, operation: op as any})}
-                                                className={`flex-1 py-2 text-xs font-bold uppercase rounded transition ${
-                                                    adjustment.operation === op ? 'bg-white text-masuma-orange shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                                                }`}
-                                            >
-                                                {op}
-                                            </button>
-                                        ))}
+                            <div className="mb-6 bg-gray-50 p-3 rounded border border-gray-200">
+                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Current Location</p>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-bold">{selectedItem.branch.name}</span>
+                                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">{selectedItem.quantity} Available</span>
+                                </div>
+                            </div>
+
+                            {isTransferMode ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Transfer To</label>
+                                        <select 
+                                            className="w-full p-2 border rounded focus:border-masuma-orange outline-none bg-white"
+                                            value={transferData.toBranchId}
+                                            onChange={e => setTransferData({...transferData, toBranchId: e.target.value})}
+                                        >
+                                            <option value="">Select Destination Branch</option>
+                                            {branches.filter(b => b.id !== selectedItem.branch.id).map(b => (
+                                                <option key={b.id} value={b.id}>{b.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                    <div className="mb-6">
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Quantity to Move</label>
                                         <input 
                                             type="number" 
-                                            min="0"
-                                            value={adjustment.quantity}
-                                            onChange={e => setAdjustment({...adjustment, quantity: e.target.value})}
-                                            className="w-full p-3 border-2 border-gray-200 rounded focus:border-masuma-orange outline-none text-xl font-bold text-center"
+                                            className="w-full p-2 border rounded focus:border-masuma-orange outline-none"
+                                            value={transferData.quantity}
+                                            onChange={e => setTransferData({...transferData, quantity: e.target.value})}
                                             placeholder="0"
                                         />
                                     </div>
-                                    <button onClick={saveAdjustment} disabled={isSaving} className="w-full bg-masuma-dark text-white py-3 rounded font-bold uppercase tracking-widest hover:bg-masuma-orange transition flex items-center justify-center gap-2">
-                                        {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Update
+                                    <button 
+                                        onClick={executeTransfer}
+                                        disabled={isSaving}
+                                        className="w-full bg-masuma-dark text-white py-3 rounded font-bold uppercase text-xs hover:bg-masuma-orange transition flex justify-center items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Truck size={16}/>} Confirm Transfer
                                     </button>
-                                </>
+                                </div>
                             ) : (
-                                <>
-                                    <div className="space-y-4 mb-6">
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Destination Branch</label>
-                                            <select 
-                                                className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none bg-white"
-                                                value={transferData.toBranchId}
-                                                onChange={e => setTransferData({...transferData, toBranchId: e.target.value})}
-                                            >
-                                                <option value="">Select Branch...</option>
-                                                {branches.filter(b => b.id !== selectedItem.branch.id).map(b => (
-                                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Quantity to Transfer</label>
-                                            <input 
-                                                type="number" 
-                                                min="1"
-                                                max={selectedItem.quantity}
-                                                value={transferData.quantity}
-                                                onChange={e => setTransferData({...transferData, quantity: e.target.value})}
-                                                className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none"
-                                                placeholder="0"
-                                            />
-                                        </div>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button onClick={() => setAdjustment({...adjustment, operation: 'add'})} className={`py-2 text-xs font-bold uppercase rounded border ${adjustment.operation === 'add' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-white text-gray-500'}`}>Add (+)</button>
+                                        <button onClick={() => setAdjustment({...adjustment, operation: 'subtract'})} className={`py-2 text-xs font-bold uppercase rounded border ${adjustment.operation === 'subtract' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-white text-gray-500'}`}>Remove (-)</button>
+                                        <button onClick={() => setAdjustment({...adjustment, operation: 'set'})} className={`py-2 text-xs font-bold uppercase rounded border ${adjustment.operation === 'set' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-500'}`}>Set (=)</button>
                                     </div>
-                                    <button onClick={executeTransfer} disabled={isSaving} className="w-full bg-masuma-orange text-white py-3 rounded font-bold uppercase tracking-widest hover:bg-orange-600 transition flex items-center justify-center gap-2">
-                                        {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Truck size={18} />} Confirm Transfer
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Quantity</label>
+                                        <input 
+                                            type="number" 
+                                            className="w-full p-2 border rounded focus:border-masuma-orange outline-none"
+                                            value={adjustment.quantity}
+                                            onChange={e => setAdjustment({...adjustment, quantity: e.target.value})}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                    <button 
+                                        onClick={saveAdjustment}
+                                        disabled={isSaving}
+                                        className="w-full bg-masuma-dark text-white py-3 rounded font-bold uppercase text-xs hover:bg-masuma-orange transition flex justify-center items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Save size={16}/>} Update Stock
                                     </button>
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
             )}
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-auto">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <Loader2 className="animate-spin text-masuma-orange" size={32} />
+                        </div>
+                    ) : (
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white text-gray-500 uppercase font-bold text-xs border-b border-gray-200 sticky top-0 z-10">
+                                <tr>
+                                    <th className="px-6 py-3">Product</th>
+                                    <th className="px-6 py-3">SKU</th>
+                                    <th className="px-6 py-3">Branch</th>
+                                    <th className="px-6 py-3">Stock Level</th>
+                                    <th className="px-6 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {stockItems.map(item => (
+                                    <tr key={item.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-3 font-bold text-gray-800">{item.product.name}</td>
+                                        <td className="px-6 py-3 font-mono text-xs text-masuma-dark">{item.product.sku}</td>
+                                        <td className="px-6 py-3 text-gray-500 text-xs uppercase">{item.branch.name}</td>
+                                        <td className="px-6 py-3">
+                                            {item.quantity <= item.lowStockThreshold ? (
+                                                <span className="flex items-center gap-1 text-red-600 font-bold text-[10px] uppercase bg-red-50 px-2 py-1 rounded w-fit">
+                                                    <AlertTriangle size={12} /> Low: {item.quantity}
+                                                </span>
+                                            ) : (
+                                                <span className="text-green-600 font-bold text-[10px] uppercase bg-green-50 px-2 py-1 rounded">
+                                                    {item.quantity} Units
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-3 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => handleAdjust(item)} className="p-2 border rounded hover:bg-gray-100 text-gray-600" title="Adjust">
+                                                    <Edit size={14} />
+                                                </button>
+                                                <button onClick={() => handleTransfer(item)} className="p-2 border rounded hover:bg-gray-100 text-gray-600" title="Transfer">
+                                                    <ArrowRightLeft size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {stockItems.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-gray-400">No inventory records found.</td></tr>}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };

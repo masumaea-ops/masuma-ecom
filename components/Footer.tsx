@@ -41,9 +41,14 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
           
           {/* Brand */}
           <div>
-            <div className="flex flex-col mb-4">
-              <span className="text-3xl font-bold text-masuma-orange tracking-tighter font-display">MASUMA</span>
-              <span className="text-[0.65rem] font-bold text-white tracking-widest uppercase leading-none">Autoparts East Africa Ltd</span>
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-masuma-orange rounded-sm flex items-center justify-center shrink-0">
+                    <span className="font-display font-bold text-2xl text-black">M</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-3xl font-bold text-masuma-orange tracking-tighter font-display">MASUMA</span>
+                  <span className="text-[0.65rem] font-bold text-white tracking-widest uppercase leading-none">Autoparts East Africa Ltd</span>
+                </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               {info.about}
