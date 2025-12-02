@@ -98,13 +98,16 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
   const getYoutubeEmbedUrl = (url: string) => {
       const id = getYoutubeId(url);
       if (!id) return '';
-      // Fixed: Removed 'origin' and 'enablejsapi' to prevent Error 153 on restricted domains/localips.
-      // Removed 'playlist' redundancy which sometimes breaks loops on single videos.
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1`;
+      
+      // FIX ERROR 153:
+      // 1. Inject current origin dynamically to satisfy API security requirements
+      // 2. enablejsapi=1 allows control
+      // 3. mute=1 and autoplay=1 are required for background auto-play
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&origin=${origin}`;
   };
 
   if (slides.length === 0) {
-      // Immediate fallback if loading state persists too long or init fails
       return (
         <div className="h-[600px] md:h-[700px] bg-masuma-dark animate-pulse flex items-center justify-center">
             <div className="text-gray-600 font-bold uppercase tracking-widest">Loading...</div>
@@ -133,8 +136,9 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                         <iframe 
                             src={getYoutubeEmbedUrl(slide.videoUrl)} 
                             className="w-[300%] h-[300%] -ml-[100%] -mt-[100%] md:w-full md:h-full md:ml-0 md:mt-0 object-cover opacity-60"
-                            allow="autoplay; encrypted-media"
+                            allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
                             title="Background Video"
+                            referrerPolicy="strict-origin-when-cross-origin"
                             sandbox="allow-scripts allow-same-origin allow-presentation"
                         ></iframe>
                      </div>

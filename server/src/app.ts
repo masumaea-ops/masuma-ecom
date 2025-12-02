@@ -4,6 +4,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 // FIX: Use require for compression to bypass TS errors in some environments
 declare const require: any;
+// Ensure __dirname is recognized by TS
+declare var __dirname: string;
+
 const compression = require('compression'); 
 import rateLimit from 'express-rate-limit';
 import path from 'path';
@@ -156,6 +159,11 @@ app.post('/api/mpesa/pay', validate(mpesaOrderSchema) as any, async (req: any, r
     order.customerPhone = customerPhone;
     order.shippingAddress = shippingAddress || 'Walk-in / Pickup';
     order.totalAmount = totalAmount;
+    
+    // FIX: Explicitly initialize payment fields to prevent DB "Not Null" errors
+    order.amountPaid = 0; 
+    order.balance = totalAmount;
+
     order.status = OrderStatus.PENDING;
     order.items = items.map((i: any) => {
       const item = new OrderItem();

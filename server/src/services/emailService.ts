@@ -8,11 +8,23 @@ import { config } from '../config/env';
 const transporter = nodemailer.createTransport({
     host: config.SMTP_HOST || 'smtp.gmail.com',
     port: Number(config.SMTP_PORT),
-    secure: Number(config.SMTP_PORT) === 465,
+    secure: Number(config.SMTP_PORT) === 465, // true for 465, false for other ports
     auth: {
         user: config.SMTP_USER,
         pass: config.SMTP_PASS,
     },
+    tls: {
+        rejectUnauthorized: false // Helps with self-signed certs or strict firewall issues
+    }
+});
+
+// Verify connection configuration
+transporter.verify(function (error, success) {
+    if (error) {
+        console.warn('⚠️ SMTP Connection Error:', error.message);
+    } else {
+        console.log('✅ SMTP Server is ready to take messages');
+    }
 });
 
 // Initialize Queue ONLY if Redis is available
@@ -60,17 +72,30 @@ export class EmailService {
                 <p>Total: KES ${data.totalAmount}</p>
             `;
         } else if (type === 'QUOTE_REQUEST') {
-            // 1. Notify Sales
+            // 1. Notify Sales (Internal)
             await this.sendRawEmail(
-                'sales@masuma.africa',
+                config.SMTP_USER || 'sales@masuma.africa',
                 `New Inquiry: ${data.productName}`,
-                `<p>Customer: ${data.name} (${data.phone})</p><p>Msg: ${data.message}</p>`
+                `<p><strong>Customer:</strong> ${data.name} (${data.phone})</p>
+                 <p><strong>Email:</strong> ${data.email}</p>
+                 <p><strong>Product:</strong> ${data.productName}</p>
+                 <p><strong>Message:</strong><br/>${data.message}</p>`
             );
             
             // 2. Reply to Customer
-            to = data.email;
-            subject = `We received your request: ${data.productName}`;
-            html = `<p>Jambo ${data.name}, we received your inquiry. Our team will contact you shortly.</p>`;
+            if (data.email && data.email.includes('@')) {
+                to = data.email;
+                subject = `We received your request: ${data.productName}`;
+                html = `
+                    <p>Jambo ${data.name},</p>
+                    <p>We have received your inquiry regarding <strong>${data.productName}</strong>.</p>
+                    <p>Our sales team will check availability and pricing and contact you shortly at ${data.phone}.</p>
+                    <br/>
+                    <p>Regards,<br/>Masuma Autoparts EA Team</p>
+                `;
+            } else {
+                return; // No valid customer email
+            }
         }
 
         if (to && subject && html) {
@@ -84,15 +109,16 @@ export class EmailService {
             return;
         }
         try {
-            await transporter.sendMail({
+            const info = await transporter.sendMail({
                 from: `"Masuma Auto Parts" <${config.FROM_EMAIL}>`,
                 to,
                 subject,
                 html,
             });
-            console.log(`Email sent to ${to}`);
-        } catch(e) {
-             console.error("Email send failed", e);
+            console.log(`Email sent to ${to} (ID: ${info.messageId})`);
+        } catch(e: any) {
+             console.error(`Email send failed to ${to}:`, e.message);
+             throw e; // Re-throw to ensure caller knows it failed
         }
     }
 }

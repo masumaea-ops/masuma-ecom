@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-export const authenticate = async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+export const authenticate = async (req: ExpressRequest, res: ExpressResponse, next: any) => {
   const request = req as any;
   const response = res as any;
   const authHeader = request.headers['authorization'];
@@ -55,7 +55,7 @@ export const authenticate = async (req: ExpressRequest, res: ExpressResponse, ne
 };
 
 export const authorize = (roles: string[]) => {
-  return (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+  return (req: ExpressRequest, res: ExpressResponse, next: any) => {
     const request = req as any;
     const response = res as any;
     if (!request.user) return response.status(401).json({ error: 'Unauthorized' });

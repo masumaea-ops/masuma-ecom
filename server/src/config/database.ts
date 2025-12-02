@@ -74,6 +74,8 @@ export const AppDataSource = new DataSource({
   extra: {
     connectionLimit: 10,
     waitForConnections: true,
-    queueLimit: 0
+    queueLimit: 0,
+    enableKeepAlive: true, // Critical: Prevents "Connection lost" errors
+    keepAliveInitialDelay: 10000 // Send ping every 10 seconds to keep connection active
   }
 });

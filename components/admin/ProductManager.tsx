@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Save, Loader2, UploadCloud, Download, Upload, Package, Car, Image as ImageIcon, Star, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Save, Loader2, UploadCloud, Download, Upload, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 
@@ -72,7 +72,6 @@ const ProductManager: React.FC = () => {
   };
 
   const handleAddNew = () => {
-    // Initialize numeric fields as empty strings for better UX
     setFormData({
         name: '', sku: '', price: '', costPrice: '', wholesalePrice: '', quantity: '',
         description: '', category: categories[0]?.name || 'General', image: '', images: [], oemNumbers: [], compatibility: []
@@ -113,7 +112,6 @@ const ProductManager: React.FC = () => {
       uploadData.append('image', file);
 
       try {
-          // Simplified call: apiClient (axios) will auto-detect FormData and set header
           const res = await apiClient.post('/upload', uploadData);
           
           if (res.data && res.data.url) {
@@ -150,7 +148,6 @@ const ProductManager: React.FC = () => {
   const handleRemoveImage = (urlToRemove: string) => {
       setFormData((prev: any) => {
           const updatedImages = prev.images.filter((img: string) => img !== urlToRemove);
-          // If we removed the primary image, set the first available one as primary, or empty
           let newPrimary = prev.image;
           if (prev.image === urlToRemove) {
               newPrimary = updatedImages.length > 0 ? updatedImages[0] : '';
@@ -167,6 +164,7 @@ const ProductManager: React.FC = () => {
   const cleanNumber = (str: any) => {
       if (str === null || str === undefined || str === '') return 0;
       // Remove all non-numeric chars except digits, minus sign, and dot
+      // This strips currency symbols, commas, etc.
       const clean = String(str).replace(/[^\d.-]/g, '');
       if (clean === '') return 0;
       const num = parseFloat(clean);
@@ -214,7 +212,6 @@ const ProductManager: React.FC = () => {
   const handleExport = async () => {
       setIsExporting(true);
       try {
-          // Fetch all products for export (bypass pagination)
           const res = await apiClient.get('/products?limit=100000');
           const allProducts = res.data.data || res.data || [];
 
@@ -225,7 +222,7 @@ const ProductManager: React.FC = () => {
               `"${p.name.replace(/"/g, '""')}"`,
               p.category,
               p.price,
-              p.quantity || 0, // Added Quantity
+              p.quantity || 0,
               p.costPrice || 0,
               p.wholesalePrice || 0,
               `"${(p.description || '').replace(/"/g, '""')}"`,
@@ -293,7 +290,6 @@ const ProductManager: React.FC = () => {
 
           const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
 
-          // Robust Header Matcher
           const getColumnIndex = (candidates: string[], exclusions: string[] = []) => {
               return headers.findIndex(h => {
                   const matchesCandidate = candidates.some(c => h.includes(c));
@@ -334,7 +330,6 @@ const ProductManager: React.FC = () => {
 
                   // Oems (Handle pipe or comma sep)
                   const oemRaw = getRawValue(['oem', 'cross', 'ref', 'original']);
-                  // Replace pipes with commas for standardized processing
                   const oemNumbers = oemRaw.replace(/\|/g, ',');
 
                   const compatRaw = getRawValue(['vehicle', 'fit', 'compat', 'model']);
@@ -348,7 +343,7 @@ const ProductManager: React.FC = () => {
                       sku,
                       name,
                       category,
-                      price,
+                      price, // Guaranteed number
                       costPrice,
                       wholesalePrice,
                       description,

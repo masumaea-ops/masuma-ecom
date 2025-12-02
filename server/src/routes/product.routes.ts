@@ -138,26 +138,41 @@ router.post('/bulk', authenticate, authorize(['ADMIN', 'MANAGER']), validate(bul
 
             let product = await queryRunner.manager.findOneBy(Product, { sku: item.sku });
             
+            // Helper to sanitize numeric inputs to avoid NaN in DB
+            const safeNum = (val: number | undefined | null, defaultVal: number | null = null) => {
+                if (typeof val === 'number' && isFinite(val)) return val;
+                return defaultVal;
+            };
+
             if (product) {
+                // Update existing
                 product.name = item.name;
-                product.price = item.price;
-                product.costPrice = item.costPrice || product.costPrice;
-                product.wholesalePrice = item.wholesalePrice || product.wholesalePrice;
+                product.price = safeNum(item.price, 0) as number;
+                
+                // Use nullish coalescing (??) to allow 0 as a valid value
+                product.costPrice = safeNum(item.costPrice, product.costPrice) as number;
+                product.wholesalePrice = safeNum(item.wholesalePrice, product.wholesalePrice) as number | undefined;
+                
                 product.description = item.description || product.description;
                 product.category = category;
                 if (item.imageUrl) product.imageUrl = item.imageUrl;
+                
                 await queryRunner.manager.save(product);
                 updatedCount++;
             } else {
+                // Create new
                 product = new Product();
                 product.sku = item.sku;
                 product.name = item.name;
-                product.price = item.price;
-                product.costPrice = item.costPrice || 0;
-                product.wholesalePrice = item.wholesalePrice || item.price;
+                product.price = safeNum(item.price, 0) as number;
+                product.costPrice = safeNum(item.costPrice, 0) as number;
+                // Default wholesale to price if not provided, safely
+                product.wholesalePrice = safeNum(item.wholesalePrice, item.price) as number | undefined;
+                
                 product.description = item.description || '';
                 product.category = category;
                 product.imageUrl = item.imageUrl || '';
+                
                 await queryRunner.manager.save(product);
                 createdCount++;
             }
@@ -203,8 +218,8 @@ router.post('/bulk', authenticate, authorize(['ADMIN', 'MANAGER']), validate(bul
                     stock.branch = branch;
                     stock.quantity = 0;
                 }
-                stock.quantity = item.quantity;
-                stock.lowStockThreshold = item.lowStockThreshold || 5;
+                stock.quantity = safeNum(item.quantity, 0) as number;
+                stock.lowStockThreshold = safeNum(item.lowStockThreshold, 5) as number;
                 await queryRunner.manager.save(stock);
             }
         }

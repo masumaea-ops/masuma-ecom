@@ -190,6 +190,11 @@ router.post('/:id/convert', authenticate, authorize(['ADMIN', 'MANAGER']), async
         order.customerPhone = quote.customer.phone || '';
         order.shippingAddress = quote.customer.address || 'Pickup';
         order.totalAmount = quote.total;
+        
+        // FIX: Explicitly initialize payment fields
+        order.amountPaid = 0;
+        order.balance = quote.total;
+
         order.status = OrderStatus.PENDING; // Unpaid Invoice
         order.sourceQuote = quote;
 

@@ -18,10 +18,12 @@ Rules:
 
 export const sendMessageToGemini = async (history: {role: string, parts: {text: string}[]}[], message: string): Promise<string> => {
   try {
-    // Check for API Key at runtime, not load time
-    const apiKey = process.env.API_KEY;
+    // Robust Key Detection: Check standard env and Vite specific env
+    // @ts-ignore
+    const apiKey = process.env.API_KEY || (import.meta.env && import.meta.env.VITE_API_KEY);
+
     if (!apiKey) {
-        console.warn("Gemini API Key is missing in environment variables.");
+        console.warn("⚠️ Gemini API Key is missing. Ensure 'API_KEY' or 'VITE_API_KEY' is set in .env");
         return "I am currently unable to connect to the AI service. Please contact support.";
     }
 

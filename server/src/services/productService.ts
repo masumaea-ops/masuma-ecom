@@ -21,11 +21,21 @@ export class ProductService {
           const cleanItem = item.trim();
           if (!cleanItem) continue;
 
-          const parts = cleanItem.split(' ');
-          const make = parts.length > 1 ? parts[0] : 'Generic';
-          const model = parts.length > 1 ? parts.slice(1).join(' ') : cleanItem;
+          // Split by one or more spaces to handle accidental double spaces
+          const parts = cleanItem.split(/\s+/);
+          
+          let make = 'Generic';
+          let model = cleanItem;
 
-          let vehicle = await this.vehicleRepo.findOneBy({ make, model });
+          if (parts.length > 1) {
+              make = parts[0]; // First word is Make
+              model = parts.slice(1).join(' '); // Rest is Model
+          }
+
+          // Case insensitive check
+          let vehicle = await this.vehicleRepo.findOne({ 
+              where: { make: make, model: model } 
+          });
           
           if (!vehicle) {
               vehicle = this.vehicleRepo.create({ make, model });
@@ -200,13 +210,41 @@ export class ProductService {
   }
 
   static async deleteProduct(id: string) {
-    const product = await this.productRepo.findOneBy({ id });
-    if (!product) throw new Error('Product not found');
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    await this.productRepo.remove(product);
-    await CacheService.invalidate('products:*');
-    await CacheService.invalidate(`product:detail:${id}`);
-    return true;
+    try {
+      const product = await queryRunner.manager.findOne(Product, { where: { id } });
+      if (!product) throw new Error('Product not found');
+
+      // 1. Manually delete dependencies that restrict deletion
+      // Delete Stock entries first (Fixes Foreign Key Constraint Error)
+      await queryRunner.manager.delete(ProductStock, { product: { id: id } });
+      
+      // Delete OemNumbers (Good practice to clean up explicitly)
+      await queryRunner.manager.delete(OemNumber, { product: { id: id } });
+
+      // 2. Delete the Product
+      await queryRunner.manager.remove(product);
+
+      await queryRunner.commitTransaction();
+
+      await CacheService.invalidate('products:*');
+      await CacheService.invalidate(`product:detail:${id}`);
+      return true;
+    } catch (error: any) {
+      await queryRunner.rollbackTransaction();
+      console.error('Delete Product Error:', error);
+      
+      // Check for other constraints (like OrderItems) that indicate sales history
+      if (error.message?.includes('foreign key constraint fails')) {
+          throw new Error('Cannot delete this product because it is part of existing Orders or Sales. Please edit or archive it instead.');
+      }
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
   
   static async getAllProductIdsForSitemap() {

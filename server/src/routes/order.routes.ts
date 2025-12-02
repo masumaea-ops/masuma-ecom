@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { Order, OrderStatus } from '../entities/Order';
@@ -41,6 +40,11 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
         order.customerPhone = customerPhone;
         order.shippingAddress = shippingAddress || '';
         order.totalAmount = totalAmount;
+        
+        // FIX: Explicitly initialize payment fields
+        order.amountPaid = 0;
+        order.balance = totalAmount;
+
         order.status = OrderStatus.PENDING;
         order.paymentMethod = paymentMethod || 'MANUAL';
         

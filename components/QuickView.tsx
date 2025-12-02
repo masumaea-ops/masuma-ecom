@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus, ArrowRight } from 'lucide-react';
+import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus, ArrowRight, Share2, Facebook, Twitter } from 'lucide-react';
 import { Product } from '../types';
 import QuoteModal from './QuoteModal';
 import Price from './Price';
@@ -19,11 +19,21 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoadingRelated, setIsLoadingRelated] = useState(false);
+  
+  // Gallery State
+  const [activeImage, setActiveImage] = useState('');
+  const [gallery, setGallery] = useState<string[]>([]);
 
-  // Reset quantity and fetch related items when product changes
+  // Reset state when product changes
   useEffect(() => {
     if (isOpen && product) {
       setQuantity(1);
+      
+      // Initialize Gallery
+      const imgs = product.images && product.images.length > 0 ? product.images : [product.image];
+      setGallery(imgs);
+      setActiveImage(imgs[0]);
+
       fetchRelatedProducts(product);
     }
   }, [isOpen, product]);
@@ -31,11 +41,8 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   const fetchRelatedProducts = async (currentProduct: Product) => {
       setIsLoadingRelated(true);
       try {
-          // Fetch products in the same category
           const res = await apiClient.get(`/products?category=${currentProduct.category}&limit=10`);
           const allProducts = res.data.data || res.data || [];
-          
-          // Filter out current product
           const filtered = allProducts.filter((p: Product) => p.id !== currentProduct.id);
           setRelatedProducts(filtered);
       } catch (error) {
@@ -59,11 +66,30 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
 
   const handleSwitch = (p: Product) => {
       if (onSwitchProduct) {
-          // Scroll to top of modal content on switch
           const contentDiv = document.getElementById('quickview-content');
           if (contentDiv) contentDiv.scrollTop = 0;
           onSwitchProduct(p);
       }
+  };
+
+  // Social Share Logic
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareText = `Check out this ${product.name} at Masuma Autoparts EA!`;
+
+  const handleSocialShare = (platform: 'whatsapp' | 'facebook' | 'twitter') => {
+      let url = '';
+      switch (platform) {
+          case 'whatsapp':
+              url = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
+              break;
+          case 'facebook':
+              url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+              break;
+          case 'twitter':
+              url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+              break;
+      }
+      window.open(url, '_blank', 'width=600,height=400');
   };
 
   return (
@@ -75,7 +101,6 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
         ></div>
         
         <div className="relative bg-white w-full max-w-5xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-scale-up">
-          {/* Enhanced Close Button */}
           <button 
             onClick={onClose}
             className="absolute top-3 right-3 z-50 p-2 bg-gray-100 hover:bg-masuma-orange hover:text-white rounded-full transition shadow-md border border-gray-200 group"
@@ -86,104 +111,136 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
 
           <div id="quickview-content" className="flex-1 overflow-y-auto bg-white">
             <div className="flex flex-col md:flex-row border-b border-gray-200">
-                {/* Image Section */}
-                <div className="w-full md:w-1/2 bg-white p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 relative min-h-[300px]">
-                    <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="max-h-[250px] md:max-h-[400px] w-full object-contain" 
-                    />
-                    <div className="absolute bottom-4 left-4">
-                        <span className="inline-block px-3 py-1 bg-gray-50 border border-gray-200 text-xs font-bold text-gray-500 rounded-full shadow-sm">
-                        Category: {product.category}
-                        </span>
+                
+                {/* Image Gallery Section */}
+                <div className="w-full md:w-1/2 bg-white p-8 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col">
+                    <div className="flex-1 flex items-center justify-center relative min-h-[300px] mb-4">
+                        <img 
+                            src={activeImage} 
+                            alt={product.name} 
+                            className="max-h-[300px] md:max-h-[400px] w-full object-contain transition-all duration-300" 
+                        />
+                        <div className="absolute bottom-0 left-0">
+                            <span className="inline-block px-3 py-1 bg-gray-50 border border-gray-200 text-xs font-bold text-gray-500 rounded-full shadow-sm">
+                                {product.category}
+                            </span>
+                        </div>
                     </div>
+
+                    {/* Thumbnails */}
+                    {gallery.length > 1 && (
+                        <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
+                            {gallery.map((img, idx) => (
+                                <button 
+                                    key={idx}
+                                    onClick={() => setActiveImage(img)}
+                                    className={`w-16 h-16 border rounded overflow-hidden transition ${activeImage === img ? 'border-masuma-orange ring-1 ring-masuma-orange' : 'border-gray-200 hover:border-gray-300'}`}
+                                >
+                                    <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Details Section */}
                 <div className="w-full md:w-1/2 p-6 md:p-8">
                     <div className="mb-6 mt-4 md:mt-0">
-                    <h2 className="text-2xl md:text-3xl font-bold text-masuma-dark font-display mb-2 leading-tight pr-8">{product.name}</h2>
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <span className="px-2 py-1 bg-masuma-orange text-white text-xs font-mono font-bold rounded-sm">SKU: {product.sku}</span>
-                        {product.stock ? (
-                            <span className="flex items-center gap-1 text-green-600 text-xs font-bold uppercase">
-                                <Check size={14} /> In Stock
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-1 text-red-600 text-xs font-bold uppercase">
-                                <AlertTriangle size={14} /> Out of Stock
-                            </span>
-                        )}
-                    </div>
-                    </div>
-
-                    <div className="mb-6">
-                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Price</h3>
-                    <p className="text-3xl font-bold text-masuma-dark">
-                        <Price amount={product.price} />
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-1">Includes VAT.</p>
+                        <h2 className="text-2xl md:text-3xl font-bold text-masuma-dark font-display mb-2 leading-tight pr-8">{product.name}</h2>
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <span className="px-2 py-1 bg-masuma-orange text-white text-xs font-mono font-bold rounded-sm">SKU: {product.sku}</span>
+                            {product.stock ? (
+                                <span className="flex items-center gap-1 text-green-600 text-xs font-bold uppercase">
+                                    <Check size={14} /> In Stock
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1 text-red-600 text-xs font-bold uppercase">
+                                    <AlertTriangle size={14} /> Out of Stock
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="mb-6">
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Description</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Price</h3>
+                        <p className="text-3xl font-bold text-masuma-dark">
+                            <Price amount={product.price} />
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-1">Includes VAT.</p>
+                    </div>
+
+                    <div className="mb-6">
+                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Description</h3>
+                        <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
                     </div>
 
                     <div className="mb-6 bg-gray-50 p-4 rounded-sm border border-gray-100">
-                    <h3 className="text-xs font-bold text-masuma-dark uppercase tracking-wider mb-3">Technical Specs</h3>
-                    <div className="grid grid-cols-1 gap-y-3">
-                        <div>
-                            <span className="block text-[10px] text-gray-500 uppercase">OEM Cross-Reference</span>
-                            <p className="text-sm font-mono text-gray-800 break-all">{product.oemNumbers.join(', ')}</p>
-                        </div>
-                        <div>
-                            <span className="block text-[10px] text-gray-500 uppercase">Compatible Models</span>
-                            <p className="text-sm text-gray-800">{product.compatibility.join(', ')}</p>
+                        <h3 className="text-xs font-bold text-masuma-dark uppercase tracking-wider mb-3">Technical Specs</h3>
+                        <div className="grid grid-cols-1 gap-y-3">
+                            <div>
+                                <span className="block text-[10px] text-gray-500 uppercase">OEM Cross-Reference</span>
+                                <p className="text-sm font-mono text-gray-800 break-all">{product.oemNumbers.join(', ')}</p>
+                            </div>
+                            <div>
+                                <span className="block text-[10px] text-gray-500 uppercase">Compatible Models</span>
+                                <p className="text-sm text-gray-800">{product.compatibility.join(', ')}</p>
+                            </div>
                         </div>
                     </div>
+
+                    {/* Social Share Buttons */}
+                    <div className="mb-6 flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Share:</span>
+                        <button onClick={() => handleSocialShare('whatsapp')} className="p-2 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition" title="Share on WhatsApp">
+                            <MessageCircle size={16} />
+                        </button>
+                        <button onClick={() => handleSocialShare('facebook')} className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition" title="Share on Facebook">
+                            <Facebook size={16} />
+                        </button>
+                        <button onClick={() => handleSocialShare('twitter')} className="p-2 bg-gray-100 text-black rounded-full hover:bg-gray-200 transition" title="Share on X (Twitter)">
+                            <Twitter size={16} />
+                        </button>
                     </div>
 
                     {/* Quantity & Actions */}
                     <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
-                    {product.stock && (
-                        <div className="flex items-center border border-gray-300 rounded-sm h-[46px] shrink-0">
-                        <button 
-                            onClick={() => handleQuantityChange(-1)}
-                            className="px-3 h-full text-gray-500 hover:bg-gray-100 transition"
-                        >
-                            <Minus size={14} />
-                        </button>
-                        <span className="w-10 text-center font-bold text-masuma-dark">{quantity}</span>
-                        <button 
-                            onClick={() => handleQuantityChange(1)}
-                            className="px-3 h-full text-gray-500 hover:bg-gray-100 transition"
-                        >
-                            <Plus size={14} />
-                        </button>
-                        </div>
-                    )}
+                        {product.stock && (
+                            <div className="flex items-center border border-gray-300 rounded-sm h-[46px] shrink-0">
+                            <button 
+                                onClick={() => handleQuantityChange(-1)}
+                                className="px-3 h-full text-gray-500 hover:bg-gray-100 transition"
+                            >
+                                <Minus size={14} />
+                            </button>
+                            <span className="w-10 text-center font-bold text-masuma-dark">{quantity}</span>
+                            <button 
+                                onClick={() => handleQuantityChange(1)}
+                                className="px-3 h-full text-gray-500 hover:bg-gray-100 transition"
+                            >
+                                <Plus size={14} />
+                            </button>
+                            </div>
+                        )}
 
-                    <button
-                        onClick={handleAddToCart}
-                        disabled={!product.stock}
-                        className={`flex-1 py-3 px-4 font-bold uppercase tracking-widest text-xs sm:text-sm transition flex items-center justify-center gap-2 ${
-                            product.stock 
-                            ? 'bg-masuma-dark text-white hover:bg-masuma-orange shadow-lg hover:shadow-xl transform hover:-translate-y-0.5' 
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
-                    >
-                        {product.stock ? 'Add to Cart' : 'Sold Out'}
-                    </button>
-                    
-                    <button
-                        onClick={() => setIsQuoteModalOpen(true)}
-                        className="flex-1 py-3 px-4 font-bold uppercase tracking-widest text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-white border-2 border-masuma-dark text-masuma-dark hover:bg-masuma-dark hover:text-white"
-                    >
-                        <MessageCircle size={18} />
-                        Quote
-                    </button>
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={!product.stock}
+                            className={`flex-1 py-3 px-4 font-bold uppercase tracking-widest text-xs sm:text-sm transition flex items-center justify-center gap-2 ${
+                                product.stock 
+                                ? 'bg-masuma-dark text-white hover:bg-masuma-orange shadow-lg hover:shadow-xl transform hover:-translate-y-0.5' 
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            {product.stock ? 'Add to Cart' : 'Sold Out'}
+                        </button>
+                        
+                        <button
+                            onClick={() => setIsQuoteModalOpen(true)}
+                            className="flex-1 py-3 px-4 font-bold uppercase tracking-widest text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-white border-2 border-masuma-dark text-masuma-dark hover:bg-masuma-dark hover:text-white"
+                        >
+                            <MessageCircle size={18} />
+                            Quote
+                        </button>
                     </div>
                     
                     <div className="mt-4 flex items-center gap-2 text-gray-500 justify-center sm:justify-start">

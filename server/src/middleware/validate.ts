@@ -2,7 +2,7 @@ import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } 
 import { ZodSchema, ZodError } from 'zod';
 
 export const validate = (schema: ZodSchema<any>) => 
-  async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+  async (req: ExpressRequest, res: ExpressResponse, next: any) => {
     const request = req as any;
     const response = res as any;
     try {
