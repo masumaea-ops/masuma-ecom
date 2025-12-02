@@ -1,7 +1,6 @@
 
 import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
-import path from 'path';
+import { config } from './env'; // Import validates env vars first
 import { Product } from '../entities/Product';
 import { Category } from '../entities/Category';
 import { Vehicle } from '../entities/Vehicle';
@@ -21,53 +20,21 @@ import { SystemSetting } from '../entities/SystemSetting';
 import { Payment } from '../entities/Payment';
 import { Expense } from '../entities/Expense';
 
-// Load .env explicitly from the server root directory
-const envPath = path.resolve((process as any).cwd(), '.env');
-const result = dotenv.config({ path: envPath });
-
-if (result.error) {
-    console.warn(`⚠️  .env file not found at: ${envPath}`);
-    console.warn('   Using default credentials (password: "password")');
-} else {
-    console.log(`✅ Loaded configuration from: ${envPath}`);
-}
-
-// Log connection details (masking password for security if not empty)
-const dbUser = process.env.DB_USER || 'root';
-const dbHost = process.env.DB_HOST || 'localhost';
-const dbPort = process.env.DB_PORT || 3306;
-const dbName = process.env.DB_NAME || 'masuma_db';
-console.log(`🔌 Connecting to Database: ${dbUser}@${dbHost}:${dbPort}/${dbName}`);
+console.log(`🔌 Connecting to Database: ${config.DB_USER}@${config.DB_HOST}:${config.DB_PORT}/${config.DB_NAME}`);
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 3306,
-  username: process.env.DB_USER || 'root',
-  // Use ?? 'password' to allow empty string passwords (common in XAMPP)
-  password: process.env.DB_PASSWORD ?? 'password',
-  database: process.env.DB_NAME || 'masuma_db',
-  synchronize: process.env.NODE_ENV !== 'production', // Set to false in production and use migrations
-  logging: false, // Disable verbose SQL logs during seed/start
+  host: config.DB_HOST,
+  port: Number(config.DB_PORT),
+  username: config.DB_USER,
+  password: config.DB_PASSWORD,
+  database: config.DB_NAME,
+  synchronize: config.NODE_ENV !== 'production', // Only sync in dev, use migrations in prod ideally
+  logging: false, 
   entities: [
-    Product,
-    Category,
-    Vehicle,
-    OemNumber,
-    Order,
-    OrderItem,
-    MpesaTransaction,
-    Branch,
-    User,
-    Customer,
-    ProductStock,
-    Quote,
-    Sale,
-    BlogPost,
-    AuditLog,
-    SystemSetting,
-    Payment,
-    Expense
+    Product, Category, Vehicle, OemNumber, Order, OrderItem,
+    MpesaTransaction, Branch, User, Customer, ProductStock,
+    Quote, Sale, BlogPost, AuditLog, SystemSetting, Payment, Expense
   ],
   subscribers: [],
   migrations: [],
@@ -75,7 +42,8 @@ export const AppDataSource = new DataSource({
     connectionLimit: 10,
     waitForConnections: true,
     queueLimit: 0,
-    enableKeepAlive: true, // Critical: Prevents "Connection lost" errors
-    keepAliveInitialDelay: 10000 // Send ping every 10 seconds to keep connection active
+    // Critical for preventing "PROTOCOL_CONNECTION_LOST" in PM2 environments
+    enableKeepAlive: true, 
+    keepAliveInitialDelay: 10000 
   }
 });

@@ -632,10 +632,10 @@ const ProductManager: React.FC = () => {
                                 <td className="px-6 py-3 text-xs text-gray-500">{product.category}</td>
                                 <td className="px-6 py-3 font-bold">{product.price.toLocaleString()}</td>
                                 <td className="px-6 py-3">
-                                    {product.quantity > 5 ? (
-                                        <span className="text-green-600 font-bold text-[10px] uppercase bg-green-50 px-2 py-1 rounded">{product.quantity} In Stock</span>
-                                    ) : product.quantity > 0 ? (
-                                        <span className="text-orange-600 font-bold text-[10px] uppercase bg-orange-50 px-2 py-1 rounded">{product.quantity} Low Stock</span>
+                                    {(product.quantity || 0) > 5 ? (
+                                        <span className="text-green-600 font-bold text-[10px] uppercase bg-green-50 px-2 py-1 rounded">{product.quantity || 0} In Stock</span>
+                                    ) : (product.quantity || 0) > 0 ? (
+                                        <span className="text-orange-600 font-bold text-[10px] uppercase bg-orange-50 px-2 py-1 rounded">{product.quantity || 0} Low Stock</span>
                                     ) : (
                                         <span className="text-red-600 font-bold text-[10px] uppercase bg-red-50 px-2 py-1 rounded">Out of Stock</span>
                                     )}

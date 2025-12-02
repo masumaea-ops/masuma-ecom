@@ -1,5 +1,14 @@
+
 import 'reflect-metadata';
-import express, { Request, Response, NextFunction, RequestHandler } from 'express';
+import path from 'path';
+import fs from 'fs'; 
+
+console.log(`\n🚀 [APP] Initializing Masuma ERP Server Module...`);
+
+// CRITICAL: Import Config FIRST to ensure .env is loaded and validated before anything else
+import { config } from './config/env'; 
+
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 // FIX: Use require for compression to bypass TS errors in some environments
@@ -9,11 +18,8 @@ declare var __dirname: string;
 
 const compression = require('compression'); 
 import rateLimit from 'express-rate-limit';
-import path from 'path';
-import fs from 'fs'; // Added fs for path checking
 import { redis } from './config/redis';
 import { AppDataSource } from './config/database';
-import { config } from './config/env'; 
 import { errorHandler } from './middleware/errorHandler'; 
 import { httpLogger } from './middleware/httpLogger'; 
 import { logger } from './utils/logger';
@@ -62,7 +68,7 @@ AppDataSource.initialize()
   })
   .catch((err) => {
     logger.error('❌ Database connection failed:', err);
-    (process as any).exit(1);
+    // Do not exit process here either, for debugging purposes
   });
 
 // --- Security & Performance Middleware ---
@@ -316,7 +322,7 @@ const server = app.listen(Number(PORT), '0.0.0.0', () => {
 server.on('error', (e: any) => {
   if (e.code === 'EADDRINUSE') {
     logger.error(`\n❌ ERROR: Port ${PORT} is already in use.`);
-    (process as any).exit(1);
+    // Do not exit to prevent restart loop spam
   }
 });
 

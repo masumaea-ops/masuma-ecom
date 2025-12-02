@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ShoppingCart, Package, Users, TrendingUp, AlertTriangle, ArrowUpRight, Loader2, Activity, User, Clock, Plane } from 'lucide-react';
+import { ShoppingCart, Users, TrendingUp, AlertTriangle, Loader2, Activity, Clock, Plane } from 'lucide-react';
 import { apiClient, formatCurrency } from '../../utils/apiClient';
 import { DashboardStats } from '../../types';
 
@@ -31,7 +30,9 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
         setStats(statsRes.data);
         setActivityLog(logsRes.data.slice(0, 6));
         
-        const sourcing = quotesRes.data.filter((q: any) => q.type === 'SOURCING' && q.status === 'DRAFT').length;
+        // Safety check for quotes array
+        const quotes = Array.isArray(quotesRes.data) ? quotesRes.data : [];
+        const sourcing = quotes.filter((q: any) => q.type === 'SOURCING' && q.status === 'DRAFT').length;
         setSourcingCount(sourcing);
 
       } catch (err) {
@@ -69,7 +70,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Revenue', value: formatCurrency(stats?.totalSales || 0), icon: TrendingUp, color: 'bg-green-500', change: 'All Time', link: 'sales_history' },
@@ -100,7 +100,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sales Trend */}
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <h3 className="text-lg font-bold text-masuma-dark mb-6 uppercase tracking-wide">Revenue Trend (6 Months)</h3>
           <div className="h-[300px]">
@@ -119,7 +118,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Category Distribution */}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
            <h3 className="text-lg font-bold text-masuma-dark mb-6 uppercase tracking-wide">Catalog Mix</h3>
            <div className="h-[300px]">
@@ -146,7 +144,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Recent Activity Feed */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-bold text-masuma-dark uppercase tracking-wide flex items-center gap-2">
