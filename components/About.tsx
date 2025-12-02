@@ -1,15 +1,34 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ShieldCheck, CheckCircle, Star, Globe, Wrench, AlertTriangle, Target, Eye, Truck, Activity } from 'lucide-react';
 import { ViewState } from '../types';
+import SEO from './SEO';
 
 interface AboutProps {
     setView: (view: ViewState) => void;
 }
 
 const About: React.FC<AboutProps> = ({ setView }) => {
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleNav = (e: React.MouseEvent, view: ViewState) => {
+      e.preventDefault();
+      setView(view);
+      const newUrl = `/?view=${view}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+      window.scrollTo(0, 0);
+  };
+
   return (
     <div className="animate-fade-in bg-white min-h-screen font-sans">
+      <SEO 
+        title="About Masuma" 
+        description="Masuma Autoparts East Africa - The exclusive distributor of Japanese engineered automotive parts in Kenya. Learn about our heritage, mission, and 12-month warranty."
+      />
+
       {/* 1. HERO SECTION */}
       <div className="relative bg-masuma-dark text-white h-[500px] flex items-center overflow-hidden">
         {/* Background with overlay */}
@@ -29,12 +48,13 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                 <p className="text-gray-300 text-lg md:text-xl font-light leading-relaxed max-w-2xl mb-10 border-l-4 border-masuma-orange pl-6">
                     Masuma Autoparts East Africa is the bridge between Japanese precision engineering and the rugged demands of the African continent. We don't just sell parts; we provide reliability.
                 </p>
-                <button 
-                    onClick={() => setView('CATALOG')}
-                    className="bg-white text-masuma-dark hover:bg-masuma-orange hover:text-white px-10 py-4 font-bold uppercase tracking-widest text-sm transition duration-300 shadow-xl"
+                <a 
+                    href="/?view=CATALOG"
+                    onClick={(e) => handleNav(e, 'CATALOG')}
+                    className="bg-white text-masuma-dark hover:bg-masuma-orange hover:text-white px-10 py-4 font-bold uppercase tracking-widest text-sm transition duration-300 shadow-xl inline-flex items-center justify-center"
                 >
                     Explore Our Catalog
-                </button>
+                </a>
             </div>
         </div>
       </div>
@@ -157,9 +177,13 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                       <h2 className="text-4xl font-bold text-masuma-dark font-display uppercase">Engineered to Outlast</h2>
                       <p className="text-gray-500 mt-2">Specific adaptations for the African market.</p>
                   </div>
-                  <button onClick={() => setView('CATALOG')} className="hidden md:flex items-center gap-2 text-masuma-orange font-bold uppercase text-xs tracking-widest hover:text-masuma-dark transition">
+                  <a 
+                    href="/?view=CATALOG"
+                    onClick={(e) => handleNav(e, 'CATALOG')}
+                    className="hidden md:flex items-center gap-2 text-masuma-orange font-bold uppercase text-xs tracking-widest hover:text-masuma-dark transition"
+                  >
                       View Full Catalog <Activity size={16} />
-                  </button>
+                  </a>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

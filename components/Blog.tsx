@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { BlogPost, Product } from '../types';
@@ -60,7 +61,8 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   };
 
   // 2. Handle Post Selection (Update URL)
-  const handleSelectPost = (post: BlogPost) => {
+  const handleSelectPost = (e: React.MouseEvent, post: BlogPost) => {
+      e.preventDefault();
       setSelectedPost(post);
       const newUrl = `${window.location.pathname}?post=${post.id}`;
       window.history.pushState({ path: newUrl }, '', newUrl);
@@ -261,10 +263,11 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
          <>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {posts.map((post) => (
-                   <div 
-                      key={post.id} 
-                      className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
-                      onClick={() => handleSelectPost(post)}
+                   <a 
+                      key={post.id}
+                      href={`/?post=${post.id}`} 
+                      className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1 block"
+                      onClick={(e) => handleSelectPost(e, post)}
                    >
                       <div className="relative h-56 overflow-hidden">
                          <div className="absolute top-4 left-4 z-10">
@@ -295,7 +298,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                             Read Article <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-2 transition" />
                          </div>
                       </div>
-                   </div>
+                   </a>
                 ))}
              </div>
              

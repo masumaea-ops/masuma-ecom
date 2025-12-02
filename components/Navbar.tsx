@@ -51,6 +51,17 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
       return item;
   };
 
+  const handleNav = (e: React.MouseEvent, view: ViewState) => {
+      e.preventDefault();
+      setView(view);
+      
+      // Update URL for Deep Linking / SEO
+      const newUrl = view === 'HOME' ? '/' : `/?view=${view}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+      window.scrollTo(0, 0);
+      setIsMenuOpen(false);
+  };
+
   return (
     <>
       {/* TOP UTILITY BAR */}
@@ -73,9 +84,9 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                <button onClick={() => setIsSourcingOpen(true)} className="flex items-center gap-2 px-4 text-masuma-orange font-bold hover:text-white transition uppercase tracking-wider">
                  <Plane size={12} className="transform -rotate-45" /> Special Orders
                </button>
-               <button onClick={() => setView('CONTACT')} className="flex items-center gap-2 px-4 opacity-80 hover:opacity-100 transition hover:text-masuma-orange">
+               <a href="/?view=CONTACT" onClick={(e) => handleNav(e, 'CONTACT')} className="flex items-center gap-2 px-4 opacity-80 hover:opacity-100 transition hover:text-masuma-orange">
                  <MapPin size={12} /> Locations
-               </button>
+               </a>
                <div className="flex items-center gap-4 px-4 relative z-[1001]">
                   <div className="relative">
                     <button 
@@ -102,12 +113,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                     En <ChevronDown size={10}/>
                   </button>
                </div>
-               <button 
-                 onClick={() => setView('LOGIN')}
+               <a 
+                 href="/?view=LOGIN"
+                 onClick={(e) => handleNav(e, 'LOGIN')}
                  className="flex items-center gap-2 pl-4 text-gray-400 hover:text-white transition uppercase tracking-wider ml-2"
                >
                  <User size={12} /> Login
-               </button>
+               </a>
             </div>
          </div>
       </div>
@@ -122,7 +134,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
           <div className="flex justify-between items-center h-16">
             
             {/* Logo Section */}
-            <div className="flex-shrink-0 flex items-center cursor-pointer group gap-3" onClick={() => setView('HOME')}>
+            <a href="/" className="flex-shrink-0 flex items-center cursor-pointer group gap-3" onClick={(e) => handleNav(e, 'HOME')}>
               <div className="w-10 h-10 bg-masuma-orange rounded-sm flex items-center justify-center shadow-sm">
                   <span className="font-display font-bold text-2xl text-black">M</span>
               </div>
@@ -130,19 +142,20 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                 <span className="text-3xl font-bold text-masuma-orange tracking-tighter font-display leading-none group-hover:scale-105 transition-transform origin-left">MASUMA</span>
                 <span className="text-[0.65rem] font-bold text-masuma-dark tracking-[0.2em] uppercase leading-none mt-1">Autoparts E.A.</span>
               </div>
-            </div>
+            </a>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               {navItems.map((item) => (
-                  <button 
+                  <a 
                       key={item}
-                      onClick={() => setView(item)} 
+                      href={`/?view=${item}`}
+                      onClick={(e) => handleNav(e, item)} 
                       className="relative text-masuma-dark font-bold uppercase tracking-wide text-xs hover:text-masuma-orange transition group"
                   >
                       {formatNavLabel(item)}
                       <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-masuma-orange transition-all duration-300 group-hover:w-full"></span>
-                  </button>
+                  </a>
               ))}
             </div>
 
@@ -183,13 +196,14 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
         }`}>
             <div className="px-4 py-4 space-y-1">
               {navItems.map((item) => (
-                  <button 
+                  <a 
                       key={item}
-                      onClick={() => { setView(item); setIsMenuOpen(false); }} 
+                      href={`/?view=${item}`}
+                      onClick={(e) => handleNav(e, item)} 
                       className="block w-full text-left px-4 py-4 text-sm font-bold text-masuma-dark hover:text-masuma-orange hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider"
                   >
                       {formatNavLabel(item)}
-                  </button>
+                  </a>
               ))}
               {/* Mobile Currency */}
               <div className="px-4 py-4 border-b border-gray-100 flex gap-2">
@@ -207,12 +221,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
               </button>
 
               {/* Mobile Login */}
-              <button 
-                  onClick={() => { setView('LOGIN'); setIsMenuOpen(false); }} 
+              <a 
+                  href="/?view=LOGIN"
+                  onClick={(e) => handleNav(e, 'LOGIN')} 
                   className="block w-full text-left px-4 py-4 text-sm font-bold text-gray-500 hover:text-masuma-dark hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider flex items-center gap-2"
               >
                   <User size={16} /> Staff Login
-              </button>
+              </a>
               
               <button 
                   onClick={() => { toggleAi(); setIsMenuOpen(false); }} 

@@ -34,6 +34,16 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
       fetchSettings();
   }, []);
 
+  const handleNav = (e: React.MouseEvent, view: ViewState) => {
+      e.preventDefault();
+      if (setView) {
+          setView(view);
+          const newUrl = `/?view=${view}`;
+          window.history.pushState({ path: newUrl }, '', newUrl);
+          window.scrollTo(0, 0);
+      }
+  };
+
   return (
     <footer className="bg-masuma-dark text-white pt-16 pb-8 border-t-4 border-masuma-orange">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -64,8 +74,9 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
           <div>
             <h3 className="text-lg font-bold mb-4 text-white font-display uppercase tracking-wide">Quick Links</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><button onClick={() => setView?.('PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</button></li>
-              <li><button onClick={() => setView?.('WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</button></li>
+              <li><a href="/?view=ABOUT" onClick={(e) => handleNav(e, 'ABOUT')} className="hover:text-masuma-orange transition">About Us</a></li>
+              <li><a href="/?view=PART_FINDER" onClick={(e) => handleNav(e, 'PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</a></li>
+              <li><a href="/?view=WARRANTY" onClick={(e) => handleNav(e, 'WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</a></li>
               <li><a href="#" className="hover:text-masuma-orange transition">Distributor Portal</a></li>
               <li><a href="#" className="hover:text-masuma-orange transition">Download Catalog (PDF)</a></li>
             </ul>

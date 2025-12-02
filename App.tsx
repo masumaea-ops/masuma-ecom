@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -72,8 +73,12 @@ const App: React.FC = () => {
 
       // 2. Route based on URL Params (Deep Linking)
       const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view');
+      
       if (params.get('post')) {
           setView('BLOG');
+      } else if (viewParam) {
+          setView(viewParam as ViewState);
       }
 
       // 3. Check for existing session
@@ -87,6 +92,19 @@ const App: React.FC = () => {
       // 4. Load Cart
       const storedCart = localStorage.getItem('masuma_cart');
       if (storedCart) setCart(JSON.parse(storedCart));
+
+      // 5. Handle Browser Back/Forward buttons for Deep Links
+      const handlePopState = () => {
+          const newParams = new URLSearchParams(window.location.search);
+          const newView = newParams.get('view');
+          
+          if (newParams.get('post')) setView('BLOG');
+          else if (newView) setView(newView as ViewState);
+          else setView('HOME');
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Track View Changes

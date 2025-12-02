@@ -13,7 +13,6 @@ interface ProductListProps {
 }
 
 const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
-  // Replaced enum usage with dynamic string state
   const [categories, setCategories] = useState<string[]>(['All']);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   
@@ -32,6 +31,20 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [totalProducts, setTotalProducts] = useState(0);
   const ITEMS_PER_PAGE = 12;
 
+  // 1. Check for Deep Links on Mount
+  useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const deepLinkProductId = params.get('product');
+      
+      if (deepLinkProductId) {
+          apiClient.get(`/products/${deepLinkProductId}`)
+              .then(res => {
+                  if (res.data) setSelectedProduct(res.data);
+              })
+              .catch(err => console.error("Deep link product not found", err));
+      }
+  }, []);
+
   // Fetch Categories on Mount
   useEffect(() => {
       const fetchCategories = async () => {
@@ -42,7 +55,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                   setCategories(['All', ...catNames]);
               }
           } catch (e) {
-              // Silently fallback to basics if API fails to prevent console noise
               setCategories(['All', 'Filters', 'Brakes', 'Suspension']);
           }
       };
@@ -58,12 +70,9 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
             params.append('page', currentPage.toString());
             params.append('limit', ITEMS_PER_PAGE.toString());
             if (searchQuery) params.append('q', searchQuery);
-            
-            // Use dynamic category string
             if (selectedCategory !== 'All') params.append('category', selectedCategory);
             
             const response = await apiClient.get(`/products?${params.toString()}`);
-            
             const responseData = response.data;
             
             if (responseData.data && Array.isArray(responseData.data)) {
@@ -112,6 +121,11 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
               listElement.scrollIntoView({ behavior: 'smooth' });
           }
       }
+  };
+
+  const handleProductClick = (e: React.MouseEvent, product: Product) => {
+      e.preventDefault(); // Prevent full page reload
+      setSelectedProduct(product);
   };
 
   const ProductSkeleton = () => (
@@ -226,7 +240,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
         <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
             {displayProducts.map((product) => (
-                <div key={product.id} className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm">
+                <a 
+                    key={product.id}
+                    href={`/?product=${product.id}`}
+                    onClick={(e) => handleProductClick(e, product)}
+                    className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm cursor-pointer block"
+                >
                 
                 <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
                     <img 
@@ -250,12 +269,11 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                     </div>
 
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
-                        <button 
-                            onClick={() => setSelectedProduct(product)}
+                        <span 
                             className="bg-white text-masuma-dark hover:text-masuma-orange px-6 py-3 font-bold uppercase text-xs tracking-widest flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition duration-300 shadow-lg"
                         >
                             <Eye size={16} /> Quick View
-                        </button>
+                        </span>
                     </div>
                 </div>
 
@@ -284,7 +302,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                                 </span>
                             </div>
                             <button
-                                onClick={() => addToCart(product)}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
                                 disabled={!product.stock}
                                 className={`p-3 rounded-full transition-all duration-300 ${
                                     product.stock 
@@ -298,7 +316,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                         </div>
                     </div>
                 </div>
-                </div>
+                </a>
             ))}
             </div>
 
