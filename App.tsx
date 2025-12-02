@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -36,9 +37,7 @@ import WarrantyPolicy from './components/WarrantyPolicy';
 import Toast, { ToastType } from './components/Toast';
 import SEO from './components/SEO';
 import { ViewState, Product, CartItem } from './types';
-import { CurrencyProvider } from './contexts/CurrencyContext';
 import { CheckCircle, MessageCircle } from 'lucide-react';
-import { HelmetProvider } from 'react-helmet-async';
 import ReactGA from "react-ga4";
 import { apiClient } from './utils/apiClient';
 
@@ -171,59 +170,59 @@ const App: React.FC = () => {
       setView('HOME');
   };
 
-  // Admin Dashboard Render Logic
-  if (view === 'DASHBOARD' && user) {
-      const renderModule = () => {
-          switch(adminModule) {
-              case 'dashboard': return <DashboardHome onNavigate={setAdminModule} />;
-              case 'products': return <ProductManager />;
-              case 'inventory': return <InventoryManager />;
-              case 'orders': return <OrderManager />;
-              case 'sales_history': return <SalesHistory />;
-              case 'customers': return <CustomerManager />;
-              case 'mpesa': return <MpesaLogs />;
-              case 'users': return <UserManager />;
-              case 'audit': return <AuditLogs />;
-              case 'settings': return <SettingsManager />;
-              case 'quotes': return <QuoteManager />;
-              case 'reports': return <ReportsManager />;
-              case 'branches': return <BranchManager />;
-              case 'pos': return <PosTerminal />;
-              case 'blog': return <BlogManager />;
-              case 'cms': return <CmsManager />;
-              case 'profile': return <Profile />;
-              case 'b2b': return <B2BPortal />;
-              case 'shipping': return <ShippingManager />;
-              case 'finance': return <FinanceManager />;
-              case 'categories': return <CategoryManager />;
-              default: return <DashboardHome onNavigate={setAdminModule} />;
-          }
-      };
+  const renderContent = () => {
+    // Admin Dashboard Render Logic
+    if (view === 'DASHBOARD' && user) {
+        const renderModule = () => {
+            switch(adminModule) {
+                case 'dashboard': return <DashboardHome onNavigate={setAdminModule} />;
+                case 'products': return <ProductManager />;
+                case 'inventory': return <InventoryManager />;
+                case 'orders': return <OrderManager />;
+                case 'sales_history': return <SalesHistory />;
+                case 'customers': return <CustomerManager />;
+                case 'mpesa': return <MpesaLogs />;
+                case 'users': return <UserManager />;
+                case 'audit': return <AuditLogs />;
+                case 'settings': return <SettingsManager />;
+                case 'quotes': return <QuoteManager />;
+                case 'reports': return <ReportsManager />;
+                case 'branches': return <BranchManager />;
+                case 'pos': return <PosTerminal />;
+                case 'blog': return <BlogManager />;
+                case 'cms': return <CmsManager />;
+                case 'profile': return <Profile />;
+                case 'b2b': return <B2BPortal />;
+                case 'shipping': return <ShippingManager />;
+                case 'finance': return <FinanceManager />;
+                case 'categories': return <CategoryManager />;
+                default: return <DashboardHome onNavigate={setAdminModule} />;
+            }
+        };
 
-      return (
-          <DashboardLayout 
-            activeModule={adminModule} 
-            onNavigate={setAdminModule} 
-            onLogout={handleLogout}
-          >
-              <SEO title="Admin Dashboard" description="Masuma ERP System Internal Access" />
-              {renderModule()}
-          </DashboardLayout>
-      );
-  }
+        return (
+            <DashboardLayout 
+                activeModule={adminModule} 
+                onNavigate={setAdminModule} 
+                onLogout={handleLogout}
+            >
+                <SEO title="Admin Dashboard" description="Masuma ERP System Internal Access" />
+                {renderModule()}
+            </DashboardLayout>
+        );
+    }
 
-  if (view === 'LOGIN') {
-      return (
-        <>
-            <SEO title="Staff Login" description="Secure access for Masuma Autoparts Staff" />
-            <AdminLogin onLoginSuccess={handleLoginSuccess} onBack={() => setView('HOME')} />
-        </>
-      );
-  }
+    if (view === 'LOGIN') {
+        return (
+            <>
+                <SEO title="Staff Login" description="Secure access for Masuma Autoparts Staff" />
+                <AdminLogin onLoginSuccess={handleLoginSuccess} onBack={() => setView('HOME')} />
+            </>
+        );
+    }
 
-  return (
-    <HelmetProvider>
-        <CurrencyProvider>
+    // Main Storefront Render Logic
+    return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <Navbar 
                 cartCount={cart.reduce((a, b) => a + b.quantity, 0)} 
@@ -315,20 +314,24 @@ const App: React.FC = () => {
             <Footer setView={setView} />
             
             <CartDrawer 
-            isOpen={isCartOpen} 
-            onClose={() => setIsCartOpen(false)} 
-            cartItems={cart} 
-            removeFromCart={removeFromCart} 
-            onCheckout={clearCart}
-            updateQuantity={updateQuantity}
+                isOpen={isCartOpen} 
+                onClose={() => setIsCartOpen(false)} 
+                cartItems={cart} 
+                removeFromCart={removeFromCart} 
+                onCheckout={clearCart}
+                updateQuantity={updateQuantity}
             />
             
             <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-            
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>
-        </CurrencyProvider>
-    </HelmetProvider>
+    );
+  };
+
+  return (
+    <>
+        {renderContent()}
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </>
   );
 };
 

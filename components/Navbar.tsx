@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Menu, X, Bot, Phone, MessageCircle, MapPin, User, ChevronDown, Plane } from 'lucide-react';
 import { ViewState } from '../types';
 import { useCurrency, CurrencyCode } from '../contexts/CurrencyContext';
 import { apiClient } from '../utils/apiClient';
 import SourcingModal from './SourcingModal';
+import { Logo } from './Logo';
 
 interface NavbarProps {
   cartCount: number;
@@ -133,14 +135,8 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
           <div className="flex justify-between items-center h-16">
             
             {/* Logo Section */}
-            <a href="/" className="flex-shrink-0 flex items-center cursor-pointer group gap-3" onClick={(e) => handleNav(e, 'HOME')}>
-              <div className="w-10 h-10 bg-masuma-orange rounded-sm flex items-center justify-center shadow-sm">
-                  <span className="font-display font-bold text-2xl text-black">M</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-3xl font-bold text-masuma-orange tracking-tighter font-display leading-none group-hover:scale-105 transition-transform origin-left">MASUMA</span>
-                <span className="text-[0.65rem] font-bold text-masuma-dark tracking-[0.2em] uppercase leading-none mt-1">Autoparts E.A.</span>
-              </div>
+            <a href="/" className="flex-shrink-0 cursor-pointer group" onClick={(e) => handleNav(e, 'HOME')}>
+              <Logo />
             </a>
 
             {/* Desktop Navigation */}

@@ -1,7 +1,10 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { HelmetProvider } from 'react-helmet-async';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,5 +13,11 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <App />
+  <React.StrictMode>
+    <HelmetProvider>
+      <CurrencyProvider>
+        <App />
+      </CurrencyProvider>
+    </HelmetProvider>
+  </React.StrictMode>
 );
