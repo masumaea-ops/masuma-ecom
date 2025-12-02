@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -35,9 +34,13 @@ import Contact from './components/Contact';
 import About from './components/About';
 import WarrantyPolicy from './components/WarrantyPolicy';
 import Toast, { ToastType } from './components/Toast';
+import SEO from './components/SEO';
 import { ViewState, Product, CartItem } from './types';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { CheckCircle, MessageCircle } from 'lucide-react';
+import { HelmetProvider } from 'react-helmet-async';
+import ReactGA from "react-ga4";
+import { apiClient } from './utils/apiClient';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
@@ -54,7 +57,26 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
-      // Check for existing session
+      // 1. Initialize SEO/Analytics settings
+      const initSettings = async () => {
+          try {
+              const res = await apiClient.get('/settings');
+              const gaId = res.data.GOOGLE_ANALYTICS_ID;
+              if (gaId) {
+                  ReactGA.initialize(gaId);
+                  ReactGA.send({ hitType: "pageview", page: window.location.pathname });
+              }
+          } catch (e) {}
+      };
+      initSettings();
+
+      // 2. Route based on URL Params (Deep Linking)
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('post')) {
+          setView('BLOG');
+      }
+
+      // 3. Check for existing session
       const storedToken = localStorage.getItem('masuma_auth_token');
       const storedUser = localStorage.getItem('masuma_user');
       if (storedToken && storedUser) {
@@ -62,10 +84,22 @@ const App: React.FC = () => {
           setUser(JSON.parse(storedUser));
       }
       
-      // Load Cart
+      // 4. Load Cart
       const storedCart = localStorage.getItem('masuma_cart');
       if (storedCart) setCart(JSON.parse(storedCart));
   }, []);
+
+  // Track View Changes
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+          try {
+            // Re-send pageview on virtual route change
+            setTimeout(() => {
+                ReactGA.send({ hitType: "pageview", page: window.location.pathname + window.location.search, title: document.title });
+            }, 500);
+          } catch(e) {}
+      }
+  }, [view]);
 
   useEffect(() => {
       localStorage.setItem('masuma_cart', JSON.stringify(cart));
@@ -155,77 +189,124 @@ const App: React.FC = () => {
             onNavigate={setAdminModule} 
             onLogout={handleLogout}
           >
+              <SEO title="Admin Dashboard" description="Masuma ERP System Internal Access" />
               {renderModule()}
           </DashboardLayout>
       );
   }
 
   if (view === 'LOGIN') {
-      return <AdminLogin onLoginSuccess={handleLoginSuccess} onBack={() => setView('HOME')} />;
+      return (
+        <>
+            <SEO title="Staff Login" description="Secure access for Masuma Autoparts Staff" />
+            <AdminLogin onLoginSuccess={handleLoginSuccess} onBack={() => setView('HOME')} />
+        </>
+      );
   }
 
   return (
-    <CurrencyProvider>
-      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-        <Navbar 
-            cartCount={cart.reduce((a, b) => a + b.quantity, 0)} 
-            setView={setView} 
-            toggleCart={() => setIsCartOpen(true)}
-            toggleAi={() => setIsAiOpen(true)}
-        />
-        
-        <main className="flex-grow">
-          {view === 'HOME' && (
-            <>
-              <Hero setView={setView} />
-              <ProductList addToCart={addToCart} />
-              
-              <div className="bg-masuma-dark text-white py-24 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
-                <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center relative z-10">
-                    <div>
-                        <h3 className="text-3xl md:text-4xl font-bold font-display uppercase mb-6 leading-tight">Why <span className="text-masuma-orange">Masuma?</span></h3>
-                        <p className="text-gray-300 mb-8 text-lg leading-relaxed font-light">The Kenyan market is flooded with counterfeits. Masuma Autoparts EA is your firewall against fake parts.</p>
-                        <ul className="space-y-4">
-                            <li className="flex items-start gap-4"><div className="bg-masuma-orange/20 p-2 rounded-full text-masuma-orange"><CheckCircle size={24} /></div><div><h4 className="font-bold text-white uppercase">12-Month Warranty</h4><p className="text-sm text-gray-400">No questions asked.</p></div></li>
-                            <li className="flex items-start gap-4"><div className="bg-masuma-orange/20 p-2 rounded-full text-masuma-orange"><CheckCircle size={24} /></div><div><h4 className="font-bold text-white uppercase">Locally Stocked</h4><p className="text-sm text-gray-400">Immediate availability.</p></div></li>
-                        </ul>
-                    </div>
-                    <div className="h-[400px] rounded-lg overflow-hidden relative shadow-2xl border-4 border-white/10 group bg-white flex items-center justify-center">
-                        <img src="https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg" alt="Masuma Oil Filter" className="w-full h-full object-contain p-8 transition duration-700 group-hover:scale-105 group-hover:opacity-90" />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500">
-                            <h4 className="text-2xl font-display font-bold text-white mb-4 uppercase">Need Advice?</h4>
-                            <button onClick={() => setIsAiOpen(true)} className="bg-masuma-orange text-white px-8 py-3 font-bold uppercase tracking-widest hover:bg-white hover:text-masuma-orange transition"><div className="flex items-center gap-2"><MessageCircle size={20} /> Chat Now</div></button>
+    <HelmetProvider>
+        <CurrencyProvider>
+        <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+            <Navbar 
+                cartCount={cart.reduce((a, b) => a + b.quantity, 0)} 
+                setView={setView} 
+                toggleCart={() => setIsCartOpen(true)}
+                toggleAi={() => setIsAiOpen(true)}
+            />
+            
+            <main className="flex-grow">
+            {view === 'HOME' && (
+                <>
+                <SEO 
+                    title="Home" 
+                    description="Official distributor of Masuma automotive parts in Kenya. High-quality Japanese engineered parts for Toyota, Nissan, Subaru, and more."
+                    schema={{
+                        "@context": "https://schema.org",
+                        "@type": "AutoPartsStore",
+                        "name": "Masuma Autoparts East Africa",
+                        "image": "https://masuma.africa/logo.png",
+                        "url": "https://masuma.africa",
+                        "telephone": "+254792506590",
+                        "address": {
+                            "@type": "PostalAddress",
+                            "streetAddress": "Ruby Mall, Accra Road",
+                            "addressLocality": "Nairobi",
+                            "addressCountry": "KE"
+                        },
+                        "priceRange": "$$"
+                    }}
+                />
+                <Hero setView={setView} />
+                <ProductList addToCart={addToCart} />
+                
+                <div className="bg-masuma-dark text-white py-24 relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
+                    <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center relative z-10">
+                        <div>
+                            <h3 className="text-3xl md:text-4xl font-bold font-display uppercase mb-6 leading-tight">Why <span className="text-masuma-orange">Masuma?</span></h3>
+                            <p className="text-gray-300 mb-8 text-lg leading-relaxed font-light">The Kenyan market is flooded with counterfeits. Masuma Autoparts EA is your firewall against fake parts.</p>
+                            <ul className="space-y-4">
+                                <li className="flex items-start gap-4"><div className="bg-masuma-orange/20 p-2 rounded-full text-masuma-orange"><CheckCircle size={24} /></div><div><h4 className="font-bold text-white uppercase">12-Month Warranty</h4><p className="text-sm text-gray-400">No questions asked.</p></div></li>
+                                <li className="flex items-start gap-4"><div className="bg-masuma-orange/20 p-2 rounded-full text-masuma-orange"><CheckCircle size={24} /></div><div><h4 className="font-bold text-white uppercase">Locally Stocked</h4><p className="text-sm text-gray-400">Immediate availability.</p></div></li>
+                            </ul>
+                        </div>
+                        <div className="h-[400px] rounded-lg overflow-hidden relative shadow-2xl border-4 border-white/10 group bg-white flex items-center justify-center">
+                            <img src="https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg" alt="Masuma Oil Filter" className="w-full h-full object-contain p-8 transition duration-700 group-hover:scale-105 group-hover:opacity-90" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500">
+                                <h4 className="text-2xl font-display font-bold text-white mb-4 uppercase">Need Advice?</h4>
+                                <button onClick={() => setIsAiOpen(true)} className="bg-masuma-orange text-white px-8 py-3 font-bold uppercase tracking-widest hover:bg-white hover:text-masuma-orange transition"><div className="flex items-center gap-2"><MessageCircle size={20} /> Chat Now</div></button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            </>
-          )}
-          {view === 'CATALOG' && <ProductList addToCart={addToCart} />}
-          {view === 'PART_FINDER' && <PartFinder addToCart={addToCart} />}
-          {view === 'BLOG' && <Blog addToCart={addToCart} />}
-          {view === 'ABOUT' && <About setView={setView} />}
-          {view === 'CONTACT' && <Contact />}
-          {view === 'WARRANTY' && <WarrantyPolicy />}
-        </main>
+                </>
+            )}
+            {view === 'CATALOG' && (
+                <>
+                    <SEO title="Product Catalog" description="Browse filters, brakes, suspension, and engine parts." />
+                    <ProductList addToCart={addToCart} />
+                </>
+            )}
+            {view === 'PART_FINDER' && (
+                <>
+                    <SEO title="Part Finder" description="Check local stock availability by SKU or Part Number." />
+                    <PartFinder addToCart={addToCart} />
+                </>
+            )}
+            {view === 'BLOG' && <Blog addToCart={addToCart} />}
+            {view === 'ABOUT' && <About setView={setView} />}
+            {view === 'CONTACT' && (
+                <>
+                    <SEO title="Contact Us" description="Get in touch with Masuma East Africa. Phone, Email, and Location." />
+                    <Contact />
+                </>
+            )}
+            {view === 'WARRANTY' && (
+                <>
+                    <SEO title="Warranty Policy" description="Our 12-month warranty details and return policy." />
+                    <WarrantyPolicy />
+                </>
+            )}
+            </main>
 
-        <Footer setView={setView} />
-        
-        <CartDrawer 
-          isOpen={isCartOpen} 
-          onClose={() => setIsCartOpen(false)} 
-          cartItems={cart} 
-          removeFromCart={removeFromCart} 
-          onCheckout={clearCart}
-          updateQuantity={updateQuantity}
-        />
-        
-        <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-        
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      </div>
-    </CurrencyProvider>
+            <Footer setView={setView} />
+            
+            <CartDrawer 
+            isOpen={isCartOpen} 
+            onClose={() => setIsCartOpen(false)} 
+            cartItems={cart} 
+            removeFromCart={removeFromCart} 
+            onCheckout={clearCart}
+            updateQuantity={updateQuantity}
+            />
+            
+            <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+            
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        </div>
+        </CurrencyProvider>
+    </HelmetProvider>
   );
 };
 

@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus, ArrowRight, Share2, Facebook, Twitter } from 'lucide-react';
 import { Product } from '../types';
 import QuoteModal from './QuoteModal';
 import Price from './Price';
 import { apiClient } from '../utils/apiClient';
+import SEO from './SEO';
 
 interface QuickViewProps {
   product: Product | null;
@@ -24,17 +24,25 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   const [activeImage, setActiveImage] = useState('');
   const [gallery, setGallery] = useState<string[]>([]);
 
-  // Reset state when product changes
+  // 1. Manage URL State for Deep Linking & SEO
   useEffect(() => {
     if (isOpen && product) {
-      setQuantity(1);
-      
-      // Initialize Gallery
-      const imgs = product.images && product.images.length > 0 ? product.images : [product.image];
-      setGallery(imgs);
-      setActiveImage(imgs[0]);
+        // Update URL to /?product=ID without reloading
+        const newUrl = `${window.location.pathname}?product=${product.id}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+        
+        setQuantity(1);
+        
+        // Initialize Gallery
+        const imgs = product.images && product.images.length > 0 ? product.images : [product.image];
+        setGallery(imgs);
+        setActiveImage(imgs[0]);
 
-      fetchRelatedProducts(product);
+        fetchRelatedProducts(product);
+    } else if (!isOpen) {
+        // Revert URL when closed
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
     }
   }, [isOpen, product]);
 
@@ -73,7 +81,7 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   };
 
   // Social Share Logic
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareUrl = `${window.location.origin}/?product=${product.id}`;
   const shareText = `Check out this ${product.name} at Masuma Autoparts EA!`;
 
   const handleSocialShare = (platform: 'whatsapp' | 'facebook' | 'twitter') => {
@@ -92,8 +100,43 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
       window.open(url, '_blank', 'width=600,height=400');
   };
 
+  // Construct Product Schema for Google
+  const productSchema = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": product.name,
+      "image": product.images || [product.image],
+      "description": product.description,
+      "sku": product.sku,
+      "mpn": product.sku,
+      "brand": {
+          "@type": "Brand",
+          "name": "Masuma"
+      },
+      "offers": {
+          "@type": "Offer",
+          "url": shareUrl,
+          "priceCurrency": "KES",
+          "price": product.price,
+          "itemCondition": "https://schema.org/NewCondition",
+          "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          "seller": {
+              "@type": "Organization",
+              "name": "Masuma Autoparts East Africa"
+          }
+      }
+  };
+
   return (
     <>
+      <SEO 
+        title={product.name} 
+        description={product.description.substring(0, 160)} 
+        image={product.image}
+        type="product"
+        schema={productSchema}
+      />
+
       <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
         <div 
           className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
@@ -127,7 +170,6 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                         </div>
                     </div>
 
-                    {/* Thumbnails */}
                     {gallery.length > 1 && (
                         <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
                             {gallery.map((img, idx) => (

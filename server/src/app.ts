@@ -220,19 +220,41 @@ app.get('/api/orders/:id/status', async (req: any, res: any) => {
   }
 });
 
-// Sitemap
+// Sitemap Generation
 app.get('/sitemap.xml', async (req: any, res: any) => {
   try {
     const products = await ProductService.getAllProductIdsForSitemap();
-    const baseUrl = 'https://masuma.africa/product';
+    
+    // Dynamic import to avoid circular dependency in some environments
+    const blogRepo = AppDataSource.getRepository('BlogPost'); 
+    // @ts-ignore
+    const posts = await blogRepo.find({ select: { id: true } });
+
+    const baseUrl = 'https://masuma.africa';
     let xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
-    products.forEach(p => {
-      xml += `<url><loc>${baseUrl}/${p.id}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`;
+    
+    // Static Pages
+    xml += `<url><loc>${baseUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`;
+    xml += `<url><loc>${baseUrl}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>`;
+    xml += `<url><loc>${baseUrl}/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>`;
+    xml += `<url><loc>${baseUrl}/warranty</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>`;
+    
+    // Products (Deep Links)
+    products.forEach((p: any) => {
+      xml += `<url><loc>${baseUrl}/?product=${p.id}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`;
     });
+
+    // Blogs (Deep Links)
+    // @ts-ignore
+    posts.forEach((p: any) => {
+      xml += `<url><loc>${baseUrl}/?post=${p.id}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+    });
+
     xml += `</urlset>`;
     res.header('Content-Type', 'text/xml');
     res.send(xml);
   } catch (error) {
+    console.error("Sitemap generation error:", error);
     res.status(500).end();
   }
 });

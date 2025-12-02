@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Save, Settings, Users, Building, FileText, Loader2, Activity, Server, Database, RefreshCw, Globe, Smartphone, Key, Shield } from 'lucide-react';
+import { Save, Settings, Users, Building, FileText, Loader2, Activity, Server, Database, RefreshCw, Globe, Smartphone, Key, Shield, BarChart3 } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 
 const SettingsManager: React.FC = () => {
@@ -55,7 +54,7 @@ const SettingsManager: React.FC = () => {
             await apiClient.post('/settings', settings);
             // Update Cache Immediately so Documents reflect changes without reload
             localStorage.setItem('masuma_settings_cache', JSON.stringify(settings));
-            alert('Settings saved successfully. Receipts and Invoices updated.');
+            alert('Settings saved successfully.');
         } catch (error) {
             alert('Failed to save settings');
         } finally {
@@ -88,6 +87,7 @@ const SettingsManager: React.FC = () => {
                     {[
                         { id: 'general', label: 'General Config', icon: Settings },
                         { id: 'branch', label: 'Branch Details', icon: Building },
+                        { id: 'seo', label: 'SEO & Analytics', icon: BarChart3 },
                         { id: 'integrations', label: 'API Integrations', icon: Globe },
                         { id: 'fiscal', label: 'Fiscal / eTIMS', icon: FileText },
                         { id: 'status', label: 'System Health', icon: Activity },
@@ -106,6 +106,7 @@ const SettingsManager: React.FC = () => {
 
                 {/* Content */}
                 <div className="flex-1 p-8 overflow-y-auto">
+                    {/* ... (Previous tabs remain unchanged) ... */}
                     {activeTab === 'general' && (
                         <div className="space-y-6">
                             <h3 className="text-lg font-bold uppercase text-masuma-dark mb-6 pb-2 border-b border-gray-100">General Configuration</h3>
@@ -142,6 +143,40 @@ const SettingsManager: React.FC = () => {
                                 <input type="text" value={settings['BRANCH_PHONE'] || ''} onChange={e => handleChange('BRANCH_PHONE', e.target.value)} className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none" />
                             </div>
                          </div>
+                    )}
+
+                    {/* NEW SEO TAB */}
+                    {activeTab === 'seo' && (
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold uppercase text-masuma-dark mb-6 pb-2 border-b border-gray-100 flex items-center gap-2">
+                                <BarChart3 size={20} className="text-blue-600"/> SEO & Analytics (Site Kit)
+                            </h3>
+                            <div className="bg-blue-50 border border-blue-200 p-4 rounded mb-4">
+                                <p className="text-xs text-blue-800">
+                                    Configure Google integration here. Changes will reflect on the storefront immediately.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-gray-500">Google Analytics 4 (Measurement ID)</label>
+                                <input 
+                                    type="text" 
+                                    value={settings['GOOGLE_ANALYTICS_ID'] || ''} 
+                                    onChange={e => handleChange('GOOGLE_ANALYTICS_ID', e.target.value)} 
+                                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" 
+                                    placeholder="G-XXXXXXXXXX"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-gray-500">Google Search Console (Verification Meta Tag)</label>
+                                <input 
+                                    type="text" 
+                                    value={settings['GOOGLE_VERIFICATION_TAG'] || ''} 
+                                    onChange={e => handleChange('GOOGLE_VERIFICATION_TAG', e.target.value)} 
+                                    className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-mono" 
+                                    placeholder="google-site-verification=..."
+                                />
+                            </div>
+                        </div>
                     )}
 
                     {activeTab === 'integrations' && (

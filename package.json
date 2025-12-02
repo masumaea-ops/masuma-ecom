@@ -26,6 +26,8 @@
     "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
-    "@tailwindcss/typography": "^0.5.10"
+    "@tailwindcss/typography": "^0.5.10",
+    "react-helmet-async": "^2.0.4",
+    "react-ga4": "^2.1.0"
   }
 }

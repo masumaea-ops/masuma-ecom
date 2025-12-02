@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { BlogPost } from '../entities/BlogPost';
@@ -20,7 +19,24 @@ const blogSchema = z.object({
     relatedProductCategory: z.string()
 });
 
-// GET /api/blog (Public)
+// GET /api/blog/:id (Public - Single Post)
+router.get('/:id', async (req, res) => {
+    try {
+        const post = await blogRepo.findOneBy({ id: req.params.id });
+        if (!post) return res.status(404).json({ error: 'Post not found' });
+        
+        const formatted = {
+            ...post,
+            date: post.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        };
+
+        res.json(formatted);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch post' });
+    }
+});
+
+// GET /api/blog (Public - List)
 router.get('/', async (req, res) => {
     try {
         const page = parseInt(req.query.page as string) || 1;

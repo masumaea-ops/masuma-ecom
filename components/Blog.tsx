@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
+import SEO from './SEO';
 
 interface BlogProps {
   addToCart: (product: Product) => void;
@@ -16,12 +16,35 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0, pages: 1 });
   const [copied, setCopied] = useState(false);
 
+  // 1. Initial Data Fetch & Deep Link Check
   useEffect(() => {
-      fetchPosts(1);
+      const init = async () => {
+          setIsLoading(true);
+          
+          // Check for deep link
+          const params = new URLSearchParams(window.location.search);
+          const deepLinkPostId = params.get('post');
+
+          if (deepLinkPostId) {
+              try {
+                  const res = await apiClient.get(`/blog/${deepLinkPostId}`);
+                  setSelectedPost(res.data);
+              } catch (e) {
+                  console.error("Deep link post not found");
+              }
+          }
+
+          // Always fetch the list for navigation
+          await fetchPosts(1);
+          
+          if (!deepLinkPostId) setIsLoading(false);
+          else setIsLoading(false);
+      };
+      
+      init();
   }, []);
 
   const fetchPosts = async (page: number) => {
-      setIsLoading(true);
       try {
           const res = await apiClient.get(`/blog?page=${page}&limit=${pagination.limit}`);
 
@@ -29,20 +52,35 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
               setPosts(res.data.data);
               setPagination(res.data.meta);
           } else if (Array.isArray(res.data)) {
-              // Fallback for non-paginated API
               setPosts(res.data);
           }
       } catch (error) {
           console.error('Failed to fetch blog posts');
-      } finally {
-          setIsLoading(false);
       }
+  };
+
+  // 2. Handle Post Selection (Update URL)
+  const handleSelectPost = (post: BlogPost) => {
+      setSelectedPost(post);
+      const newUrl = `${window.location.pathname}?post=${post.id}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 3. Handle Back Navigation (Clean URL)
+  const handleBack = () => {
+      setSelectedPost(null);
+      const cleanUrl = window.location.pathname;
+      window.history.pushState({ path: cleanUrl }, '', cleanUrl);
   };
 
   const handlePageChange = (newPage: number) => {
       if (newPage >= 1 && newPage <= pagination.pages) {
-          fetchPosts(newPage);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setIsLoading(true);
+          fetchPosts(newPage).then(() => {
+              setIsLoading(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
       }
   };
 
@@ -58,17 +96,19 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
               }
           };
           fetchRelated();
-          window.scrollTo(0, 0);
       }
   }, [selectedPost]);
 
   const handleShare = async () => {
     if (!selectedPost) return;
 
+    // Use current URL which now contains ?post=ID
+    const shareUrl = window.location.href; 
+
     const shareData = {
         title: selectedPost.title,
         text: selectedPost.excerpt,
-        url: window.location.href 
+        url: shareUrl
     };
 
     if (navigator.share) {
@@ -79,7 +119,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
         }
     } else {
         try {
-            await navigator.clipboard.writeText(window.location.href);
+            await navigator.clipboard.writeText(shareUrl);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
@@ -89,14 +129,34 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
   };
 
   if (selectedPost) {
+    const articleSchema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": selectedPost.title,
+        "image": selectedPost.image,
+        "datePublished": selectedPost.date,
+        "author": {
+            "@type": "Organization",
+            "name": "Masuma Autoparts EA"
+        },
+        "description": selectedPost.excerpt
+    };
+
     return (
       <div className="animate-fade-in bg-white min-h-screen">
+        <SEO 
+            title={selectedPost.title} 
+            description={selectedPost.excerpt} 
+            image={selectedPost.image} 
+            type="article" 
+            schema={articleSchema}
+        />
         <div className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden">
           <div className="absolute inset-0 bg-masuma-dark/50 z-10"></div>
           <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 max-w-screen-2xl mx-auto">
             <button 
-              onClick={() => setSelectedPost(null)}
+              onClick={handleBack}
               className="absolute top-6 left-6 md:left-12 text-white hover:text-masuma-orange transition flex items-center gap-2 font-bold uppercase text-sm tracking-wider bg-black/20 backdrop-blur-md px-4 py-2 rounded-full"
             >
               <ArrowLeft size={16} /> Back to Blog
@@ -130,7 +190,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                     className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-masuma-orange hover:text-white transition font-bold text-xs uppercase tracking-wider"
                    >
                        {copied ? <Check size={16} /> : <Share2 size={16} />}
-                       {copied ? 'Link Copied' : 'Share'}
+                       {copied ? 'Link Copied' : 'Share Link'}
                    </button>
                 </div>
              </div>
@@ -179,6 +239,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
 
   return (
     <div className="animate-fade-in bg-white min-h-screen">
+      <SEO title="Blog & Insights" description="Automotive maintenance tips and Masuma product news for Kenya." />
       <div className="bg-masuma-dark text-white py-20 relative overflow-hidden">
          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
          <div className="max-w-screen-2xl mx-auto px-4 relative z-10 text-center">
@@ -203,7 +264,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                    <div 
                       key={post.id} 
                       className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
-                      onClick={() => setSelectedPost(post)}
+                      onClick={() => handleSelectPost(post)}
                    >
                       <div className="relative h-56 overflow-hidden">
                          <div className="absolute top-4 left-4 z-10">
