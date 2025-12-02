@@ -5,7 +5,7 @@ import { Product, Customer, Sale } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 import InvoiceTemplate from './InvoiceTemplate';
 
-// Fallback interface in case Product import fails resolution
+// Robust local interface definition
 interface PosItem {
     id: string;
     name: string;
@@ -24,6 +24,7 @@ interface PosItem {
 type PaymentMethod = 'CASH' | 'MPESA' | 'CHEQUE' | 'CARD';
 
 const PosTerminal: React.FC = () => {
+    // Explicitly type the state to ensure TS knows 'cart' items have an 'id'
     const [cart, setCart] = useState<PosItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -147,18 +148,21 @@ const PosTerminal: React.FC = () => {
                           ? product.wholesalePrice 
                           : product.price;
 
-            // Explicitly map fields to PosItem to satisfy type checker
-            return [...prev, {
-                ...product, 
+            // Explicitly cast to PosItem
+            const newItem: PosItem = {
                 id: product.id,
                 name: product.name,
                 sku: product.sku,
                 price: product.price,
-                quantity: product.quantity,
                 wholesalePrice: product.wholesalePrice,
+                quantity: product.quantity,
+                oemNumbers: product.oemNumbers,
                 qty: 1, 
-                appliedPrice: price 
-            }];
+                appliedPrice: price,
+                ...product
+            };
+
+            return [...prev, newItem];
         });
         setSearchTerm('');
         setSearchResults([]);
@@ -201,7 +205,7 @@ const PosTerminal: React.FC = () => {
         setCart(prev => prev.map(item => ({
             ...item,
             appliedPrice: (c.isWholesale && item.wholesalePrice) ? item.wholesalePrice : item.price
-        })));
+        } as PosItem)));
     };
 
     const handleUseCustomCustomer = () => {
