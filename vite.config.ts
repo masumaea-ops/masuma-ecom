@@ -10,8 +10,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        'jspdf': 'https://aistudiocdn.com/jspdf@^2.5.1',
-        'jspdf-autotable': 'https://aistudiocdn.com/jspdf-autotable@^3.8.2',
+        // Keep jspdf aliased if you want to load it from CDN or handle it specifically
+        // Otherwise, removing aliases allows normal node_modules resolution
       }
     },
     server: {
@@ -29,15 +29,16 @@ export default defineConfig(({ mode }) => {
       }
     },
     optimizeDeps: {
-      exclude: ['jspdf', 'jspdf-autotable', 'react-helmet-async', 'react-ga4']
+      // Only exclude heavy libraries if you specifically want to load them from CDN
+      exclude: ['jspdf', 'jspdf-autotable']
     },
     build: {
       rollupOptions: {
-        external: ['jspdf', 'jspdf-autotable', 'react-helmet-async', 'react-ga4']
+        // react-helmet-async and react-ga4 are now bundled locally
+        external: ['jspdf', 'jspdf-autotable']
       }
     },
     define: {
-      // Safely stringify env vars to prevent "process is not defined" errors
       'process.env': JSON.stringify({
         API_KEY: env.API_KEY,
         NODE_ENV: mode,
