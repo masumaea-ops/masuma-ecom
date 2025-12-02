@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { ShieldCheck, CheckCircle, Star, Globe, Wrench, AlertTriangle, Target, Eye, Truck, Activity } from 'lucide-react';
 import { ViewState } from '../types';

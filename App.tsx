@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -270,7 +269,12 @@ const App: React.FC = () => {
                             </ul>
                         </div>
                         <div className="h-[400px] rounded-lg overflow-hidden relative shadow-2xl border-4 border-white/10 group bg-white flex items-center justify-center">
-                            <img src="https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg" alt="Masuma Oil Filter" className="w-full h-full object-contain p-8 transition duration-700 group-hover:scale-105 group-hover:opacity-90" />
+                            <img 
+                                src="/media/why_masuma.jpg" 
+                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://masuma.com/wp-content/uploads/2021/09/MFC-112_1.jpg'; }}
+                                alt="Masuma Quality Parts" 
+                                className="w-full h-full object-contain p-8 transition duration-700 group-hover:scale-105 group-hover:opacity-90" 
+                            />
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500">
                                 <h4 className="text-2xl font-display font-bold text-white mb-4 uppercase">Need Advice?</h4>
                                 <button onClick={() => setIsAiOpen(true)} className="bg-masuma-orange text-white px-8 py-3 font-bold uppercase tracking-widest hover:bg-white hover:text-masuma-orange transition"><div className="flex items-center gap-2"><MessageCircle size={20} /> Chat Now</div></button>

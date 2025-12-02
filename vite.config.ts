@@ -29,11 +29,11 @@ export default defineConfig(({ mode }) => {
       }
     },
     optimizeDeps: {
-      exclude: ['jspdf', 'jspdf-autotable']
+      exclude: ['jspdf', 'jspdf-autotable', 'react-helmet-async', 'react-ga4']
     },
     build: {
       rollupOptions: {
-        external: ['jspdf', 'jspdf-autotable']
+        external: ['jspdf', 'jspdf-autotable', 'react-helmet-async', 'react-ga4']
       }
     },
     define: {

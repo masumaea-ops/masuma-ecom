@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
 import { Search, AlertCircle, Eye, ShoppingBag, Plane, ChevronLeft, ChevronRight } from 'lucide-react';

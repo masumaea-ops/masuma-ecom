@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Menu, X, Bot, Phone, MessageCircle, MapPin, User, ChevronDown, Plane } from 'lucide-react';
 import { ViewState } from '../types';
