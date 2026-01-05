@@ -34,6 +34,12 @@ export class Sale {
   @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
   netAmount!: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  discount!: number;
+
+  @Column({ default: 'FIXED' })
+  discountType!: string; // 'FIXED' or 'PERCENTAGE'
+
   @Column({ default: 'CASH' })
   paymentMethod!: string; 
 

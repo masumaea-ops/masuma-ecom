@@ -1,6 +1,3 @@
-
-
-
 export enum Category {
   ALL = 'All',
   FILTERS = 'Filters',
@@ -19,16 +16,16 @@ export interface Product {
   name: string;
   sku: string; // Masuma Part Number
   oemNumbers: string[]; // Original Equipment Manufacturer Numbers
-  category: string; // Changed from Category enum to string to support dynamic DB categories
+  category: string; 
   price: number; // In KES
   wholesalePrice?: number;
   costPrice?: number;
   description: string;
-  compatibility: string[]; // e.g., ["Toyota Vitz", "Corolla"]
+  compatibility: string[]; 
   image: string;
   images?: string[];
   videoUrl?: string;
-  stock: boolean; // Frontend derived flag
+  stock: boolean; 
   quantity?: number;
 }
 
@@ -40,23 +37,21 @@ export interface BlogPost {
   id: string;
   title: string;
   excerpt: string;
-  content: string; // HTML or Markdown-like string
+  content: string; 
   image: string;
   date: string;
   readTime: string;
   category: string;
-  relatedProductCategory: string; // Changed from Category enum to string
+  relatedProductCategory: string; 
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD';
 
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   isError?: boolean;
 }
-
-// --- Admin / Dashboard Types ---
 
 export interface User {
   id: string;
@@ -88,7 +83,7 @@ export interface Order {
     orderNumber: string;
     customerName: string;
     customerEmail?: string;
-    customerPhone?: string;
+    customerPhone: string;
     shippingAddress?: string;
     date: string;
     total: number;
@@ -112,6 +107,8 @@ export interface Sale {
     kraControlCode?: string;
     itemsCount: number;
     itemsSnapshot?: any[];
+    discount?: number;
+    discountType?: 'PERCENTAGE' | 'FIXED';
 }
 
 export interface MpesaLog {
@@ -147,14 +144,6 @@ export interface HeroSlide {
   ctaLink: ViewState;
 }
 
-export interface CmsConfig {
-    heroTitle: string; // Legacy
-    heroSubtitle: string; // Legacy
-    heroImage: string; // Legacy
-    announcementText: string;
-    showAnnouncement: boolean;
-}
-
 export interface DashboardStats {
   totalSales: number;
   lowStockItems: number;
@@ -185,4 +174,29 @@ export interface Quote {
     vin?: string;
     itemsCount?: number;
     items: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[];
+}
+
+// Added missing Technical Academy types
+export interface Student {
+    id: string;
+    fullName: string;
+    studentId: string;
+    currentAverage: number;
+    status: 'ACTIVE' | 'GRADUATED' | 'INACTIVE';
+}
+
+export interface GradeScale {
+    id: string;
+    label: string;
+    minScore: number;
+    maxScore: number;
+    comment: string;
+}
+
+export interface Assessment {
+    id: string;
+    studentId: string;
+    title: string;
+    score: number;
+    date: string;
 }

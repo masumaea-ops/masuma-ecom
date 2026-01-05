@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
-  Smartphone, Users, FileText, Truck, Car, 
+  Smartphone, Users, FileText, Truck, GraduationCap, 
   BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
@@ -26,17 +25,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
       }
   }, []);
 
-  // Define Menu Items with Role Permissions
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
-    { id: 'finance', label: 'Finance & Profit', icon: DollarSign, roles: ['ADMIN', 'MANAGER'] }, // NEW
+    { id: 'finance', label: 'Finance & Profit', icon: DollarSign, roles: ['ADMIN', 'MANAGER'] },
     { id: 'pos', label: 'Point of Sale', icon: ShoppingCart, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'products', label: 'Product Manager', icon: Package, roles: ['ADMIN', 'MANAGER'] },
     { id: 'categories', label: 'Categories', icon: Tag, roles: ['ADMIN', 'MANAGER'] },
     { id: 'inventory', label: 'Inventory', icon: Package, roles: ['ADMIN', 'MANAGER'] },
     { id: 'branches', label: 'Branches', icon: Building, roles: ['ADMIN'] },
     { id: 'orders', label: 'Orders', icon: FileText, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
-    { id: 'shipping', label: 'Shipping & Logistics', icon: Truck, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'shipping', label: 'Logistics', icon: Truck, roles: ['ADMIN', 'MANAGER'] },
     { id: 'quotes', label: 'Quotations', icon: FileText, roles: ['ADMIN', 'MANAGER'] },
     { id: 'b2b', label: 'B2B Portal', icon: Briefcase, roles: ['ADMIN', 'MANAGER', 'B2B_USER'] },
     { id: 'sales_history', label: 'Sales History', icon: History, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
@@ -54,10 +52,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
-      {/* Sidebar */}
-      <aside 
-        className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-masuma-dark text-white transition-all duration-300 flex flex-col flex-shrink-0`}
-      >
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-masuma-dark text-white transition-all duration-300 flex flex-col flex-shrink-0`}>
         <div className="h-16 flex items-center justify-center border-b border-gray-800">
           {isSidebarOpen ? (
              <div className="flex items-center gap-3">
@@ -66,7 +61,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
                 </div>
                 <div className="flex flex-col">
                     <span className="font-display font-bold text-xl tracking-wider text-white">MASUMA</span>
-                    <span className="text-[8px] text-gray-400 tracking-widest uppercase">Enterprise ERP</span>
+                    <span className="text-[8px] text-gray-400 tracking-widest uppercase">E.A. LIMITED</span>
                 </div>
              </div>
           ) : (
@@ -97,56 +92,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
         </div>
 
         <div className="p-4 border-t border-gray-800">
-          <button 
-            onClick={onLogout}
-            className="w-full flex items-center px-2 py-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={onLogout} className="w-full flex items-center px-2 py-2 text-gray-400 hover:text-white transition-colors">
             <LogOut size={20} />
             {isSidebarOpen && <span className="ml-3 text-sm font-medium">Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
         <header className="h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6 relative z-40">
           <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-500 hover:text-masuma-orange">
             <Menu size={24} />
           </button>
-
           <div className="flex items-center space-x-6">
-            <div className="text-right hidden md:block">
-              <p className="text-xs font-bold text-masuma-dark uppercase">
-                 {user.branch?.name || 'Headquarters'}
-              </p>
-              <p className="text-[10px] text-gray-500">User: {user.name} ({user.role})</p>
-            </div>
             <div className="relative">
                <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="relative cursor-pointer focus:outline-none">
                    <Bell size={20} className="text-gray-500 hover:text-masuma-orange transition" />
                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                </button>
-               <NotificationsPopover 
-                  isOpen={isNotifOpen} 
-                  onClose={() => setIsNotifOpen(false)} 
-                  onNavigate={onNavigate}
-               />
+               <NotificationsPopover isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} onNavigate={onNavigate} />
             </div>
-            <button 
-              onClick={() => onNavigate('profile')}
-              className="w-8 h-8 bg-masuma-orange rounded-full flex items-center justify-center text-white font-bold text-xs hover:scale-110 transition shadow-md uppercase"
-              title="My Profile"
-            >
+            <button onClick={() => onNavigate('profile')} className="w-8 h-8 bg-masuma-orange rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shadow-md">
               {user.name ? user.name.charAt(0) : 'U'}
             </button>
           </div>
         </header>
-
-        {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">{children}</main>
       </div>
     </div>
   );

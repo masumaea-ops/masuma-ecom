@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Shield, Key, Trash2, Edit, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Shield, Key, Trash2, Edit, Loader2, Building } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
+import { Branch } from '../../types';
 
 interface UserData {
     id: string;
@@ -10,21 +11,36 @@ interface UserData {
     role: string;
     isActive: boolean;
     createdAt: string;
+    branch?: {
+        id: string;
+        name: string;
+    };
 }
 
 const UserManager: React.FC = () => {
     const [users, setUsers] = useState<UserData[]>([]);
+    const [branches, setBranches] = useState<Branch[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     
     // Form State
-    const [newUser, setNewUser] = useState({ fullName: '', email: '', password: '', role: 'CASHIER' });
+    const [newUser, setNewUser] = useState({ 
+        fullName: '', 
+        email: '', 
+        password: '', 
+        role: 'CASHIER',
+        branchId: ''
+    });
 
-    const fetchUsers = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.get('/users');
-            setUsers(res.data);
+            const [usersRes, branchesRes] = await Promise.all([
+                apiClient.get('/users'),
+                apiClient.get('/branches')
+            ]);
+            setUsers(usersRes.data);
+            setBranches(branchesRes.data);
         } catch (error) {
             console.error(error);
             setUsers([]);
@@ -34,14 +50,25 @@ const UserManager: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchUsers();
+        fetchData();
     }, []);
 
     const handleCreateUser = async () => {
+        if (!newUser.fullName || !newUser.email || !newUser.password) {
+            alert('Please fill in all required fields.');
+            return;
+        }
         try {
-            await apiClient.post('/users', newUser);
+            // Only send branchId if selected
+            const payload = {
+                ...newUser,
+                branchId: newUser.branchId || undefined
+            };
+            
+            await apiClient.post('/users', payload);
             setIsCreating(false);
-            fetchUsers();
+            setNewUser({ fullName: '', email: '', password: '', role: 'CASHIER', branchId: '' });
+            fetchData();
             alert('User created successfully');
         } catch (error: any) {
             alert(error.response?.data?.error || 'Failed to create user');
@@ -52,7 +79,7 @@ const UserManager: React.FC = () => {
         if (!confirm('Are you sure you want to delete this user?')) return;
         try {
             await apiClient.delete(`/users/${id}`);
-            fetchUsers();
+            fetchData();
         } catch (error) {
             alert('Failed to delete user');
         }
@@ -63,7 +90,7 @@ const UserManager: React.FC = () => {
              <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase">User Management</h2>
-                    <p className="text-sm text-gray-500">Manage staff access and permissions.</p>
+                    <p className="text-sm text-gray-500">Manage staff access, roles, and branch assignments.</p>
                 </div>
                 <button 
                     onClick={() => setIsCreating(!isCreating)}
@@ -76,42 +103,56 @@ const UserManager: React.FC = () => {
             {isCreating && (
                 <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6 animate-slide-up">
                     <h3 className="font-bold text-masuma-dark uppercase mb-4">Create New Staff Account</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <input 
                             type="text" 
-                            placeholder="Full Name" 
-                            className="p-2 border rounded"
+                            placeholder="Full Name *" 
+                            className="p-2 border rounded focus:border-masuma-orange outline-none"
                             value={newUser.fullName}
                             onChange={e => setNewUser({...newUser, fullName: e.target.value})}
                         />
                         <input 
                             type="email" 
-                            placeholder="Email" 
-                            className="p-2 border rounded"
+                            placeholder="Email Address *" 
+                            className="p-2 border rounded focus:border-masuma-orange outline-none"
                             value={newUser.email}
                             onChange={e => setNewUser({...newUser, email: e.target.value})}
                         />
                         <input 
                             type="password" 
-                            placeholder="Password" 
-                            className="p-2 border rounded"
+                            placeholder="Password *" 
+                            className="p-2 border rounded focus:border-masuma-orange outline-none"
                             value={newUser.password}
                             onChange={e => setNewUser({...newUser, password: e.target.value})}
                         />
-                        <select 
-                            className="p-2 border rounded bg-white"
-                            value={newUser.role}
-                            onChange={e => setNewUser({...newUser, role: e.target.value})}
-                        >
-                            <option value="CASHIER">Cashier</option>
-                            <option value="MANAGER">Manager</option>
-                            <option value="ADMIN">Admin</option>
-                            <option value="B2B_USER">B2B User</option>
-                        </select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <select 
+                                className="p-2 border rounded bg-white focus:border-masuma-orange outline-none"
+                                value={newUser.role}
+                                onChange={e => setNewUser({...newUser, role: e.target.value})}
+                            >
+                                <option value="CASHIER">Cashier</option>
+                                <option value="MANAGER">Manager</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="B2B_USER">B2B User</option>
+                            </select>
+                            <select 
+                                className="p-2 border rounded bg-white focus:border-masuma-orange outline-none"
+                                value={newUser.branchId}
+                                onChange={e => setNewUser({...newUser, branchId: e.target.value})}
+                            >
+                                <option value="">Assign Branch (Optional)</option>
+                                {branches.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                    <button onClick={handleCreateUser} className="bg-green-600 text-white px-6 py-2 rounded font-bold uppercase text-xs">
-                        Save User
-                    </button>
+                    <div className="flex justify-end">
+                        <button onClick={handleCreateUser} className="bg-green-600 text-white px-6 py-2 rounded font-bold uppercase text-xs hover:bg-green-700 transition">
+                            Save User
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -126,6 +167,7 @@ const UserManager: React.FC = () => {
                             <tr>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Role</th>
+                                <th className="px-6 py-4">Branch</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Created At</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
@@ -153,6 +195,15 @@ const UserManager: React.FC = () => {
                                         }`}>
                                             <Shield size={10} /> {user.role}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {user.branch ? (
+                                            <span className="flex items-center gap-1 text-gray-700 text-xs">
+                                                <Building size={12} className="text-masuma-orange"/> {user.branch.name}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs italic">Global / HQ</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4">
                                         {user.isActive ? (

@@ -178,7 +178,7 @@ router.post('/bulk', authenticate, authorize(['ADMIN', 'MANAGER']), validate(bul
             }
 
             if (item.oemNumbers) {
-                await queryRunner.manager.delete(OemNumber, { product: { id: product.id } });
+                await queryRunner.manager.delete(OemNumber, { product: { id: product.id } } as any);
                 const oems = item.oemNumbers.split(',').map((code: string) => {
                     const o = new OemNumber();
                     o.code = code.trim();
@@ -209,7 +209,7 @@ router.post('/bulk', authenticate, authorize(['ADMIN', 'MANAGER']), validate(bul
 
             if (item.quantity !== undefined) {
                 let stock = await queryRunner.manager.findOne(ProductStock, {
-                    where: { product: { id: product.id }, branch: { id: branch.id } }
+                    where: { product: { id: product.id } as any, branch: { id: branch.id } as any }
                 });
 
                 if (!stock) {

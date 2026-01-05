@@ -10,12 +10,16 @@ declare const __dirname: string;
 console.log(`\n---------------------------------------------------`);
 console.log(`🚀 [ENV] Starting Environment Loading...`);
 console.log(`⏰ Time: ${new Date().toISOString()}`);
+// @ts-ignore
 console.log(`👤 User: ${process.env.USER || 'unknown'} (UID: ${process.getuid ? process.getuid() : 'n/a'})`);
+// @ts-ignore
 console.log(`📂 CWD:  ${process.cwd()}`);
 
 // Define explicit candidates to check
+// @ts-ignore
+const currentDir = process.cwd();
 const candidates = [
-    path.join(process.cwd(), '.env'),
+    path.join(currentDir, '.env'),
     path.join(__dirname, '../../.env'), // Standard dist/config/ -> server/
     path.join(__dirname, '../../../.env'), 
     '/home/kemasuma/htdocs/masuma.africa/server/.env' // Absolute fallback
@@ -129,9 +133,9 @@ if (!parsedEnv.success) {
   console.error('\n❌ [ENV] VALIDATION FAILED. The app may crash or misbehave.');
   const errors = parsedEnv.error.format();
   Object.entries(errors).forEach(([key, value]) => {
-      if (key !== '_errors' && value && '(_errors)' in value === false) {
-          // @ts-ignore
-          const issues = value._errors || [];
+      if (key !== '_errors' && value) {
+          const fieldError = value as { _errors: string[] };
+          const issues = fieldError._errors || [];
           if (issues.length > 0) console.error(`   - ${key}: ${issues.join(', ')}`);
       }
   });

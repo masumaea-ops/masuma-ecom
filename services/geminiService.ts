@@ -2,52 +2,45 @@
 import { GoogleGenAI } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `
-You are 'MasumaBot', the official digital assistant for Masuma Autoparts East Africa Limited in Nairobi.
-Your brand color is Orange (#E0621B). You are helpful, knowledgeable, and concise.
+You are 'MasumaBot', the official digital assistant for Masuma Autoparts East Africa Limited.
+Your primary base is Nairobi, Kenya. You are helpful, knowledgeable, and professional.
 
 Your capabilities:
-1. Advise on part compatibility for common Kenyan cars (Vitz, Demio, Fielder, Forester, Note, etc.).
-2. Explain product features (e.g., "Why are ceramic brake pads better for Nairobi traffic?").
-3. If a user asks for a specific part, ask them to provide the Chassis Number (VIN) so our team can check the live inventory.
+1. Advise on part compatibility for Kenyan car models (Toyota Vitz, Fielder, Corolla, Harrier, Nissan Note, Subaru Forester, etc.).
+2. Explain Japanese OE engineering benefits.
+3. Help users find genuine parts to avoid counterfeits.
 
 Rules:
-- Do not invent prices. If asked for a price, say: "Please check our live catalog on the website for the most up-to-date pricing."
-- If a user asks about a specific part number, explain what it is generally (e.g. "That is an Oil Filter"), but direct them to the search bar for stock status.
-- Be friendly and professional.
+- If asked for prices, always direct the user to the "Live Catalog" or "Part Finder" on the website. 
+- Remind users about our 12-month warranty.
+- If they have a specific part need, ask for their Chassis Number (VIN).
+- Be concise and polite.
 `;
 
 export const sendMessageToGemini = async (history: {role: string, parts: {text: string}[]}[], message: string): Promise<string> => {
-  try {
-    // Robust Key Detection: Check standard env and Vite specific env
-    // @ts-ignore
-    const apiKey = process.env.API_KEY || (import.meta.env && import.meta.env.VITE_API_KEY);
+  // CRITICAL: Initialize directly with process.env.API_KEY as per coding guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  // The SDK history sequence must start with 'user'. 
+  // We filter out the initial 'model' greeting from the UI state if it's the start of the sequence.
+  const cleanHistory = history.length > 0 && history[0].role === 'model' ? history.slice(1) : history;
 
-    if (!apiKey) {
-        console.warn("⚠️ Gemini API Key is missing. Ensure 'API_KEY' or 'VITE_API_KEY' is set in .env");
-        return "I am currently unable to connect to the AI service. Please contact support.";
-    }
+  const chat = ai.chats.create({
+    model: 'gemini-3-flash-preview',
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      thinkingConfig: { thinkingBudget: 0 } // Optimization for latency
+    },
+    history: cleanHistory,
+  });
 
-    // Initialize client here to prevent top-level crashes
-    const ai = new GoogleGenAI({ apiKey });
-    const model = 'gemini-2.5-flash';
-    
-    const chat = ai.chats.create({
-      model: model,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7,
-      },
-      history: history, 
-    });
+  const response = await chat.sendMessage({
+    message: message
+  });
 
-    const result = await chat.sendMessage({
-      message: message
-    });
-
-    return result.text || "I'm having trouble accessing the network right now. Please try again.";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    // Fail gracefully instead of crashing the app
-    return "I'm having trouble connecting to the Masuma network right now. Please check your internet connection.";
+  if (!response || !response.text) {
+      throw new Error("Empty response from AI");
   }
+
+  return response.text;
 };

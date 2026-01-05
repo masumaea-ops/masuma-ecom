@@ -26,7 +26,7 @@ router.get('/', authenticate, authorize(['ADMIN']), async (req, res) => {
             relations: ['branch'],
             select: {
                 id: true, fullName: true, email: true, role: true, isActive: true, createdAt: true,
-                branch: { id: true, name: true }
+                branch: { id: true, name: true } as any
             }
         });
         res.json(users);

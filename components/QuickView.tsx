@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus, ArrowRight, Share2, Facebook, Twitter } from 'lucide-react';
 import { Product } from '../types';
@@ -24,13 +25,8 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   const [activeImage, setActiveImage] = useState('');
   const [gallery, setGallery] = useState<string[]>([]);
 
-  // 1. Manage URL State for Deep Linking & SEO
   useEffect(() => {
     if (isOpen && product) {
-        // Update URL to /?product=ID without reloading
-        const newUrl = `${window.location.pathname}?product=${product.id}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-        
         setQuantity(1);
         
         // Initialize Gallery
@@ -39,11 +35,7 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
         setActiveImage(imgs[0]);
 
         fetchRelatedProducts(product);
-    } else if (!isOpen) {
-        // Revert URL when closed
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
-    }
+    } 
   }, [isOpen, product]);
 
   const fetchRelatedProducts = async (currentProduct: Product) => {
@@ -126,6 +118,10 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
           }
       }
   };
+
+  // Ensure arrays exist before rendering
+  const compatibilityList = product.compatibility || [];
+  const oemList = product.oemNumbers || [];
 
   return (
     <>
@@ -221,11 +217,11 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                         <div className="grid grid-cols-1 gap-y-3">
                             <div>
                                 <span className="block text-[10px] text-gray-500 uppercase">OEM Cross-Reference</span>
-                                <p className="text-sm font-mono text-gray-800 break-all">{product.oemNumbers.join(', ')}</p>
+                                <p className="text-sm font-mono text-gray-800 break-all">{oemList.join(', ')}</p>
                             </div>
                             <div>
                                 <span className="block text-[10px] text-gray-500 uppercase">Compatible Models</span>
-                                <p className="text-sm text-gray-800">{product.compatibility.join(', ')}</p>
+                                <p className="text-sm text-gray-800">{compatibilityList.join(', ')}</p>
                             </div>
                         </div>
                     </div>

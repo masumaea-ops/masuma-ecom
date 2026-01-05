@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { BlogPost, Product } from '../types';
@@ -6,9 +7,11 @@ import SEO from './SEO';
 
 interface BlogProps {
   addToCart: (product: Product) => void;
+  initialPostId?: string | null;
+  onProductClick?: (product: Product) => void;
 }
 
-const Blog: React.FC<BlogProps> = ({ addToCart }) => {
+const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -21,28 +24,27 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
       const init = async () => {
           setIsLoading(true);
           
-          // Check for deep link
-          const params = new URLSearchParams(window.location.search);
-          const deepLinkPostId = params.get('post');
-
-          if (deepLinkPostId) {
+          if (initialPostId) {
               try {
-                  const res = await apiClient.get(`/blog/${deepLinkPostId}`);
+                  const res = await apiClient.get(`/blog/${initialPostId}`);
                   setSelectedPost(res.data);
               } catch (e) {
                   console.error("Deep link post not found");
               }
+          } else {
+              setSelectedPost(null);
           }
 
-          // Always fetch the list for navigation
-          await fetchPosts(1);
+          // Always fetch the list for navigation if empty
+          if (posts.length === 0) {
+              await fetchPosts(1);
+          }
           
-          if (!deepLinkPostId) setIsLoading(false);
-          else setIsLoading(false);
+          setIsLoading(false);
       };
       
       init();
-  }, []);
+  }, [initialPostId]);
 
   const fetchPosts = async (page: number) => {
       try {
@@ -210,15 +212,27 @@ const Blog: React.FC<BlogProps> = ({ addToCart }) => {
                    
                    <div className="space-y-4">
                       {relatedProducts.length > 0 ? relatedProducts.map(product => (
-                         <div key={product.id} className="bg-white p-3 flex gap-3 shadow-sm hover:shadow-md transition border border-gray-100 group">
+                         <div 
+                            key={product.id} 
+                            onClick={(e) => {
+                                if (onProductClick) {
+                                    e.preventDefault();
+                                    onProductClick(product);
+                                }
+                            }}
+                            className="bg-white p-3 flex gap-3 shadow-sm hover:shadow-md transition border border-gray-100 group cursor-pointer"
+                         >
                             <div className="w-16 h-16 bg-gray-100 shrink-0 overflow-hidden">
                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                             </div>
                             <div className="flex-1">
-                               <h4 className="font-bold text-masuma-dark text-xs uppercase leading-tight mb-1">{product.name}</h4>
+                               <h4 className="font-bold text-masuma-dark text-xs uppercase leading-tight mb-1 group-hover:text-masuma-orange transition">{product.name}</h4>
                                <p className="text-masuma-orange font-bold text-sm">KES {product.price.toLocaleString()}</p>
                                <button 
-                                  onClick={() => addToCart(product)}
+                                  onClick={(e) => {
+                                      e.stopPropagation(); // Prevent opening modal if clicking Add to Cart directly
+                                      addToCart(product);
+                                  }}
                                   className="mt-2 text-[10px] font-bold uppercase bg-masuma-dark text-white px-3 py-1 hover:bg-masuma-orange transition w-full text-center"
                                >
                                   Add to Cart

@@ -1,38 +1,46 @@
-
 import { Worker } from 'bullmq';
 import { redis } from '../config/redis';
 import { EmailService } from '../services/emailService';
 
-declare const require: any;
-declare const module: any;
-
 export const startEmailWorker = () => {
     if (!redis) {
-        console.log('⚠️ Redis unavailable. Background Email Worker not started.');
+        console.log('⚠️ [WORKER] Redis unavailable. Email Worker not started.');
         return;
     }
 
+    console.log('📧 [WORKER] Initializing Email Background Worker...');
+
     const emailWorker = new Worker('email-queue', async (job) => {
-        const { type, data } = job.data;
-        // Reuse the direct processing logic from the service to avoid duplication
-        await EmailService.processDirectEmail(type, data);
+        console.log(`📥 [WORKER] Processing Job ${job.id} (Type: ${job.data.type})...`);
+        try {
+            const { type, data } = job.data;
+            await EmailService.processDirectEmail(type, data);
+            console.log(`✨ [WORKER] Job ${job.id} finished processing.`);
+        } catch (err: any) {
+            console.error(`🔥 [WORKER] Job ${job.id} logic error:`, err.message);
+            throw err; // Re-throw to trigger BullMQ fail listener
+        }
     }, { 
         connection: redis,
-        concurrency: 5
+        concurrency: 5,
+        // Ensure worker doesn't stall on closed connections
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 1000 }
+    });
+
+    emailWorker.on('ready', () => {
+        console.log('✅ [WORKER] Email Queue Worker is READY and listening.');
     });
 
     emailWorker.on('completed', (job) => {
-        console.log(`Email job ${job.id} completed`);
+        console.log(`✅ [WORKER] Job ${job.id} marked COMPLETED.`);
     });
 
     emailWorker.on('failed', (job, err) => {
-        console.error(`Email job ${job?.id} failed: ${err.message}`);
+        console.error(`❌ [WORKER] Job ${job?.id} FAILED:`, err.message);
     });
 
-    console.log('📧 Email Background Worker Started');
+    emailWorker.on('error', (err) => {
+        console.error('🚨 [WORKER] Fatal Worker Error:', err);
+    });
 };
-
-// Start immediately if run standalone
-if (require.main === module) {
-    startEmailWorker();
-}

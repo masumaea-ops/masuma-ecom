@@ -1,17 +1,24 @@
 
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, (process as any).cwd(), '');
+  // Load env from the project root
+  // Fix: Property 'cwd' does not exist on type 'Process'. Cast to any to access Node.js runtime method.
+  const rootEnv = loadEnv(mode, (process as any).cwd(), '');
+  
+  // Also check the server directory for the .env file as a fallback
+  // Fix: Property 'cwd' does not exist on type 'Process'. Cast to any to access Node.js runtime method.
+  const serverEnv = loadEnv(mode, path.resolve((process as any).cwd(), 'server'), '');
+  
+  // Combine potential key names (GEMINI_API_KEY or API_KEY) from both locations
+  const apiKey = rootEnv.GEMINI_API_KEY || rootEnv.API_KEY || serverEnv.GEMINI_API_KEY || serverEnv.API_KEY || "";
 
   return {
     plugins: [react()],
     resolve: {
       alias: {
-        // Keep jspdf aliased if you want to load it from CDN or handle it specifically
-        // Otherwise, removing aliases allows normal node_modules resolution
       }
     },
     server: {
@@ -29,21 +36,17 @@ export default defineConfig(({ mode }) => {
       }
     },
     optimizeDeps: {
-      // Only exclude heavy libraries if you specifically want to load them from CDN
       exclude: ['jspdf', 'jspdf-autotable']
     },
     build: {
       rollupOptions: {
-        // react-helmet-async and react-ga4 are now bundled locally
         external: ['jspdf', 'jspdf-autotable']
       }
     },
     define: {
-      'process.env': JSON.stringify({
-        API_KEY: env.API_KEY,
-        NODE_ENV: mode,
-        ...env
-      })
+      // The SDK strictly looks for process.env.API_KEY
+      'process.env.API_KEY': JSON.stringify(apiKey),
+      'process.env.NODE_ENV': JSON.stringify(mode),
     }
   };
 });

@@ -19,6 +19,8 @@ const createSaleSchema = z.object({
         oem: z.string().optional()
     })),
     totalAmount: z.number(),
+    discount: z.number().optional(),
+    discountType: z.string().optional(),
     paymentMethod: z.string(),
     branchId: z.string().optional(),
     customerId: z.string().optional(),
@@ -31,12 +33,13 @@ router.post('/', authenticate, validate(createSaleSchema), async (req: any, res)
     try {
         const saleData = {
             ...req.body,
+            // Prioritize body branchId, fall back to user's branch
             branchId: req.body.branchId || req.user.branch?.id,
             cashierId: req.user.id
         };
 
         if (!saleData.branchId) {
-            return res.status(400).json({ error: 'Branch ID is required to record a sale.' });
+            return res.status(400).json({ error: 'Branch ID is required to record a sale. Please ensure you are assigned to a branch.' });
         }
 
         const sale = await SaleService.createSale(saleData);

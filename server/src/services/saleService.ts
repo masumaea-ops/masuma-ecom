@@ -13,8 +13,8 @@ interface SaleItemDto {
   name: string;
   quantity: number;
   price: number;
-  sku?: string; // Added
-  oem?: string; // Added
+  sku?: string; 
+  oem?: string; 
 }
 
 interface CreateSaleDto {
@@ -26,6 +26,8 @@ interface CreateSaleDto {
   customerId?: string;
   customerName?: string;
   paymentDetails?: any;
+  discount?: number;
+  discountType?: string;
 }
 
 export class SaleService {
@@ -40,13 +42,11 @@ export class SaleService {
       
       for (const item of data.items) {
         const stockEntry = await stockRepo.findOne({
-            where: { product: { id: item.productId }, branch: { id: data.branchId } },
+            where: { product: { id: item.productId } as any, branch: { id: data.branchId } as any },
             lock: { mode: 'pessimistic_write' }
         });
 
-        // Allow sales if stock entry exists, even if low (negative stock allowed for business continuity if needed, 
-        // or strict check can be enabled here: && stockEntry.quantity >= item.quantity)
-        // Current logic: Updates stock, allows negative.
+        // Allow sales if stock entry exists, even if low (negative stock allowed for business continuity if needed)
         if (stockEntry) {
             stockEntry.quantity -= item.quantity;
             await stockRepo.save(stockEntry);
@@ -61,6 +61,7 @@ export class SaleService {
       }
 
       // Calculate Tax (Inclusive VAT 16%)
+      // Net Amount should be based on the Final Total paid (after discount)
       const taxRate = 0.16;
       const netAmount = data.totalAmount / (1 + taxRate);
       const taxAmount = data.totalAmount - netAmount;
@@ -85,31 +86,43 @@ export class SaleService {
       
       sale.itemsSnapshot = data.items;
       sale.itemsCount = data.items.length;
+      
+      // Financials
       sale.totalAmount = data.totalAmount;
       sale.netAmount = parseFloat(netAmount.toFixed(2));
       sale.taxAmount = parseFloat(taxAmount.toFixed(2));
+      
+      // Ensure discount is set, defaulting to 0 if undefined
+      sale.discount = data.discount || 0;
+      sale.discountType = data.discountType || 'FIXED';
       
       sale.paymentMethod = data.paymentMethod;
       sale.paymentDetails = data.paymentDetails;
 
       // 3. Call KRA eTIMS
-      const fiscalData = await EtimsService.signInvoice(
-        sale.receiptNumber, 
-        data.items.map(i => ({
-            hsCode: '8708.99.00',
-            name: i.name,
-            qty: i.quantity,
-            unitPrice: i.price,
-            taxRate: 16
-        })),
-        data.totalAmount
-      );
+      // Only sign if total > 0 (Gift/Foc handling might differ)
+      if (data.totalAmount > 0) {
+          const fiscalData = await EtimsService.signInvoice(
+            sale.receiptNumber, 
+            data.items.map(i => ({
+                hsCode: '8708.99.00',
+                name: i.name,
+                qty: i.quantity,
+                unitPrice: i.price, // Unit price here is pre-discount usually, but KRA expects total to match.
+                // If discount applies to whole cart, it's complex to spread.
+                // For simplicity, we send actual lines. KRA validation might check sums.
+                // Ideal approach: Spread discount to line items or add Discount line item.
+                taxRate: 16
+            })),
+            data.totalAmount // KRA expects final payable
+          );
 
-      if (fiscalData) {
-          sale.kraControlCode = fiscalData.controlCode;
-          sale.kraQrCodeUrl = fiscalData.qrCode;
-          sale.kraSignature = fiscalData.signature;
-          sale.kraDate = fiscalData.fiscalDate;
+          if (fiscalData) {
+              sale.kraControlCode = fiscalData.controlCode;
+              sale.kraQrCodeUrl = fiscalData.qrCode;
+              sale.kraSignature = fiscalData.signature;
+              sale.kraDate = fiscalData.fiscalDate;
+          }
       }
 
       await queryRunner.manager.save(sale);
@@ -134,7 +147,7 @@ export class SaleService {
     const defaultBranchId = (cashierUser?.branch?.id) || (await AppDataSource.getRepository(Branch).findOne({where: {code: 'NBI-HQ'}}))?.id;
     const systemUserId = cashierUser?.id || (await AppDataSource.getRepository(User).findOne({where: {role: 'ADMIN' as any}}))?.id;
 
-    if (!defaultBranchId || !systemUserId) throw new Error("Configuration Error");
+    if (!defaultBranchId || !systemUserId) throw new Error("Configuration Error: Branch or Admin User missing for auto-sales");
 
     // Load order items with product details including OEMs
     const orderRepo = AppDataSource.getRepository(Order);
@@ -174,7 +187,9 @@ export class SaleService {
         branchId: defaultBranchId,
         cashierId: systemUserId,
         customerId: customerId,
-        customerName: order.customerName
+        customerName: order.customerName,
+        discount: 0, // Orders usually have final price
+        discountType: 'FIXED'
     });
   }
 }

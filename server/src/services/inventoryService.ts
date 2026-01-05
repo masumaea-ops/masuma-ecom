@@ -23,7 +23,7 @@ export class InventoryService {
 
   static async updateStock(productId: string, branchId: string, quantity: number, operation: 'set' | 'add' | 'subtract') {
     let stockEntry = await this.stockRepo.findOne({
-      where: { product: { id: productId }, branch: { id: branchId } }
+      where: { product: { id: productId } as any, branch: { id: branchId } as any }
     });
 
     if (!stockEntry) {
@@ -56,7 +56,7 @@ export class InventoryService {
 
       // 1. Get Source Stock
       const sourceStock = await stockRepo.findOne({
-        where: { product: { id: productId }, branch: { id: fromBranchId } },
+        where: { product: { id: productId } as any, branch: { id: fromBranchId } as any },
         lock: { mode: 'pessimistic_write' }
       });
 
@@ -66,7 +66,7 @@ export class InventoryService {
 
       // 2. Get/Create Destination Stock
       let destStock = await stockRepo.findOne({
-        where: { product: { id: productId }, branch: { id: toBranchId } },
+        where: { product: { id: productId } as any, branch: { id: toBranchId } as any },
         lock: { mode: 'pessimistic_write' }
       });
 

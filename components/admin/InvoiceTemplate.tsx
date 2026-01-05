@@ -49,7 +49,7 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
   const isSale = (d: any): d is Sale => 'receiptNumber' in d;
   const isQuote = (d: any): d is Quote => 'quoteNumber' in d;
   
-  let docNumber, date, customer, items, total;
+  let docNumber, date, customer, items, total, discount = 0;
 
   if (isSale(data)) {
       docNumber = data.receiptNumber;
@@ -57,6 +57,7 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
       customer = data.customerName || 'Walk-in';
       items = (data as any).itemsSnapshot || [];
       total = data.totalAmount;
+      discount = data.discount || 0;
   } else if (isQuote(data)) {
       docNumber = data.quoteNumber;
       date = data.date || (data as any).createdAt;
@@ -71,6 +72,13 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
       total = data.total || (data as any).totalAmount;
   }
 
+  // Calculate Subtotal (Before Discount) if discount exists
+  // Total is the final amount paid
+  // If discount > 0, then Subtotal = Total + Discount (Simplified for display)
+  // Or Sum of items.
+  const itemSum = items.reduce((acc: number, item: any) => acc + (Number(item.price || item.unitPrice) * Number(item.qty || item.quantity)), 0);
+  
+  // Tax is calculated on the FINAL Total (Payable)
   const tax = Number(total) * 0.16;
   const net = Number(total) - tax;
 
@@ -137,6 +145,18 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
             <div className="border-b border-dashed border-black my-2"></div>
 
             <div className="space-y-1 text-[10px]">
+                {discount > 0 && (
+                    <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>{itemSum.toLocaleString()}</span>
+                    </div>
+                )}
+                {discount > 0 && (
+                    <div className="flex justify-between font-bold">
+                        <span>Discount:</span>
+                        <span>-{discount.toLocaleString()}</span>
+                    </div>
+                )}
                 <div className="flex justify-between">
                     <span>Net Amount:</span>
                     <span>{net.toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
@@ -251,8 +271,20 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
       {type !== 'WAYBILL' && (
           <div className="flex justify-end mb-12">
               <div className="w-1/2 md:w-1/3 space-y-3">
+                  {discount > 0 && (
+                      <div className="flex justify-between text-sm text-gray-600 border-b border-gray-100 pb-2">
+                          <span>Subtotal</span>
+                          <span className="font-mono">{itemSum.toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
+                      </div>
+                  )}
+                  {discount > 0 && (
+                      <div className="flex justify-between text-sm text-red-600 font-bold border-b border-gray-100 pb-2">
+                          <span>Discount Applied</span>
+                          <span className="font-mono">-{discount.toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
+                      </div>
+                  )}
                   <div className="flex justify-between text-sm text-gray-600 border-b border-gray-100 pb-2">
-                      <span>Subtotal (Excl. VAT)</span>
+                      <span>Net (Excl. VAT)</span>
                       <span className="font-mono">{net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-600 border-b border-gray-100 pb-2">

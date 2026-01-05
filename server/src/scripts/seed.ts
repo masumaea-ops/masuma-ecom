@@ -16,7 +16,6 @@ import { SystemSetting } from '../entities/SystemSetting';
 import { Customer } from '../entities/Customer';
 import { Sale } from '../entities/Sale';
 import { Order, OrderStatus } from '../entities/Order';
-import { OrderItem } from '../entities/OrderItem';
 import { Security } from '../utils/security';
 
 // --- 10 Sample Masuma Products ---
@@ -123,89 +122,10 @@ const PRODUCTS_DATA = [
   }
 ];
 
-// --- 5 Blog Posts ---
-const BLOG_DATA = [
-    {
-        title: 'Why Suspension Parts Fail Faster in Nairobi',
-        excerpt: 'The combination of potholes, speed bumps, and dust creates a harsh environment for bushings and shocks. Learn how Masuma reinforced parts extend lifespan.',
-        content: '<p>Driving in Nairobi is a test of endurance for any vehicle. The constant vibration from uneven surfaces causes standard rubber bushings to crack prematurely.</p><p>Masuma suspension parts use a high-density rubber compound specifically engineered for these conditions, offering 30% longer life than standard aftermarket alternatives.</p>',
-        image: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=800&q=80',
-        category: 'Maintenance',
-        readTime: '4 min read',
-        relatedProductCategory: 'Suspension'
-    },
-    {
-        title: 'Spotting Fake Oil Filters: A Guide',
-        excerpt: 'Counterfeit filters are flooding Kirinyaga Road. Here is how to identify a genuine Masuma filter and save your engine from catastrophe.',
-        content: '<p>A fake oil filter might look identical on the outside, but inside, the filtration media is often just cardboard. This leads to sludge buildup and eventual engine failure.</p><p>Genuine Masuma filters feature a hologram seal and a specific batch number printed on the canister. Always buy from authorized distributors.</p>',
-        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=800&q=80',
-        category: 'Advisory',
-        readTime: '3 min read',
-        relatedProductCategory: 'Filters'
-    },
-    {
-        title: 'Brake Pad Bedding-In Procedure',
-        excerpt: 'Just installed new pads? Do not slam on the brakes yet. Follow this procedure to ensure optimal stopping power and silence.',
-        content: '<p>Bedding-in transfers a layer of friction material to the rotor. Accelerate to 60kph, then brake moderately to 10kph. Repeat 10 times without coming to a complete stop.</p><p>This prevents squeaking and ensures your Masuma ceramic pads perform at their peak immediately.</p>',
-        image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80',
-        category: 'Technical',
-        readTime: '5 min read',
-        relatedProductCategory: 'Brakes'
-    },
-    {
-        title: 'When to Replace Your Wiper Blades',
-        excerpt: 'Don\'t wait for the rainy season. Streaking, squeaking, and skipping are signs your blades are dead. Masuma Hybrid blades offer the best solution.',
-        content: '<p>Rubber deteriorates in the African sun. If your wipers leave streaks or miss spots, they are a safety hazard. Masuma Hybrid blades combine the aerodynamics of a beam blade with the sturdy frame of a conventional blade, lasting 2x longer in tropical climates.</p>',
-        image: 'https://images.unsplash.com/photo-1517357216930-799640240eb0?auto=format&fit=crop&w=800&q=80',
-        category: 'Safety',
-        readTime: '2 min read',
-        relatedProductCategory: 'Wiper Blades'
-    },
-    {
-        title: 'Iridium vs. Nickel Spark Plugs',
-        excerpt: 'Is the extra cost worth it? We break down the mileage and performance benefits of upgrading to Masuma Iridium plugs.',
-        content: '<p>Standard nickel plugs last about 20,000 km. Masuma Iridium plugs can go up to 100,000 km. While they cost more upfront, the fuel savings and reduced misfires make them the smarter choice for Nairobi traffic where idling causes carbon buildup.</p>',
-        image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
-        category: 'Performance',
-        readTime: '4 min read',
-        relatedProductCategory: 'Engine & Ignition'
-    }
-];
-
-const HERO_SLIDES_DATA = [
-    {
-        id: 'slide-1',
-        title: 'JAPANESE\nPRECISION.\nKENYAN GRIT.',
-        subtitle: "Upgrade your ride with parts engineered to survive Nairobi's toughest roads. From suspension to filtration, choose the brand trusted by mechanics worldwide.",
-        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
-        ctaText: 'Browse Catalog',
-        ctaLink: 'CATALOG'
-    },
-    {
-        id: 'slide-2',
-        title: 'CERAMIC BRAKING\nPOWER.',
-        subtitle: 'Stop faster and quieter with Masuma Ceramic Brake Pads. Engineered for high heat resistance and low dust generation.',
-        image: 'https://masuma.com/wp-content/uploads/2021/09/MS-2444_1.jpg',
-        ctaText: 'Shop Brakes',
-        ctaLink: 'CATALOG'
-    },
-    {
-        id: 'slide-3',
-        title: 'REINFORCED\nSUSPENSION.',
-        subtitle: 'Bushings and joints designed for rough terrain. Restore your vehicle handling and comfort today.',
-        image: 'https://masuma.com/wp-content/uploads/2021/09/ML-3320_1.jpg',
-        ctaText: 'View Suspension',
-        ctaLink: 'CATALOG'
-    }
-];
-
 const seed = async () => {
   try {
-    // FORCE SYNC: Override production setting to create tables
-    AppDataSource.setOptions({ synchronize: true });
-
     await AppDataSource.initialize();
-    console.log('Database connected. Starting seed...');
+    console.log('Database connected. Starting seed / recovery...');
 
     // 1. Create Branch
     const branchRepo = AppDataSource.getRepository(Branch);
@@ -221,10 +141,10 @@ const seed = async () => {
         console.log('Branch created.');
     }
 
-    // 2a. Create or Update System Admin
+    // 2a. Reset or Create System Admin
     const userRepo = AppDataSource.getRepository(User);
     const adminEmail = 'admin@masuma.africa';
-    let admin = await userRepo.findOneBy({ email: adminEmail });
+    let admin = await userRepo.findOne({ where: { email: adminEmail } });
     const defaultPassword = 'password';
     const passwordHash = await Security.hashPassword(defaultPassword);
 
@@ -239,14 +159,15 @@ const seed = async () => {
         await userRepo.save(admin);
         console.log(`Admin user created (${adminEmail} / ${defaultPassword}).`);
     } else {
-        admin.passwordHash = passwordHash;
+        admin.passwordHash = passwordHash; // Reset password
+        admin.isActive = true;
         await userRepo.save(admin);
-        console.log(`Admin password reset to "${defaultPassword}".`);
+        console.log(`Admin password RECOVERY successful: reset to "${defaultPassword}".`);
     }
 
-    // 2b. Create Mbaru Tech Admin
+    // 2b. Reset or Create Mbaru Tech Admin
     const mbaruEmail = 'mbarutech@gmail.com';
-    let mbaruUser = await userRepo.findOneBy({ email: mbaruEmail });
+    let mbaruUser = await userRepo.findOne({ where: { email: mbaruEmail } });
     const mbaruPassword = 'jesuslord1J';
     const mbaruHash = await Security.hashPassword(mbaruPassword);
 
@@ -261,10 +182,11 @@ const seed = async () => {
         await userRepo.save(mbaruUser);
         console.log(`Second Admin user created: ${mbaruEmail}`);
     } else {
-        mbaruUser.passwordHash = mbaruHash;
+        mbaruUser.passwordHash = mbaruHash; // Reset password
         mbaruUser.role = UserRole.ADMIN; 
+        mbaruUser.isActive = true;
         await userRepo.save(mbaruUser);
-        console.log(`Security credentials updated for: ${mbaruEmail}`);
+        console.log(`Secondary Admin password RECOVERY successful: ${mbaruEmail}`);
     }
 
     // 3. Create Categories & Products
@@ -276,14 +198,12 @@ const seed = async () => {
     const savedProducts: Product[] = [];
 
     for (const pData of PRODUCTS_DATA) {
-        // Category
         let cat = await categoryRepo.findOneBy({ name: pData.category });
         if (!cat) {
             cat = categoryRepo.create({ name: pData.category });
             await categoryRepo.save(cat);
         }
 
-        // Product
         let product = await productRepo.findOneBy({ sku: pData.sku });
         if (!product) {
             product = new Product();
@@ -295,14 +215,12 @@ const seed = async () => {
             product.category = cat;
             product.imageUrl = pData.image;
             
-            // OEMs
             product.oemNumbers = pData.oems.map(code => {
                 const o = new OemNumber();
                 o.code = code;
                 return o;
             });
 
-            // Vehicles
             const vehicles = [];
             for (const vData of pData.fits) {
                 let v = await vehicleRepo.findOneBy({ make: vData.make, model: vData.model });
@@ -316,7 +234,6 @@ const seed = async () => {
 
             await productRepo.save(product);
             
-            // Initial Stock
             const stock = stockRepo.create({
                 product,
                 branch: hq,
@@ -325,104 +242,21 @@ const seed = async () => {
             });
             await stockRepo.save(stock);
             
-            console.log(`Created product: ${product.sku}`);
+            console.log(`Sync product: ${product.sku}`);
         }
         savedProducts.push(product);
     }
 
-    // 4. Create Blog Posts
-    const blogRepo = AppDataSource.getRepository(BlogPost);
-    for (const bData of BLOG_DATA) {
-        const exists = await blogRepo.findOneBy({ title: bData.title });
-        if (!exists) {
-            const post = blogRepo.create(bData);
-            await blogRepo.save(post);
-            console.log(`Created blog post: ${bData.title}`);
-        }
-    }
-
-    // 5. Seed Hero Slides
-    const settingsRepo = AppDataSource.getRepository(SystemSetting);
-    const existingSlides = await settingsRepo.findOneBy({ key: 'CMS_HERO_SLIDES' });
-    if (!existingSlides) {
-        const setting = new SystemSetting();
-        setting.key = 'CMS_HERO_SLIDES';
-        setting.value = JSON.stringify(HERO_SLIDES_DATA);
-        await settingsRepo.save(setting);
-        console.log('Created Default Hero Slides');
-    }
-
-    // 6. Seed Customers (New)
-    const customerRepo = AppDataSource.getRepository(Customer);
-    const customers = [
-        { name: 'John Kamau', phone: '0722123456', email: 'john@gmail.com' },
-        { name: 'Alice Wanjiku', phone: '0733654321', email: 'alice@yahoo.com' },
-        { name: 'AutoExpress Garage', phone: '0711000000', email: 'procurement@autoexpress.co.ke', isWholesale: true }
-    ];
-
-    const savedCustomers = [];
-    for (const cData of customers) {
-        let customer = await customerRepo.findOneBy({ phone: cData.phone });
-        if (!customer) {
-            customer = customerRepo.create(cData);
-            await customerRepo.save(customer);
-            console.log(`Created customer: ${cData.name}`);
-        }
-        savedCustomers.push(customer);
-    }
-
-    // 7. Seed Sales and Orders (New)
-    // Create a few dummy sales for the dashboard
-    const saleRepo = AppDataSource.getRepository(Sale);
-    const orderRepo = AppDataSource.getRepository(Order);
+    // Final Sync Message
+    console.log('\n✅ SYNC COMPLETE');
+    console.log('--- Access Credentials ---');
+    console.log(`1. ${adminEmail} : ${defaultPassword}`);
+    console.log(`2. ${mbaruEmail} : ${mbaruPassword}`);
+    console.log('--------------------------');
     
-    // Check if sales exist
-    const salesCount = await saleRepo.count();
-    if (salesCount === 0 && savedProducts.length > 0) {
-        console.log('Seeding initial sales data...');
-        
-        // Sale 1
-        const sale1 = new Sale();
-        sale1.receiptNumber = 'RCP-SEED-001';
-        sale1.branch = hq;
-        sale1.cashier = admin;
-        sale1.customer = savedCustomers[0];
-        sale1.customerName = savedCustomers[0].name;
-        sale1.paymentMethod = 'MPESA';
-        sale1.totalAmount = savedProducts[0].price * 2 + savedProducts[1].price;
-        sale1.netAmount = sale1.totalAmount / 1.16;
-        sale1.taxAmount = sale1.totalAmount - sale1.netAmount;
-        sale1.itemsCount = 2;
-        sale1.itemsSnapshot = [
-            { productId: savedProducts[0].id, name: savedProducts[0].name, quantity: 2, price: savedProducts[0].price },
-            { productId: savedProducts[1].id, name: savedProducts[1].name, quantity: 1, price: savedProducts[1].price }
-        ];
-        sale1.kraControlCode = 'KRA-SEED-001';
-        await saleRepo.save(sale1);
-
-        // Order 1 (Pending)
-        const order1 = new Order();
-        order1.orderNumber = 'ORD-SEED-001';
-        order1.customerName = 'David Odhiambo';
-        order1.customerEmail = 'david@gmail.com';
-        order1.customerPhone = '0700111222';
-        order1.status = OrderStatus.PENDING;
-        order1.totalAmount = savedProducts[2].price;
-        order1.shippingAddress = 'Westlands';
-        order1.items = [
-            { product: savedProducts[2], quantity: 1, price: savedProducts[2].price } as any
-        ];
-        await orderRepo.save(order1);
-
-        console.log('Sales and Orders seeded.');
-    }
-
-    console.log('Seeding complete.');
-    console.log('1. Admin: admin@masuma.africa / password');
-    console.log('2. Admin: mbarutech@gmail.com / jesuslord1J');
     (process as any).exit(0);
   } catch (error) {
-    console.error('Seeding failed:', error);
+    console.error('Seeding / Recovery failed:', error);
     (process as any).exit(1);
   }
 };

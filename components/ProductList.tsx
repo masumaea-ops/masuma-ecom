@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
 import { Search, AlertCircle, Eye, ShoppingBag, Plane, ChevronLeft, ChevronRight } from 'lucide-react';
-import QuickView from './QuickView';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
@@ -10,14 +9,14 @@ import SourcingModal from './SourcingModal';
 
 interface ProductListProps {
   addToCart: (product: Product, quantity?: number) => void;
+  onProductClick: (product: Product) => void;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
+const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) => {
   const [categories, setCategories] = useState<string[]>(['All']);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [vinFilter, setVinFilter] = useState('');
@@ -30,20 +29,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const ITEMS_PER_PAGE = 12;
-
-  // 1. Check for Deep Links on Mount
-  useEffect(() => {
-      const params = new URLSearchParams(window.location.search);
-      const deepLinkProductId = params.get('product');
-      
-      if (deepLinkProductId) {
-          apiClient.get(`/products/${deepLinkProductId}`)
-              .then((res: any) => {
-                  if (res.data) setSelectedProduct(res.data);
-              })
-              .catch((err: any) => console.error("Deep link product not found", err));
-      }
-  }, []);
 
   // Fetch Categories on Mount
   useEffect(() => {
@@ -123,9 +108,9 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
       }
   };
 
-  const handleProductClick = (e: React.MouseEvent, product: Product) => {
+  const handleCardClick = (e: React.MouseEvent, product: Product) => {
       e.preventDefault(); // Prevent full page reload
-      setSelectedProduct(product);
+      onProductClick(product); // Trigger global modal opening and URL update
   };
 
   const ProductSkeleton = () => (
@@ -142,13 +127,6 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
 
   return (
     <div id="product-list-top" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <QuickView 
-        product={selectedProduct} 
-        isOpen={!!selectedProduct} 
-        onClose={() => setSelectedProduct(null)} 
-        addToCart={addToCart}
-        onSwitchProduct={setSelectedProduct}
-      />
       <SourcingModal isOpen={isSourcingOpen} onClose={() => setIsSourcingOpen(false)} />
 
       <div className="mb-10 text-center md:text-left flex flex-col md:flex-row justify-between items-end">
@@ -243,7 +221,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                 <a 
                     key={product.id}
                     href={`/?product=${product.id}`}
-                    onClick={(e) => handleProductClick(e, product)}
+                    onClick={(e) => handleCardClick(e, product)}
                     className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm cursor-pointer block"
                 >
                 
@@ -290,8 +268,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart }) => {
                     <div className="mt-auto space-y-4">
                         <div className="p-3 bg-gray-50 rounded-sm border border-gray-100 h-14">
                             <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Fits:</p>
-                            <p className="text-xs text-gray-700 line-clamp-1" title={product.compatibility.join(', ')}>
-                                {product.compatibility.join(', ')}
+                            <p className="text-xs text-gray-700 line-clamp-1" title={(product.compatibility || []).join(', ')}>
+                                {(product.compatibility || []).join(', ')}
                             </p>
                         </div>
 

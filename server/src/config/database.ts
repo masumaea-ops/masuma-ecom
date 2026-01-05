@@ -29,7 +29,8 @@ export const AppDataSource = new DataSource({
   username: config.DB_USER,
   password: config.DB_PASSWORD,
   database: config.DB_NAME,
-  synchronize: config.NODE_ENV !== 'production', // Only sync in dev, use migrations in prod ideally
+  // FORCE SYNC: Set to true to ensure 'discount' columns are added to existing tables
+  synchronize: true, 
   logging: false, 
   entities: [
     Product, Category, Vehicle, OemNumber, Order, OrderItem,

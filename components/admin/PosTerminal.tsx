@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote, AlertTriangle, Send } from 'lucide-react';
+import { Search, Trash2, Plus, Minus, CreditCard, Printer, Save, CheckCircle, QrCode, User, X, Loader2, Smartphone, FileText, Banknote, AlertTriangle, Send, Percent, Tag, ChevronRight } from 'lucide-react';
 import { Product, Customer, Sale } from '../../types';
 import { apiClient } from '../../utils/apiClient';
 import InvoiceTemplate from './InvoiceTemplate';
 
-// Fallback interface in case Product import fails resolution
+// Robust local interface definition
 interface PosItem {
     id: string;
     name: string;
@@ -14,10 +14,8 @@ interface PosItem {
     wholesalePrice?: number;
     quantity?: number;
     oemNumbers?: string[];
-    // POS specific fields
     qty: number;
     appliedPrice: number;
-    // Allow any other props
     [key: string]: any;
 }
 
@@ -31,9 +29,14 @@ const PosTerminal: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     
-    // Payment State
+    // User Session State
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
+    // Payment & Discount State
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
     const [paymentReference, setPaymentReference] = useState('');
+    const [discountValue, setDiscountValue] = useState<string>(''); // Allow empty string for input
+    const [discountType, setDiscountType] = useState<'PERCENTAGE' | 'FIXED'>('FIXED');
     
     // M-Pesa Specific State
     const [mpesaPhone, setMpesaPhone] = useState('');
@@ -49,12 +52,15 @@ const PosTerminal: React.FC = () => {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const printRef = useRef<HTMLDivElement>(null);
 
-    // Initial load
+    // Initial load - Get User for Branch ID
     useEffect(() => {
-        if (isCustomerSearchOpen) {
-            handleSearchCustomer('');
+        const u = localStorage.getItem('masuma_user');
+        if (u) {
+            try {
+                setCurrentUser(JSON.parse(u));
+            } catch (e) { console.error('Failed to parse user session'); }
         }
-    }, [isCustomerSearchOpen]);
+    }, []);
 
     // Pre-fill phone if customer selected
     useEffect(() => {
@@ -64,6 +70,22 @@ const PosTerminal: React.FC = () => {
             setMpesaPhone('');
         }
     }, [customer]);
+
+    // Calculations
+    const subTotal = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
+    
+    let discountAmount = 0;
+    const numDiscount = parseFloat(discountValue) || 0;
+    
+    if (numDiscount > 0) {
+        if (discountType === 'PERCENTAGE') {
+            discountAmount = subTotal * (Math.min(numDiscount, 100) / 100);
+        } else {
+            discountAmount = Math.min(numDiscount, subTotal);
+        }
+    }
+    
+    const finalTotal = Math.max(0, subTotal - discountAmount);
 
     // Polling Logic for M-Pesa
     useEffect(() => {
@@ -76,7 +98,6 @@ const PosTerminal: React.FC = () => {
                     if (statusRes.data.status === 'PAID') {
                         clearInterval(interval);
                         
-                        // Give backend a moment to generate the Sale record from the Order
                         setTimeout(async () => {
                             try {
                                 const saleRes = await apiClient.get(`/sales/order/${pollingOrderNumber}`);
@@ -86,20 +107,20 @@ const PosTerminal: React.FC = () => {
                                 setPollingOrderId(null);
                                 setPollingOrderNumber(null);
                                 setWaitingForPayment(false);
+                                setDiscountValue('');
                                 
-                                // Auto Print Receipt
                                 setTimeout(() => window.print(), 800);
                             } catch (e) {
                                 console.error("Could not fetch generated sale", e);
-                                alert("Payment confirmed, but receipt generation is delayed. Please check Sales History.");
+                                alert("Payment confirmed, but receipt generation is delayed.");
                                 setWaitingForPayment(false);
                             }
-                        }, 1500); // Wait 1.5s for backend transaction to commit
+                        }, 1500); 
                     }
                 } catch (err) {
                     console.error("Polling error", err);
                 }
-            }, 3000); // Poll every 3 seconds
+            }, 3000); 
         }
         return () => clearInterval(interval);
     }, [waitingForPayment, pollingOrderId, pollingOrderNumber]);
@@ -128,16 +149,6 @@ const PosTerminal: React.FC = () => {
         const currentQty = cart.find(p => p.id === product.id)?.qty || 0;
         const maxStock = product.quantity || 0;
 
-        if (maxStock <= 0) {
-            alert('Item is Out of Stock!');
-            return;
-        }
-
-        if (currentQty >= maxStock) {
-            alert(`Cannot add more. Only ${maxStock} in stock.`);
-            return;
-        }
-
         setCart(prev => {
             const exists = prev.find(p => p.id === product.id);
             if (exists) {
@@ -147,18 +158,20 @@ const PosTerminal: React.FC = () => {
                           ? product.wholesalePrice 
                           : product.price;
 
-            // Explicitly map fields to PosItem to satisfy type checker
-            return [...prev, {
-                ...product, 
+            const newItem: PosItem = {
                 id: product.id,
                 name: product.name,
                 sku: product.sku,
                 price: product.price,
-                quantity: product.quantity,
                 wholesalePrice: product.wholesalePrice,
+                quantity: product.quantity,
+                oemNumbers: product.oemNumbers,
                 qty: 1, 
-                appliedPrice: price 
-            }];
+                appliedPrice: price,
+                ...product
+            };
+
+            return [...prev, newItem];
         });
         setSearchTerm('');
         setSearchResults([]);
@@ -169,12 +182,6 @@ const PosTerminal: React.FC = () => {
         setCart(prev => prev.map(p => {
             if (p.id === id) {
                 const newQty = p.qty + delta;
-                const maxStock = p.quantity || 9999;
-                
-                if (newQty > maxStock) {
-                    alert(`Maximum stock reached (${maxStock})`);
-                    return p;
-                }
                 return { ...p, qty: Math.max(1, newQty) };
             }
             return p;
@@ -198,10 +205,11 @@ const PosTerminal: React.FC = () => {
     const selectCustomer = (c: Customer) => {
         setCustomer(c);
         setIsCustomerSearchOpen(false);
+        setCustomerSearchTerm('');
         setCart(prev => prev.map(item => ({
             ...item,
             appliedPrice: (c.isWholesale && item.wholesalePrice) ? item.wholesalePrice : item.price
-        })));
+        } as PosItem)));
     };
 
     const handleUseCustomCustomer = () => {
@@ -225,7 +233,6 @@ const PosTerminal: React.FC = () => {
 
         setIsProcessing(true);
         try {
-            // Create Order & Trigger STK
             const res = await apiClient.post('/mpesa/pay', {
                 customerName: customer?.name || 'Walk-in Customer',
                 customerEmail: customer?.email || '',
@@ -249,6 +256,24 @@ const PosTerminal: React.FC = () => {
     };
 
     const handleCompleteSale = async () => {
+        let branchId = currentUser?.branch?.id;
+        
+        if (!branchId) {
+            try {
+                const branchRes = await apiClient.get('/branches');
+                if (branchRes.data && branchRes.data.length > 0) {
+                    branchId = branchRes.data[0].id;
+                }
+            } catch (e) {
+                console.error("Failed to fetch fallback branch");
+            }
+        }
+
+        if (!branchId) {
+            alert("Error: No Branch ID found. Please assign a branch to your user account or create a branch first.");
+            return;
+        }
+
         if (paymentMethod === 'MPESA') {
             if (paymentReference.length < 5) {
                 alert("Please enter a valid M-Pesa Transaction Code.");
@@ -262,8 +287,6 @@ const PosTerminal: React.FC = () => {
 
         setIsProcessing(true);
         try {
-            const totalAmount = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
-            
             const payload = {
                 items: cart.map(i => ({ 
                     productId: i.id, 
@@ -273,11 +296,14 @@ const PosTerminal: React.FC = () => {
                     sku: i.sku,
                     oem: (i.oemNumbers && i.oemNumbers.length > 0) ? i.oemNumbers[0] : ''
                 })),
-                totalAmount,
+                totalAmount: finalTotal,
+                discount: discountAmount,
+                discountType: discountType,
                 paymentMethod,
                 paymentDetails: { reference: paymentReference },
                 customerId: customer?.id === 'GUEST' ? undefined : customer?.id,
-                customerName: customer?.name
+                customerName: customer?.name,
+                branchId: branchId
             };
 
             const response = await apiClient.post('/sales', payload);
@@ -286,8 +312,8 @@ const PosTerminal: React.FC = () => {
             setCustomer(null);
             setPaymentMethod('CASH');
             setPaymentReference('');
+            setDiscountValue('');
             
-            // Auto Print
             setTimeout(() => window.print(), 500);
         } catch (error: any) {
             alert('Sale Failed: ' + (error.response?.data?.error || 'Network Error'));
@@ -302,9 +328,6 @@ const PosTerminal: React.FC = () => {
         }, 500);
     };
 
-    const total = cart.reduce((sum, item) => sum + (item.appliedPrice * item.qty), 0);
-
-    // Modal: Waiting for M-Pesa
     if (waitingForPayment) {
         return (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
@@ -321,7 +344,7 @@ const PosTerminal: React.FC = () => {
                     </p>
                     <div className="bg-gray-100 p-3 rounded mb-6">
                         <p className="text-xs font-bold text-gray-500 uppercase">Amount Due</p>
-                        <p className="text-2xl font-bold text-masuma-dark">KES {total.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-masuma-dark">KES {finalTotal.toLocaleString()}</p>
                     </div>
                     <button 
                         onClick={() => setWaitingForPayment(false)}
@@ -337,7 +360,6 @@ const PosTerminal: React.FC = () => {
     if (lastSale) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-100px)] animate-scale-up">
-                {/* Hidden Print Container - Forces 80mm Receipt layout */}
                 <div className="hidden print-force-container">
                     <InvoiceTemplate data={lastSale} type="RECEIPT" ref={printRef} />
                 </div>
@@ -373,237 +395,252 @@ const PosTerminal: React.FC = () => {
     }
 
     return (
-        <div className="flex h-[calc(100vh-100px)] gap-6 font-sans">
+        <div className="flex h-[calc(100vh-100px)] gap-4 font-sans">
             {/* Left: Product Selection */}
             <div className="flex-1 flex flex-col bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200 flex gap-4">
+                <div className="p-3 border-b border-gray-200 flex gap-4 bg-gray-50">
                     <div className="relative flex-1">
                         <input 
                             ref={searchInputRef}
                             type="text" 
-                            className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-transparent focus:bg-white focus:border-masuma-orange outline-none rounded"
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 focus:border-masuma-orange outline-none rounded text-sm"
                             placeholder="Scan barcode or search SKU / Name..."
                             value={searchTerm}
                             onChange={(e) => handleProductSearch(e.target.value)}
                             autoFocus
                         />
-                        <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                        <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
                     {isSearching ? (
                          <div className="flex justify-center pt-10"><Loader2 className="animate-spin text-masuma-orange"/></div>
                     ) : searchTerm ? (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             {searchResults.map(p => {
                                 const isOutOfStock = (p.quantity || 0) <= 0;
                                 return (
                                     <div 
                                         key={p.id} 
-                                        onClick={() => !isOutOfStock && addToCart(p)}
-                                        className={`p-3 border rounded transition group relative ${
+                                        onClick={() => addToCart(p)}
+                                        className={`p-3 border rounded transition group relative cursor-pointer flex flex-col justify-between h-full hover:shadow-md ${
                                             isOutOfStock 
-                                                ? 'border-red-100 bg-red-50 cursor-not-allowed opacity-80' 
-                                                : 'border-gray-200 hover:border-masuma-orange cursor-pointer bg-gray-50 hover:bg-white'
+                                                ? 'border-red-100 bg-red-50 hover:bg-red-100' 
+                                                : 'border-gray-200 hover:border-masuma-orange bg-white'
                                         }`}
                                     >
-                                        <div className="flex justify-between items-start mb-1">
-                                            <div className="text-xs font-bold text-gray-500">{p.sku}</div>
-                                            {isOutOfStock && (
-                                                <span className="bg-red-600 text-white text-[9px] font-bold px-1.5 rounded uppercase flex items-center gap-1">
-                                                    <AlertTriangle size={8} /> Sold Out
-                                                </span>
-                                            )}
+                                        <div>
+                                            <div className="flex justify-between items-start mb-1">
+                                                <div className="text-[10px] font-bold text-gray-500 font-mono bg-gray-100 px-1 rounded">{p.sku}</div>
+                                                {isOutOfStock && (
+                                                    <span className="bg-red-600 text-white text-[9px] font-bold px-1.5 rounded uppercase flex items-center gap-1">
+                                                        <AlertTriangle size={8} />
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="font-bold text-xs text-masuma-dark line-clamp-2 leading-tight mb-2" title={p.name}>{p.name}</div>
                                         </div>
-                                        <div className="font-bold text-sm text-masuma-dark line-clamp-2 h-10 leading-tight">{p.name}</div>
-                                        <div className="mt-2 flex justify-between items-end">
-                                            <div className="text-masuma-orange font-bold">KES {p.price.toLocaleString()}</div>
+                                        <div className="mt-auto flex justify-between items-end">
+                                            <div className="text-masuma-orange font-bold text-sm">{(p.price).toLocaleString()}</div>
                                             <div className="text-[10px] text-gray-400 font-bold">{p.quantity} left</div>
                                         </div>
                                     </div>
                                 );
                             })}
-                            {searchResults.length === 0 && <div className="col-span-3 text-center text-gray-400">No products found</div>}
+                            {searchResults.length === 0 && <div className="col-span-full text-center text-gray-400 py-10">No products found</div>}
                         </div>
                     ) : (
                          <div className="flex flex-col items-center justify-center h-full text-gray-400">
                             <Search size={48} className="mb-4 opacity-20" />
-                            <p>Start typing to search inventory</p>
+                            <p className="text-sm">Start typing to search inventory</p>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Right: Cart & Checkout */}
-            <div className="w-96 flex flex-col bg-white rounded shadow-sm border border-gray-200 overflow-hidden relative">
-                <div className="p-4 bg-masuma-dark text-white border-b border-gray-800 flex justify-between items-center">
-                    <h3 className="font-bold uppercase tracking-wider">Current Sale</h3>
-                    <span className="bg-masuma-orange px-2 py-1 text-xs rounded font-bold">{cart.length} Items</span>
+            {/* Right: Cart & Checkout (Restored Width and Structure) */}
+            <div className="w-[380px] flex-shrink-0 flex flex-col bg-white rounded shadow-sm border border-gray-200 overflow-hidden relative">
+                
+                {/* Header */}
+                <div className="p-3 bg-masuma-dark text-white border-b border-gray-800 flex justify-between items-center">
+                    <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                        Current Sale
+                    </h3>
+                    <div className="text-right">
+                        <span className="bg-masuma-orange px-2 py-0.5 text-[10px] rounded font-bold">{cart.length} Items</span>
+                    </div>
                 </div>
 
-                <div className="p-3 border-b border-gray-200 bg-gray-50">
+                {/* Customer Section - Simplified & Fixed */}
+                <div className="p-3 border-b border-gray-200 bg-gray-50 relative z-20">
                     {!customer ? (
-                        <button 
-                            onClick={() => setIsCustomerSearchOpen(true)}
-                            className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-500 text-xs font-bold uppercase hover:border-masuma-orange hover:text-masuma-orange transition flex items-center justify-center gap-2"
-                        >
-                            <User size={16} /> Select Customer
-                        </button>
+                        <div className="relative">
+                            <button 
+                                onClick={() => { setIsCustomerSearchOpen(true); setTimeout(() => document.getElementById('cust-search')?.focus(), 100); }}
+                                className={`w-full py-2 border border-dashed border-gray-300 rounded text-gray-500 text-xs font-bold uppercase hover:border-masuma-orange hover:text-masuma-orange transition flex items-center justify-center gap-2 bg-white ${isCustomerSearchOpen ? 'hidden' : ''}`}
+                            >
+                                <User size={14} /> Add Customer
+                            </button>
+                            
+                            {isCustomerSearchOpen && (
+                                <div className="absolute top-0 left-0 w-full bg-white shadow-lg border border-gray-200 rounded z-30">
+                                    <div className="flex items-center border-b border-gray-100 p-2">
+                                        <Search size={14} className="text-gray-400 mr-2"/>
+                                        <input 
+                                            id="cust-search"
+                                            type="text" 
+                                            className="w-full text-sm outline-none"
+                                            placeholder="Search Name / Phone..."
+                                            value={customerSearchTerm}
+                                            onChange={(e) => handleSearchCustomer(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <button onClick={() => setIsCustomerSearchOpen(false)}><X size={14} className="text-gray-400 hover:text-red-500"/></button>
+                                    </div>
+                                    <div className="max-h-48 overflow-y-auto bg-white">
+                                        {foundCustomers.map(c => (
+                                            <div 
+                                                key={c.id} 
+                                                onClick={() => selectCustomer(c)}
+                                                className="p-2 hover:bg-orange-50 cursor-pointer border-b border-gray-50 last:border-0"
+                                            >
+                                                <div className="font-bold text-xs text-gray-800">{c.name}</div>
+                                                <div className="flex justify-between items-center mt-1">
+                                                    <span className="text-[10px] text-gray-500">{c.phone}</span>
+                                                    {c.isWholesale && <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded font-bold">B2B</span>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {customerSearchTerm && (
+                                            <div 
+                                                onClick={handleUseCustomCustomer}
+                                                className="p-2 hover:bg-gray-100 cursor-pointer text-xs font-bold text-masuma-orange flex items-center gap-2 border-t border-gray-100"
+                                            >
+                                                <Plus size={12}/> Walk-in: "{customerSearchTerm}"
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     ) : (
-                        <div className="flex justify-between items-center bg-white border border-gray-200 p-2 rounded">
+                        <div className="flex justify-between items-center bg-white border border-green-200 p-2 rounded shadow-sm">
                              <div className="flex flex-col">
-                                 <span className="text-xs font-bold text-masuma-dark">{customer.name}</span>
-                                 {customer.isWholesale ? (
-                                     <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded w-fit font-bold uppercase">Wholesale</span>
-                                 ) : (
-                                     <span className="text-[9px] text-gray-400 uppercase">Retail / Walk-in</span>
-                                 )}
+                                 <span className="text-xs font-bold text-masuma-dark flex items-center gap-1"><User size={12} className="text-gray-400"/> {customer.name}</span>
+                                 <div className="flex items-center gap-2 mt-0.5">
+                                     {customer.isWholesale ? (
+                                         <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded font-bold uppercase">B2B</span>
+                                     ) : (
+                                         <span className="text-[9px] text-gray-500">Walk-in</span>
+                                     )}
+                                     <span className="text-[9px] text-gray-400">{customer.phone}</span>
+                                 </div>
                              </div>
-                             <button onClick={() => { setCustomer(null); setIsCustomerSearchOpen(false); }} className="text-gray-400 hover:text-red-500"><X size={16} /></button>
+                             <button onClick={() => setCustomer(null)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded"><X size={14} /></button>
                         </div>
                     )}
                 </div>
 
-                {isCustomerSearchOpen && !customer && (
-                    <div className="absolute top-[116px] left-0 w-full bg-white shadow-xl border-b border-gray-200 z-10 p-2 animate-slide-up">
-                        <input 
-                            type="text" 
-                            autoFocus
-                            placeholder="Search Customer..."
-                            className="w-full p-2 border border-gray-300 rounded text-sm mb-2"
-                            value={customerSearchTerm}
-                            onChange={(e) => handleSearchCustomer(e.target.value)}
-                        />
-                        <div className="max-h-40 overflow-y-auto space-y-1">
-                            {foundCustomers.map(c => (
-                                <div 
-                                    key={c.id} 
-                                    onClick={() => selectCustomer(c)}
-                                    className="p-2 hover:bg-gray-100 cursor-pointer rounded text-sm flex justify-between items-center"
-                                >
-                                    <span className="font-bold text-gray-700">{c.name}</span>
-                                    {c.isWholesale && <span className="text-purple-600 text-xs font-bold bg-purple-50 px-1 rounded">B2B</span>}
-                                </div>
-                            ))}
-                            
-                            {/* Option to use custom name without DB */}
-                            {customerSearchTerm && (
-                                <div 
-                                    onClick={handleUseCustomCustomer}
-                                    className="p-2 hover:bg-orange-50 cursor-pointer rounded text-sm flex items-center gap-2 text-masuma-orange border-t border-gray-100 mt-1"
-                                >
-                                    <Plus size={14} />
-                                    <span className="font-bold">Use "{customerSearchTerm}" (Walk-in)</span>
-                                </div>
-                            )}
-
-                            {foundCustomers.length === 0 && !customerSearchTerm && <p className="text-xs text-gray-400 text-center p-2">Start typing to search...</p>}
-                        </div>
-                        <button onClick={() => setIsCustomerSearchOpen(false)} className="w-full text-center text-xs text-red-500 mt-2 py-1 hover:bg-red-50 font-bold uppercase">Cancel</button>
-                    </div>
-                )}
-
-                <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">
+                {/* Cart Items List - Ensure it takes available space */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white min-h-0">
                     {cart.map((item, idx) => (
-                        <div key={idx} className="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center">
-                            <div className="flex-1">
-                                <div className="text-xs font-bold text-gray-800">{item.name}</div>
-                                <div className="text-[10px] text-gray-500">{item.sku}</div>
+                        <div key={idx} className="bg-white p-2 rounded border border-gray-100 hover:border-gray-300 flex justify-between items-start group shadow-sm">
+                            <div className="flex-1 pr-2 min-w-0">
+                                <div className="text-xs font-bold text-gray-800 leading-tight mb-1 break-words">{item.name}</div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-mono bg-gray-50 text-gray-500 px-1 rounded">{item.sku}</span>
+                                    <span className="text-[9px] text-gray-400">@ {item.appliedPrice.toLocaleString()}</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3 mx-2">
-                                <button onClick={() => updateQty(item.id, -1)} className="p-1 bg-gray-100 hover:bg-gray-200 rounded"><Minus size={12} /></button>
-                                <span className="text-sm font-bold w-4 text-center">{item.qty}</span>
-                                <button onClick={() => updateQty(item.id, 1)} className="p-1 bg-gray-100 hover:bg-gray-200 rounded"><Plus size={12} /></button>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-sm font-bold text-masuma-dark">{(item.appliedPrice * item.qty).toLocaleString()}</div>
-                                <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600 mt-1"><Trash2 size={12} /></button>
+                            <div className="flex flex-col items-end gap-1">
+                                <div className="text-xs font-bold text-masuma-dark">{(item.appliedPrice * item.qty).toLocaleString()}</div>
+                                <div className="flex items-center border border-gray-200 rounded bg-gray-50">
+                                    <button onClick={() => updateQty(item.id, -1)} className="px-1.5 hover:bg-gray-200 text-gray-500"><Minus size={10} /></button>
+                                    <span className="text-[10px] font-bold w-5 text-center bg-white">{item.qty}</span>
+                                    <button onClick={() => updateQty(item.id, 1)} className="px-1.5 hover:bg-gray-200 text-gray-500"><Plus size={10} /></button>
+                                </div>
+                                <button 
+                                    onClick={() => removeFromCart(item.id)} 
+                                    className="text-gray-300 hover:text-red-500 transition mt-1"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
                             </div>
                         </div>
                     ))}
+                    {cart.length === 0 && (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-300">
+                            <Search size={32} className="mb-2 opacity-50" />
+                            <p className="text-xs font-bold uppercase">Cart Empty</p>
+                        </div>
+                    )}
                 </div>
 
-                <div className="p-4 border-t border-gray-200 bg-white space-y-3">
-                    {/* Payment Selector */}
+                {/* Footer Controls - Compact */}
+                <div className="p-3 border-t border-gray-200 bg-gray-50 space-y-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+                    
+                    {/* Discount */}
+                    <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-gray-200">
+                        <Tag size={12} className="text-gray-400 ml-1" />
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">Disc:</span>
+                        <input 
+                            type="number" 
+                            className="w-full text-xs outline-none bg-transparent"
+                            placeholder="0"
+                            value={discountValue}
+                            onChange={e => setDiscountValue(e.target.value)}
+                        />
+                        <div className="flex border-l pl-1 gap-1">
+                            <button onClick={() => setDiscountType('PERCENTAGE')} className={`text-[9px] px-1 rounded ${discountType === 'PERCENTAGE' ? 'bg-masuma-dark text-white' : 'text-gray-400'}`}>%</button>
+                            <button onClick={() => setDiscountType('FIXED')} className={`text-[9px] px-1 rounded ${discountType === 'FIXED' ? 'bg-masuma-dark text-white' : 'text-gray-400'}`}>KES</button>
+                        </div>
+                    </div>
+
+                    {/* Compact Totals */}
+                    <div className="flex justify-between items-end border-b border-gray-200 pb-2">
+                        <div className="text-[10px] text-gray-500">
+                            <div>Sub: {subTotal.toLocaleString()}</div>
+                            {discountAmount > 0 && <div className="text-green-600 font-bold">Disc: -{discountAmount.toLocaleString()}</div>}
+                        </div>
+                        <div className="text-right">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase mr-2">Total</span>
+                            <span className="text-xl font-bold text-masuma-dark tracking-tight">KES {finalTotal.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    {/* Payment Types - Small Buttons */}
                     <div className="grid grid-cols-3 gap-2">
-                        <button 
-                            onClick={() => setPaymentMethod('CASH')} 
-                            className={`p-2 text-[10px] font-bold uppercase border rounded flex flex-col items-center gap-1 ${paymentMethod === 'CASH' ? 'bg-masuma-dark text-white border-masuma-dark' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
-                        >
-                            <Banknote size={16} /> Cash
+                        <button onClick={() => setPaymentMethod('CASH')} className={`py-1.5 border rounded flex flex-col items-center justify-center transition ${paymentMethod === 'CASH' ? 'bg-masuma-dark text-white border-masuma-dark' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
+                            <span className="text-[10px] font-bold uppercase">Cash</span>
                         </button>
-                        <button 
-                            onClick={() => setPaymentMethod('MPESA')} 
-                            className={`p-2 text-[10px] font-bold uppercase border rounded flex flex-col items-center gap-1 ${paymentMethod === 'MPESA' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
-                        >
-                            <Smartphone size={16} /> M-Pesa
+                        <button onClick={() => setPaymentMethod('MPESA')} className={`py-1.5 border rounded flex flex-col items-center justify-center transition ${paymentMethod === 'MPESA' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
+                            <span className="text-[10px] font-bold uppercase">M-Pesa</span>
                         </button>
-                        <button 
-                            onClick={() => setPaymentMethod('CHEQUE')} 
-                            className={`p-2 text-[10px] font-bold uppercase border rounded flex flex-col items-center gap-1 ${paymentMethod === 'CHEQUE' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
-                        >
-                            <FileText size={16} /> Cheque
+                        <button onClick={() => setPaymentMethod('CHEQUE')} className={`py-1.5 border rounded flex flex-col items-center justify-center transition ${paymentMethod === 'CHEQUE' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
+                            <span className="text-[10px] font-bold uppercase">Cheque</span>
                         </button>
                     </div>
 
-                    {/* M-Pesa Automation Inputs */}
+                    {/* Conditional Inputs */}
                     {paymentMethod === 'MPESA' && (
-                        <div className="animate-fade-in bg-green-50 p-2 rounded border border-green-100">
-                            <div className="flex gap-2">
-                                <input 
-                                    type="tel" 
-                                    value={mpesaPhone}
-                                    onChange={e => setMpesaPhone(e.target.value)}
-                                    placeholder="Enter Phone Number (07...)"
-                                    className="flex-1 p-2 border border-green-200 rounded text-sm outline-none focus:border-green-500"
-                                />
-                                <button 
-                                    onClick={handleInitiateStkPush}
-                                    disabled={isProcessing || cart.length === 0}
-                                    className="bg-green-600 text-white px-3 py-2 rounded font-bold text-xs uppercase hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
-                                >
-                                    {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} STK Push
-                                </button>
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                                <div className="h-px bg-green-200 flex-1"></div>
-                                <span className="text-[10px] text-green-700 font-bold uppercase">OR Manual Code</span>
-                                <div className="h-px bg-green-200 flex-1"></div>
-                            </div>
-                            <input 
-                                type="text" 
-                                value={paymentReference}
-                                onChange={e => setPaymentReference(e.target.value.toUpperCase())}
-                                placeholder="Enter Transaction Code"
-                                className="w-full p-2 border border-green-200 rounded text-sm font-mono uppercase outline-none mt-2"
-                            />
+                        <div className="flex gap-1 animate-fade-in">
+                            <input type="tel" value={mpesaPhone} onChange={e => setMpesaPhone(e.target.value)} placeholder="07..." className="flex-1 p-1.5 border rounded text-xs outline-none" />
+                            <input type="text" value={paymentReference} onChange={e => setPaymentReference(e.target.value.toUpperCase())} placeholder="Ref Code" className="w-20 p-1.5 border rounded text-xs outline-none uppercase" />
+                            <button onClick={handleInitiateStkPush} disabled={isProcessing || cart.length === 0} className="bg-green-600 text-white px-2 rounded hover:bg-green-700 disabled:opacity-50"><Send size={12}/></button>
                         </div>
                     )}
-
-                    {/* Cheque / Manual Inputs */}
                     {paymentMethod === 'CHEQUE' && (
-                        <div className="animate-fade-in">
-                            <input 
-                                type="text" 
-                                value={paymentReference}
-                                onChange={e => setPaymentReference(e.target.value.toUpperCase())}
-                                placeholder="Enter Cheque Number"
-                                className="w-full p-2 border-2 border-masuma-orange rounded text-sm font-mono uppercase outline-none"
-                            />
-                        </div>
+                        <input type="text" value={paymentReference} onChange={e => setPaymentReference(e.target.value.toUpperCase())} placeholder="Cheque Number" className="w-full p-1.5 border rounded text-xs outline-none uppercase animate-fade-in" />
                     )}
 
-                    <div className="flex justify-between text-lg font-bold text-masuma-dark pt-2">
-                        <span>Total</span>
-                        <span>KES {total.toLocaleString()}</span>
-                    </div>
+                    {/* Complete Sale Button */}
                     <button 
                         onClick={handleCompleteSale}
                         disabled={cart.length === 0 || isProcessing}
-                        className="w-full flex items-center justify-center gap-2 bg-masuma-orange text-white py-4 rounded font-bold hover:bg-orange-600 uppercase tracking-widest shadow-lg disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 bg-masuma-orange text-white py-3 rounded font-bold hover:bg-orange-600 uppercase tracking-widest shadow disabled:opacity-50 transition-all text-xs"
                     >
-                        {isProcessing ? 'Processing...' : <><Printer size={20} /> Complete Sale</>}
+                        {isProcessing ? 'Processing...' : <><Printer size={16} /> Complete Sale</>}
                     </button>
                 </div>
             </div>

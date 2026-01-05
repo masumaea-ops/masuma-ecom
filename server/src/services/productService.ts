@@ -86,17 +86,40 @@ export class ProductService {
         quantity: p.stock?.reduce((sum, s) => sum + s.quantity, 0) || 0,
         stock: p.stock?.some(s => s.quantity > 0) || false, 
         oemNumbers: p.oemNumbers?.map(o => o.code) || [],
-        compatibility: p.vehicles?.map(v => `${v.make} ${v.model}`) || []
+        // FIX: Hide "Generic" make from display
+        compatibility: p.vehicles?.map(v => v.make === 'Generic' ? v.model : `${v.make} ${v.model}`) || []
       }));
 
       return { data, meta: { total, page, limit, pages: Math.ceil(total / limit) } };
   }
 
   static async getProductById(id: string) {
-    return this.productRepo.findOne({
+    const p = await this.productRepo.findOne({
       where: { id },
       relations: ['category', 'oemNumbers', 'vehicles', 'stock']
     });
+
+    if (!p) return null;
+
+    // Transform to DTO structure matching frontend expectation
+    return {
+      id: p.id,
+      name: p.name,
+      sku: p.sku,
+      category: p.category?.name || 'Uncategorized',
+      price: Number(p.price),
+      costPrice: Number(p.costPrice),
+      wholesalePrice: Number(p.wholesalePrice || 0),
+      description: p.description,
+      image: p.imageUrl || '',
+      images: p.images || [],
+      videoUrl: p.videoUrl || '',
+      quantity: p.stock?.reduce((sum, s) => sum + s.quantity, 0) || 0,
+      stock: p.stock?.some(s => s.quantity > 0) || false,
+      oemNumbers: p.oemNumbers?.map(o => o.code) || [],
+      // FIX: Hide "Generic" make from display
+      compatibility: p.vehicles?.map(v => v.make === 'Generic' ? v.model : `${v.make} ${v.model}`) || []
+    };
   }
 
   static async createProduct(data: any) {
@@ -170,7 +193,7 @@ export class ProductService {
     if (data.videoUrl !== undefined) product.videoUrl = data.videoUrl;
 
     if (data.oemNumbers && Array.isArray(data.oemNumbers)) {
-        await AppDataSource.getRepository(OemNumber).delete({ product: { id: product.id } });
+        await AppDataSource.getRepository(OemNumber).delete({ product: { id: product.id } } as any);
         product.oemNumbers = data.oemNumbers.map((code: string) => {
           const oem = new OemNumber();
           oem.code = code;
@@ -187,7 +210,7 @@ export class ProductService {
     // --- ACTIVE SYNC: Update Stock Quantity ---
     if (data.quantity !== undefined && data.branchId) {
         let stock = await this.stockRepo.findOne({
-            where: { product: { id: product.id }, branch: { id: data.branchId } }
+            where: { product: { id: product.id } as any, branch: { id: data.branchId } as any }
         });
 
         if (!stock) {
@@ -220,10 +243,10 @@ export class ProductService {
 
       // 1. Manually delete dependencies that restrict deletion
       // Delete Stock entries first (Fixes Foreign Key Constraint Error)
-      await queryRunner.manager.delete(ProductStock, { product: { id: id } });
+      await queryRunner.manager.delete(ProductStock, { product: { id: id } } as any);
       
       // Delete OemNumbers (Good practice to clean up explicitly)
-      await queryRunner.manager.delete(OemNumber, { product: { id: id } });
+      await queryRunner.manager.delete(OemNumber, { product: { id: id } } as any);
 
       // 2. Delete the Product
       await queryRunner.manager.remove(product);
