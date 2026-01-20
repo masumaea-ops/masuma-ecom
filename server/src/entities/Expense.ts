@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
 import { User } from './User';
 import { Branch } from './Branch';
@@ -22,7 +21,7 @@ export class Expense {
   @Column()
   title!: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 16, scale: 2 })
   amount!: number;
 
   @Column({

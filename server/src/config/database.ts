@@ -1,27 +1,13 @@
-
+import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { config } from './env'; // Import validates env vars first
-import { Product } from '../entities/Product';
-import { Category } from '../entities/Category';
-import { Vehicle } from '../entities/Vehicle';
-import { OemNumber } from '../entities/OemNumber';
-import { Order } from '../entities/Order';
-import { OrderItem } from '../entities/OrderItem';
-import { MpesaTransaction } from '../entities/MpesaTransaction';
-import { Branch } from '../entities/Branch';
-import { User } from '../entities/User';
-import { Customer } from '../entities/Customer';
-import { ProductStock } from '../entities/ProductStock';
-import { Quote } from '../entities/Quote';
-import { Sale } from '../entities/Sale';
-import { BlogPost } from '../entities/BlogPost';
-import { AuditLog } from '../entities/AuditLog';
-import { SystemSetting } from '../entities/SystemSetting';
-import { Payment } from '../entities/Payment';
-import { Expense } from '../entities/Expense';
+import path from 'path';
+import { config } from './env'; 
 
-console.log(`🔌 Connecting to Database: ${config.DB_USER}@${config.DB_HOST}:${config.DB_PORT}/${config.DB_NAME}`);
+// Fix for __dirname in Node.js environment with TypeScript
+declare const __dirname: string;
 
+// We use a glob pattern for entities to ensure all entities are correctly 
+// discovered and registered in both development (TS) and production (JS)
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: config.DB_HOST,
@@ -29,13 +15,10 @@ export const AppDataSource = new DataSource({
   username: config.DB_USER,
   password: config.DB_PASSWORD,
   database: config.DB_NAME,
-  // FORCE SYNC: Set to true to ensure 'discount' columns are added to existing tables
   synchronize: true, 
   logging: false, 
   entities: [
-    Product, Category, Vehicle, OemNumber, Order, OrderItem,
-    MpesaTransaction, Branch, User, Customer, ProductStock,
-    Quote, Sale, BlogPost, AuditLog, SystemSetting, Payment, Expense
+    path.join(__dirname, '../entities/**/*.{ts,js}')
   ],
   subscribers: [],
   migrations: [],
@@ -43,7 +26,6 @@ export const AppDataSource = new DataSource({
     connectionLimit: 10,
     waitForConnections: true,
     queueLimit: 0,
-    // Critical for preventing "PROTOCOL_CONNECTION_LOST" in PM2 environments
     enableKeepAlive: true, 
     keepAliveInitialDelay: 10000 
   }

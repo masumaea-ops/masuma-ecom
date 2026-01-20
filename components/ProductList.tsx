@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
 import { Search, AlertCircle, Eye, ShoppingBag, Plane, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -227,7 +226,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                 
                 <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
                     <img 
-                    src={(product as any).images?.[0] || product.image} 
+                    src={product.image || (product as any).images?.[0]} 
                     alt={product.name} 
                     className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-700 ease-out"
                     onError={(e) => {

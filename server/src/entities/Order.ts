@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne } from 'typeorm';
 import { OrderItem } from './OrderItem';
 import { MpesaTransaction } from './MpesaTransaction';
@@ -36,13 +35,13 @@ export class Order {
   @Column({ nullable: true })
   shippingAddress?: string;
 
-  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, transformer: new ColumnNumericTransformer() })
   totalAmount!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   amountPaid!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   balance!: number;
 
   @Column({ default: 'MANUAL' })

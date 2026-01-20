@@ -29,11 +29,14 @@ import B2BPortal from './components/admin/B2BPortal';
 import ShippingManager from './components/admin/ShippingManager';
 import FinanceManager from './components/admin/FinanceManager';
 import CategoryManager from './components/admin/CategoryManager';
+import SubscriberManager from './components/admin/SubscriberManager';
 import PartFinder from './components/PartFinder';
 import Blog from './components/Blog';
 import Contact from './components/Contact';
 import About from './components/About';
 import WarrantyPolicy from './components/WarrantyPolicy';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
 import Toast, { ToastType } from './components/Toast';
 import SEO from './components/SEO';
 import QuickView from './components/QuickView';
@@ -131,6 +134,7 @@ const App: React.FC = () => {
                 case 'orders': return <OrderManager />;
                 case 'sales_history': return <SalesHistory />;
                 case 'customers': return <CustomerManager />;
+                case 'subscribers': return <SubscriberManager />;
                 case 'mpesa': return <MpesaLogs />;
                 case 'users': return <UserManager />;
                 case 'audit': return <AuditLogs />;
@@ -190,6 +194,8 @@ const App: React.FC = () => {
             {view === 'ABOUT' && <About setView={setView} />}
             {view === 'CONTACT' && <Contact />}
             {view === 'WARRANTY' && <WarrantyPolicy />}
+            {view === 'PRIVACY' && <PrivacyPolicy />}
+            {view === 'TERMS' && <TermsOfService />}
             </main>
             <Footer setView={setView} />
             <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={(id) => setCart(cart.filter(i => i.id !== id))} onCheckout={clearCart} updateQuantity={(id, q) => setCart(cart.map(i => i.id === id ? {...i, quantity: q} : i))} />

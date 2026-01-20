@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { ProductService } from '../services/productService';
 import { validate } from '../middleware/validate';
@@ -10,12 +9,10 @@ import { Category } from '../entities/Category';
 import { ProductStock } from '../entities/ProductStock';
 import { Branch } from '../entities/Branch';
 import { OemNumber } from '../entities/OemNumber';
-import { Vehicle } from '../entities/Vehicle'; 
 import { createProductSchema, updateProductSchema } from '../schemas/product.schema';
 
 const router = Router();
 
-// GET /api/products
 router.get('/', async (req, res) => {
     try {
         const query = req.query.q as string || '';
@@ -26,25 +23,72 @@ router.get('/', async (req, res) => {
         const result = await ProductService.getAllProducts(query, category, page, limit);
         res.json(result); 
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Failed to fetch products' });
     }
 });
 
-// GET /api/products/sku/:sku
-router.get('/sku/:sku', async (req, res) => {
+router.post('/bulk/clear-all', authenticate, authorize(['ADMIN']), async (req, res) => {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-        const products = await ProductService.getAllProducts(req.params.sku);
-        const product = (products as any).data ? (products as any).data.find((p: any) => p.sku === req.params.sku) : null;
-        
-        if (!product) return res.status(404).json({ error: 'SKU not found' });
-        res.json([product]);
-    } catch (error) {
-         res.status(500).json({ error: 'Search failed' });
+        await queryRunner.manager.query('SET FOREIGN_KEY_CHECKS = 0');
+        await queryRunner.manager.query('DELETE FROM oem_numbers');
+        await queryRunner.manager.query('DELETE FROM product_stock');
+        await queryRunner.manager.query('DELETE FROM product_vehicles');
+        await queryRunner.manager.query('DELETE FROM products');
+        await queryRunner.manager.query('SET FOREIGN_KEY_CHECKS = 1');
+        await queryRunner.commitTransaction();
+        res.json({ message: 'Catalog wiped successfully. Database is now clean.' });
+    } catch (error: any) {
+        await queryRunner.rollbackTransaction();
+        res.status(500).json({ error: 'Failed to clear catalog' });
+    } finally {
+        await queryRunner.release();
     }
 });
 
-// GET /api/products/:id
+router.post('/bulk/delete', authenticate, authorize(['ADMIN', 'MANAGER']), validate(z.object({ ids: z.array(z.string()) })), async (req: any, res) => {
+    try {
+        await ProductService.bulkDelete(req.body.ids, req.user);
+        res.json({ message: `Successfully deleted ${req.body.ids.length} products.` });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Bulk delete failed' });
+    }
+});
+
+router.delete('/bulk/rollback/:batchId', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
+    const { batchId } = req.params;
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+        const products = await queryRunner.manager.findBy(Product, { importBatchId: batchId });
+        for (const p of products) {
+            await queryRunner.manager.delete(ProductStock, { product: { id: p.id } } as any);
+            await queryRunner.manager.delete(OemNumber, { product: { id: p.id } } as any);
+            await queryRunner.manager.remove(p);
+        }
+        await queryRunner.commitTransaction();
+        res.json({ message: `Successfully rolled back ${products.length} products from batch ${batchId}` });
+    } catch (error: any) {
+        await queryRunner.rollbackTransaction();
+        res.status(500).json({ error: 'Rollback failed' });
+    } finally {
+        await queryRunner.release();
+    }
+});
+
+router.post('/adjust-prices', authenticate, authorize(['ADMIN', 'MANAGER']), validate(z.object({ percentage: z.number() })), async (req: any, res) => {
+    try {
+        const { percentage } = req.body;
+        await ProductService.applyGlobalPriceAdjustment(percentage, req.user);
+        res.json({ message: `Successfully adjusted all prices by ${percentage}%` });
+    } catch (error: any) {
+        res.status(500).json({ error: 'Failed to adjust prices' });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         const product = await ProductService.getProductById(req.params.id);
@@ -55,15 +99,9 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/products (Admin Only)
 router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(createProductSchema), async (req, res) => {
     try {
-        // Inject branchId from authenticated user to initialize stock
-        const payload = { 
-            ...req.body, 
-            branchId: req.user?.branch?.id 
-        };
-        
+        const payload = { ...req.body, branchId: req.user?.branch?.id };
         const product = await ProductService.createProduct(payload);
         res.status(201).json(product);
     } catch (error: any) {
@@ -71,14 +109,9 @@ router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(createP
     }
 });
 
-// PUT /api/products/:id (Admin Only)
 router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(updateProductSchema), async (req, res) => {
     try {
-        // Enable active sync: Pass branchId so stock can be updated alongside details
-        const payload = {
-            ...req.body,
-            branchId: req.user?.branch?.id
-        };
+        const payload = { ...req.body, branchId: req.user?.branch?.id };
         const product = await ProductService.updateProduct(req.params.id, payload);
         res.json(product);
     } catch (error: any) {
@@ -86,7 +119,6 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(updat
     }
 });
 
-// DELETE /api/products/:id (Admin Only)
 router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
         await ProductService.deleteProduct(req.params.id);
@@ -96,28 +128,28 @@ router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req,
     }
 });
 
-// --- BULK IMPORT ROUTE ---
 const bulkImportSchema = z.object({
     branchId: z.string(),
+    dryRun: z.boolean().optional().default(false),
     products: z.array(z.object({
         sku: z.string(),
         name: z.string(),
         category: z.string(),
-        // Explicitly check for finite numbers to reject NaN
         price: z.number().finite(),
-        costPrice: z.number().finite().optional(),
-        wholesalePrice: z.number().finite().optional(),
+        costPrice: z.number().finite().nullable().optional(), 
+        wholesalePrice: z.number().finite().nullable().optional(), 
         description: z.string().optional(),
         oemNumbers: z.string().optional(), 
         compatibility: z.string().optional(),
-        quantity: z.number().finite().optional(),
-        lowStockThreshold: z.number().finite().optional(),
+        quantity: z.number().finite().nullable().optional(),
+        lowStockThreshold: z.number().finite().nullable().optional(),
         imageUrl: z.string().optional()
     }))
 });
 
 router.post('/bulk', authenticate, authorize(['ADMIN', 'MANAGER']), validate(bulkImportSchema), async (req, res) => {
-    const { branchId, products } = req.body;
+    const { branchId, products, dryRun } = req.body;
+    const batchId = `BATCH-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.random().toString(36).substring(7).toUpperCase()}`;
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -128,109 +160,86 @@ router.post('/bulk', authenticate, authorize(['ADMIN', 'MANAGER']), validate(bul
 
         let createdCount = 0;
         let updatedCount = 0;
+        const reports: { row: number, sku: string, status: 'CREATED' | 'UPDATED' | 'ERROR', message: string }[] = [];
 
-        for (const item of products) {
-            let category = await queryRunner.manager.findOneBy(Category, { name: item.category });
-            if (!category) {
-                category = queryRunner.manager.create(Category, { name: item.category });
-                await queryRunner.manager.save(category);
-            }
+        for (let i = 0; i < products.length; i++) {
+            const item = products[i];
+            try {
+                const safeSku = item.sku.toString().trim().toUpperCase();
+                const safeName = item.name.toString().trim().substring(0, 490);
 
-            let product = await queryRunner.manager.findOneBy(Product, { sku: item.sku });
-            
-            // Helper to sanitize numeric inputs to avoid NaN in DB
-            const safeNum = (val: number | undefined | null, defaultVal: number | null = null) => {
-                if (typeof val === 'number' && isFinite(val)) return val;
-                return defaultVal;
-            };
+                if (!safeSku) throw new Error('Missing SKU');
 
-            if (product) {
-                // Update existing
-                product.name = item.name;
-                product.price = safeNum(item.price, 0) as number;
-                
-                // Use nullish coalescing (??) to allow 0 as a valid value
-                product.costPrice = safeNum(item.costPrice, product.costPrice) as number;
-                product.wholesalePrice = safeNum(item.wholesalePrice, product.wholesalePrice) as number | undefined;
-                
-                product.description = item.description || product.description;
-                product.category = category;
-                if (item.imageUrl) product.imageUrl = item.imageUrl;
-                
-                await queryRunner.manager.save(product);
-                updatedCount++;
-            } else {
-                // Create new
-                product = new Product();
-                product.sku = item.sku;
-                product.name = item.name;
-                product.price = safeNum(item.price, 0) as number;
-                product.costPrice = safeNum(item.costPrice, 0) as number;
-                // Default wholesale to price if not provided, safely
-                product.wholesalePrice = safeNum(item.wholesalePrice, item.price) as number | undefined;
-                
-                product.description = item.description || '';
-                product.category = category;
-                product.imageUrl = item.imageUrl || '';
-                
-                await queryRunner.manager.save(product);
-                createdCount++;
-            }
+                let category = await queryRunner.manager.findOneBy(Category, { name: item.category });
+                if (!category) {
+                    category = queryRunner.manager.create(Category, { name: item.category || 'General' });
+                    await queryRunner.manager.save(category);
+                }
 
-            if (item.oemNumbers) {
-                await queryRunner.manager.delete(OemNumber, { product: { id: product.id } } as any);
-                const oems = item.oemNumbers.split(',').map((code: string) => {
-                    const o = new OemNumber();
-                    o.code = code.trim();
-                    o.product = product!;
-                    return o;
-                });
-                await queryRunner.manager.save(oems);
-            }
+                let product = await queryRunner.manager.findOneBy(Product, { sku: safeSku });
+                const price = Number(item.price) || 0;
 
-            if (item.compatibility) {
-                const compatStrings = item.compatibility.split(',').map((s: string) => s.trim()).filter((s: string) => s);
-                const vehicles = [];
-                for (const comp of compatStrings) {
-                    const parts = comp.split(' ');
-                    const make = parts.length > 1 ? parts[0] : 'Generic';
-                    const model = parts.length > 1 ? parts.slice(1).join(' ') : comp;
-                    
-                    let v = await queryRunner.manager.findOneBy(Vehicle, { make, model });
-                    if (!v) {
-                        v = queryRunner.manager.create(Vehicle, { make, model });
-                        await queryRunner.manager.save(v);
+                if (product) {
+                    product.name = safeName;
+                    product.price = price;
+                    product.costPrice = Number(item.costPrice) || product.costPrice;
+                    product.description = item.description || product.description;
+                    product.category = category;
+                    await queryRunner.manager.save(product);
+                    updatedCount++;
+                    reports.push({ row: i + 1, sku: safeSku, status: 'UPDATED', message: 'Refreshed existing part.' });
+                } else {
+                    product = new Product();
+                    product.sku = safeSku;
+                    product.name = safeName;
+                    product.price = price;
+                    product.costPrice = Number(item.costPrice) || 0;
+                    product.description = item.description || '';
+                    product.category = category;
+                    product.importBatchId = batchId; // Tag new products for rollback
+                    await queryRunner.manager.save(product);
+                    createdCount++;
+                    reports.push({ row: i + 1, sku: safeSku, status: 'CREATED', message: 'New part added.' });
+                }
+
+                if (item.oemNumbers) {
+                    await queryRunner.manager.delete(OemNumber, { product: { id: product.id } } as any);
+                    const oems = item.oemNumbers.split(',').map((s: string) => s.trim()).filter((s: string) => s).map((code: string) => {
+                        const o = new OemNumber();
+                        o.code = code.toUpperCase();
+                        o.product = product!;
+                        return o;
+                    });
+                    if (oems.length > 0) await queryRunner.manager.save(oems);
+                }
+
+                if (item.quantity !== undefined) {
+                    let stock = await queryRunner.manager.findOne(ProductStock, {
+                        where: { product: { id: product.id } as any, branch: { id: branch.id } as any }
+                    });
+                    if (!stock) {
+                        stock = new ProductStock();
+                        stock.product = product;
+                        stock.branch = branch;
                     }
-                    vehicles.push(v);
+                    stock.quantity = Number(item.quantity) || 0;
+                    await queryRunner.manager.save(stock);
                 }
-                product.vehicles = vehicles;
-                await queryRunner.manager.save(product);
-            }
-
-            if (item.quantity !== undefined) {
-                let stock = await queryRunner.manager.findOne(ProductStock, {
-                    where: { product: { id: product.id } as any, branch: { id: branch.id } as any }
-                });
-
-                if (!stock) {
-                    stock = new ProductStock();
-                    stock.product = product;
-                    stock.branch = branch;
-                    stock.quantity = 0;
-                }
-                stock.quantity = safeNum(item.quantity, 0) as number;
-                stock.lowStockThreshold = safeNum(item.lowStockThreshold, 5) as number;
-                await queryRunner.manager.save(stock);
+            } catch (rowError: any) {
+                reports.push({ row: i + 1, sku: item.sku, status: 'ERROR', message: rowError.message });
             }
         }
 
-        await queryRunner.commitTransaction();
-        res.json({ message: 'Bulk import successful', created: createdCount, updated: updatedCount });
-
+        if (dryRun) {
+            await queryRunner.rollbackTransaction();
+            res.json({ message: 'Dry run completed.', created: createdCount, updated: updatedCount, reports, isDryRun: true });
+        } else {
+            await queryRunner.commitTransaction();
+            res.json({ message: 'Import finalized.', created: createdCount, updated: updatedCount, reports, batchId, isDryRun: false });
+        }
     } catch (error: any) {
         await queryRunner.rollbackTransaction();
-        console.error(error);
-        res.status(500).json({ error: error.message || 'Bulk import failed' });
+        res.status(500).json({ error: error.message || 'Import failed' });
     } finally {
         await queryRunner.release();
     }

@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
 import { Branch } from './Branch';
 import { User } from './User';
@@ -25,16 +24,16 @@ export class Sale {
   @Column({ nullable: true })
   customerName?: string;
 
-  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, transformer: new ColumnNumericTransformer() })
   totalAmount!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, transformer: new ColumnNumericTransformer() })
   taxAmount!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, transformer: new ColumnNumericTransformer() })
   netAmount!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   discount!: number;
 
   @Column({ default: 'FIXED' })

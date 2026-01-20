@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { Order } from './Order';
 import { User } from './User';
@@ -11,7 +10,7 @@ export class Payment {
   @ManyToOne(() => Order, (order) => order.payments)
   order!: Order;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 16, scale: 2 })
   amount!: number;
 
   @Column()

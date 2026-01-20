@@ -45,7 +45,7 @@ export interface BlogPost {
   relatedProductCategory: string; 
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -176,7 +176,6 @@ export interface Quote {
     items: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[];
 }
 
-// Added missing Technical Academy types
 export interface Student {
     id: string;
     fullName: string;

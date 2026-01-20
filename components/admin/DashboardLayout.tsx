@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
   Smartphone, Users, FileText, Truck, GraduationCap, 
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign, Mail
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
 
@@ -40,6 +40,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
     { id: 'sales_history', label: 'Sales History', icon: History, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'mpesa', label: 'M-Pesa Logs', icon: Smartphone, roles: ['ADMIN', 'MANAGER'] },
     { id: 'customers', label: 'Customers (CRM)', icon: Users, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'subscribers', label: 'Newsletter', icon: Mail, roles: ['ADMIN', 'MANAGER'] },
     { id: 'reports', label: 'Reports', icon: FileBarChart, roles: ['ADMIN', 'MANAGER'] },
     { id: 'users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
     { id: 'audit', label: 'Audit Logs', icon: Shield, roles: ['ADMIN'] },

@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { Customer } from './Customer';
 import { User } from './User';
@@ -42,13 +41,13 @@ export class Quote {
   @Column({ nullable: true })
   vin?: string; 
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 16, scale: 2 })
   subtotal!: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 16, scale: 2 })
   tax!: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 16, scale: 2 })
   total!: number;
 
   @Column({

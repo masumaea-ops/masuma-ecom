@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, JoinTable, Index } from 'typeorm';
 import { Category } from './Category';
 import { OemNumber } from './OemNumber';
@@ -12,20 +11,20 @@ export class Product {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Column({ length: 500 }) 
   name!: string;
 
   @Index({ unique: true })
   @Column()
   sku!: string;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   costPrice!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, transformer: new ColumnNumericTransformer() })
   price!: number;
 
-  @Column('decimal', { precision: 10, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
+  @Column('decimal', { precision: 16, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
   wholesalePrice?: number;
 
   @Column('text')
@@ -39,6 +38,9 @@ export class Product {
 
   @Column({ nullable: true })
   videoUrl?: string;
+
+  @Column({ nullable: true })
+  importBatchId?: string; // Tracks bulk import groups
 
   @ManyToOne(() => Category, (category) => category.products)
   category!: Category;

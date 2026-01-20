@@ -1,4 +1,3 @@
-
 import { AppDataSource } from '../config/database';
 import { Product } from '../entities/Product';
 import { Category } from '../entities/Category';
@@ -7,6 +6,9 @@ import { ProductStock } from '../entities/ProductStock';
 import { Branch } from '../entities/Branch';
 import { Vehicle } from '../entities/Vehicle'; 
 import { CacheService } from '../lib/cache';
+import { AuditService } from './auditService';
+import { User } from '../entities/User';
+import { In } from 'typeorm';
 
 export class ProductService {
   private static productRepo = AppDataSource.getRepository(Product);
@@ -21,18 +23,16 @@ export class ProductService {
           const cleanItem = item.trim();
           if (!cleanItem) continue;
 
-          // Split by one or more spaces to handle accidental double spaces
           const parts = cleanItem.split(/\s+/);
           
           let make = 'Generic';
           let model = cleanItem;
 
           if (parts.length > 1) {
-              make = parts[0]; // First word is Make
-              model = parts.slice(1).join(' '); // Rest is Model
+              make = parts[0]; 
+              model = parts.slice(1).join(' ');
           }
 
-          // Case insensitive check
           let vehicle = await this.vehicleRepo.findOne({ 
               where: { make: make, model: model } 
           });
@@ -86,7 +86,6 @@ export class ProductService {
         quantity: p.stock?.reduce((sum, s) => sum + s.quantity, 0) || 0,
         stock: p.stock?.some(s => s.quantity > 0) || false, 
         oemNumbers: p.oemNumbers?.map(o => o.code) || [],
-        // FIX: Hide "Generic" make from display
         compatibility: p.vehicles?.map(v => v.make === 'Generic' ? v.model : `${v.make} ${v.model}`) || []
       }));
 
@@ -101,7 +100,6 @@ export class ProductService {
 
     if (!p) return null;
 
-    // Transform to DTO structure matching frontend expectation
     return {
       id: p.id,
       name: p.name,
@@ -117,7 +115,6 @@ export class ProductService {
       quantity: p.stock?.reduce((sum, s) => sum + s.quantity, 0) || 0,
       stock: p.stock?.some(s => s.quantity > 0) || false,
       oemNumbers: p.oemNumbers?.map(o => o.code) || [],
-      // FIX: Hide "Generic" make from display
       compatibility: p.vehicles?.map(v => v.make === 'Generic' ? v.model : `${v.make} ${v.model}`) || []
     };
   }
@@ -152,7 +149,6 @@ export class ProductService {
 
     const saved = await this.productRepo.save(product);
 
-    // Auto-create inventory record for the user's branch if provided
     if (data.branchId) {
         const branch = await this.branchRepo.findOneBy({ id: data.branchId });
         if (branch) {
@@ -207,21 +203,18 @@ export class ProductService {
 
     const saved = await this.productRepo.save(product);
 
-    // --- ACTIVE SYNC: Update Stock Quantity ---
     if (data.quantity !== undefined && data.branchId) {
         let stock = await this.stockRepo.findOne({
             where: { product: { id: product.id } as any, branch: { id: data.branchId } as any }
         });
 
         if (!stock) {
-            // Create if missing
             stock = new ProductStock();
             stock.product = product;
             stock.branch = { id: data.branchId } as Branch;
             stock.quantity = data.quantity;
             stock.lowStockThreshold = 5;
         } else {
-            // Update existing
             stock.quantity = data.quantity;
         }
         await this.stockRepo.save(stock);
@@ -230,6 +223,29 @@ export class ProductService {
     await CacheService.invalidate('products:*');
     await CacheService.invalidate(`product:detail:${id}`);
     return saved;
+  }
+
+  static async applyGlobalPriceAdjustment(percentage: number, user: User) {
+    const factor = percentage / 100;
+    const isReduction = percentage < 0;
+    
+    await AppDataSource.query(`
+        UPDATE products 
+        SET 
+            price = ROUND(price * (1 + ?), 0),
+            wholesalePrice = CASE WHEN wholesalePrice IS NOT NULL THEN ROUND(wholesalePrice * (1 + ?), 0) ELSE NULL END
+    `, [factor, factor]);
+
+    await CacheService.invalidate('products:*');
+
+    await AuditService.log(
+        'GLOBAL_PRICE_ADJUSTMENT',
+        'CATALOG',
+        `Adjusted all prices by ${percentage}% (${isReduction ? 'Reduction' : 'Increase'})`,
+        user
+    );
+
+    return true;
   }
 
   static async deleteProduct(id: string) {
@@ -241,14 +257,8 @@ export class ProductService {
       const product = await queryRunner.manager.findOne(Product, { where: { id } });
       if (!product) throw new Error('Product not found');
 
-      // 1. Manually delete dependencies that restrict deletion
-      // Delete Stock entries first (Fixes Foreign Key Constraint Error)
       await queryRunner.manager.delete(ProductStock, { product: { id: id } } as any);
-      
-      // Delete OemNumbers (Good practice to clean up explicitly)
       await queryRunner.manager.delete(OemNumber, { product: { id: id } } as any);
-
-      // 2. Delete the Product
       await queryRunner.manager.remove(product);
 
       await queryRunner.commitTransaction();
@@ -258,15 +268,39 @@ export class ProductService {
       return true;
     } catch (error: any) {
       await queryRunner.rollbackTransaction();
-      console.error('Delete Product Error:', error);
-      
-      // Check for other constraints (like OrderItems) that indicate sales history
       if (error.message?.includes('foreign key constraint fails')) {
-          throw new Error('Cannot delete this product because it is part of existing Orders or Sales. Please edit or archive it instead.');
+          throw new Error('Cannot delete this product because it is part of existing Orders or Sales.');
       }
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  static async bulkDelete(ids: string[], user: User) {
+    if (!ids.length) return;
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        await queryRunner.manager.delete(ProductStock, { product: { id: In(ids) } } as any);
+        await queryRunner.manager.delete(OemNumber, { product: { id: In(ids) } } as any);
+        await queryRunner.manager.delete(Product, { id: In(ids) });
+        
+        await queryRunner.commitTransaction();
+        
+        await AuditService.log('BULK_DELETE_PRODUCTS', 'CATALOG', `Deleted ${ids.length} products manually.`, user);
+        await CacheService.invalidate('products:*');
+        return true;
+    } catch (error: any) {
+        await queryRunner.rollbackTransaction();
+        if (error.message?.includes('foreign key constraint fails')) {
+            throw new Error('One or more products cannot be deleted because they are linked to sales or orders.');
+        }
+        throw error;
+    } finally {
+        await queryRunner.release();
     }
   }
   
