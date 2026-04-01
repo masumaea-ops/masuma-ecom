@@ -3,6 +3,7 @@ import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, Chev
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 import SEO from './SEO';
+import { trackEvent } from '../utils/analytics';
 
 interface BlogProps {
   addToCart: (product: Product) => void;
@@ -64,6 +65,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick, o
   // 2. Handle Post Selection (Update URL)
   const handleSelectPost = (e: React.MouseEvent, post: BlogPost) => {
       e.preventDefault();
+      trackEvent('Engagement', 'View Blog Post', post.title);
       if (onNavigateToPost) {
           onNavigateToPost(post.id);
       } else {

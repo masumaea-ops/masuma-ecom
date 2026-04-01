@@ -4,6 +4,7 @@ import { CartItem, Product, ViewState, PromoCode } from '../types';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
 import SEO from './SEO';
+import { trackCheckoutInitiated, trackEvent } from '../utils/analytics';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -49,6 +50,12 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
   const vatTotal = total - basePriceTotal;
 
   useEffect(() => {
+    if (step === 'processing') {
+      trackCheckoutInitiated(total, cartItems.length);
+    }
+  }, [step, cartItems, total]);
+
+  useEffect(() => {
     let interval: any;
     if (step === 'processing' && currentOrderId && paymentMethod === 'MPESA') {
       interval = setInterval(async () => {
@@ -80,8 +87,10 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
           if (res.data.valid) {
               setAppliedPromo(res.data.promo);
               setPromoInput('');
+              trackEvent('Ecommerce', 'Apply Promo Code', promoInput.toUpperCase());
           } else {
               setPromoError(res.data.message || 'Invalid or expired code.');
+              trackEvent('Ecommerce', 'Promo Code Error', promoInput.toUpperCase());
           }
       } catch (e) {
           // Fallback demo logic for common codes
@@ -115,6 +124,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
 
     setIsProcessing(true);
     setStep('processing');
+    trackEvent('Ecommerce', 'Order Attempt', paymentMethod);
 
     try {
       const endpoint = paymentMethod === 'MPESA' ? '/mpesa/pay' : '/orders';
@@ -135,8 +145,10 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
 
       if (paymentMethod === 'MPESA') {
           setCurrentOrderId(res.data.orderId);
+          trackEvent('Ecommerce', 'M-Pesa Payment Initiated', res.data.orderId);
       } else {
           setStep('success');
+          trackEvent('Ecommerce', 'Order Success', 'CASH_ON_DELIVERY');
           setTimeout(() => {
             onSuccess();
             setView('HOME');

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Bot, ExternalLink, Car, ShieldCheck, MapPin, MessageSquareText, Globe, Loader2, Info, Search } from 'lucide-react';
 import { sendMessageToGemini } from '../services/geminiService';
 import { ChatMessage } from '../types';
+import { trackAIInteraction } from '../utils/analytics';
 
 interface ExtendedChatMessage extends ChatMessage {
   sources?: { uri: string; title: string }[];
@@ -43,6 +44,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
     
     if (!overrideInput) setInput('');
     setIsLoading(true);
+    trackAIInteraction(textToSend);
 
     try {
         // Map history for API

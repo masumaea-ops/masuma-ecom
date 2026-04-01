@@ -43,8 +43,10 @@ import Checkout from './components/Checkout';
 import Toast, { ToastType } from './components/Toast';
 import SEO from './components/SEO';
 import QuickView from './components/QuickView';
+import WhatsAppButton from './components/WhatsAppButton';
 import { ViewState, Product, CartItem } from './types';
 import { apiClient } from './utils/apiClient';
+import { initGA, trackPageView } from './utils/analytics';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
@@ -59,6 +61,14 @@ const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
   const [adminModule, setAdminModule] = useState('dashboard');
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  useEffect(() => {
+      initGA();
+  }, []);
+
+  useEffect(() => {
+      trackPageView(window.location.pathname + window.location.search);
+  }, [view, selectedProduct, activePostId]);
 
   // Deep Link Resolver
   const resolveDeepLinks = useCallback(async () => {
@@ -325,6 +335,7 @@ const App: React.FC = () => {
             <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={(id) => setCart(cart.filter(i => i.id !== id))} onCheckout={() => { setIsCartOpen(false); setView('CHECKOUT'); }} updateQuantity={(id, q) => setCart(cart.map(i => i.id === id ? {...i, quantity: q} : i))} />
             <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
             <QuickView product={selectedProduct} isOpen={!!selectedProduct} onClose={closeProduct} addToCart={(p) => setCart([...cart, {...p, quantity: 1}])} onSwitchProduct={setSelectedProduct} />
+            <WhatsAppButton />
         </div>
     );
   };

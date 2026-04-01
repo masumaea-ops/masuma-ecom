@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, Loader2, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2, MessageSquare, MessageCircle } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
+import { trackWhatsAppClick, trackEvent } from '../utils/analytics';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ const Contact: React.FC = () => {
     try {
       await apiClient.post('/contact', formData);
       setStatus('success');
+      trackEvent('Engagement', 'Contact Form Submission', formData.subject);
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (error) {
       console.error(error);
@@ -69,7 +71,16 @@ const Contact: React.FC = () => {
                 <div>
                   <h4 className="font-bold text-masuma-dark uppercase mb-1">Phone & WhatsApp</h4>
                   <p className="text-gray-600 text-sm mb-1">General Inquiries: <a href="tel:+254792506590" className="font-bold hover:text-masuma-orange">+254 792 506 590</a></p>
-                  <p className="text-xs text-gray-500">Mon - Sat: 8:00 AM - 6:00 PM</p>
+                  <a 
+                    href="https://wa.me/254792506590" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => trackWhatsAppClick('Contact Page')}
+                    className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#128C7E] transition mt-2 shadow-md"
+                  >
+                    <MessageCircle size={16} fill="currentColor" /> Chat on WhatsApp
+                  </a>
+                  <p className="text-xs text-gray-500 mt-2">Mon - Sat: 8:00 AM - 6:00 PM</p>
                 </div>
               </div>
 

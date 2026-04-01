@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, ArrowRight, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, ArrowRight, Loader2, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
 import { ViewState } from '../types';
 import { Logo } from './Logo';
@@ -92,6 +92,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
                <a href="#" className="bg-white/10 p-2 rounded-sm hover:bg-masuma-orange transition"><Facebook size={18} /></a>
                <a href="#" className="bg-white/10 p-2 rounded-sm hover:bg-masuma-orange transition"><Instagram size={18} /></a>
                <a href="#" className="bg-white/10 p-2 rounded-sm hover:bg-masuma-orange transition"><Twitter size={18} /></a>
+               <a href={`https://wa.me/${info.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-white/10 p-2 rounded-sm hover:bg-[#25D366] transition"><MessageCircle size={18} fill="currentColor" /></a>
              </div>
           </div>
 

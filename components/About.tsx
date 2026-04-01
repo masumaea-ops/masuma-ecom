@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ShieldCheck, CheckCircle, Star, Globe, Wrench, AlertTriangle, Target, Eye, Truck, Activity } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Star, Globe, Wrench, AlertTriangle, Target, Eye, Truck, Activity, Award, Users, TrendingUp, Scale, Handshake } from 'lucide-react';
 import { ViewState } from '../types';
 import SEO from './SEO';
 
@@ -69,7 +69,7 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                       </div>
                       <h3 className="text-xl font-bold font-display uppercase text-masuma-dark mb-3">Our Mission</h3>
                       <p className="text-gray-600 text-sm leading-relaxed">
-                          To provide Kenyan motorists with reliable, high-quality auto parts that withstand local road conditions, ensuring safety and reducing maintenance costs through Japanese engineering excellence.
+                          To supply durable, precision-engineered automotive parts that meet global standards, while delivering expert support, fair pricing, and efficient availability to mechanics, workshops, and vehicle owners across East Africa.
                       </p>
                   </div>
 
@@ -80,7 +80,7 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                       </div>
                       <h3 className="text-xl font-bold font-display uppercase text-masuma-dark mb-3">Our Vision</h3>
                       <p className="text-gray-600 text-sm leading-relaxed">
-                          To be the undisputed leader in the East African automotive aftermarket, creating a safer driving environment where every vehicle runs on parts they can trust.
+                          To become East Africa’s most trusted and accessible provider of high-quality automotive parts, powering reliable mobility across the region.
                       </p>
                   </div>
 
@@ -127,7 +127,70 @@ const About: React.FC<AboutProps> = ({ setView }) => {
           </div>
       </section>
 
-      {/* 4. CORE PILLARS (Dark Section) */}
+      {/* 4. CORE VALUES */}
+      <section className="py-24 bg-white">
+          <div className="max-w-screen-2xl mx-auto px-6 lg:px-12">
+              <div className="text-center max-w-3xl mx-auto mb-20">
+                  <span className="text-masuma-orange font-bold uppercase tracking-widest text-xs">Our Foundation</span>
+                  <h2 className="text-4xl md:text-5xl font-bold font-display uppercase mt-2">Core Values</h2>
+                  <div className="w-20 h-1 bg-masuma-orange mx-auto mt-6"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-gray-200 border border-gray-200">
+                  {[
+                      {
+                          icon: Award,
+                          title: "Quality Without Compromise",
+                          desc: "We deliver parts that meet stringent international standards, ensuring performance, safety, and longevity in every product."
+                      },
+                      {
+                          icon: ShieldCheck,
+                          title: "Reliability & Trust",
+                          desc: "We build long-term relationships by consistently providing dependable products and honest technical guidance."
+                      },
+                      {
+                          icon: Wrench,
+                          title: "Technical Excellence",
+                          desc: "We combine engineering knowledge with real-world automotive expertise to support informed diagnostics and correct part selection."
+                      },
+                      {
+                          icon: Users,
+                          title: "Customer-Centric Approach",
+                          desc: "We prioritize the needs of mechanics, fleet operators, and everyday drivers with responsive service and practical solutions."
+                      },
+                      {
+                          icon: Globe,
+                          title: "Accessibility",
+                          desc: "We make high-quality parts available at fair prices, ensuring broader market reach without sacrificing standards."
+                      },
+                      {
+                          icon: TrendingUp,
+                          title: "Continuous Growth",
+                          desc: "We continuously expand our product range, vehicle coverage, and operational capabilities to meet evolving market demands."
+                      },
+                      {
+                          icon: Scale,
+                          title: "Integrity in Business",
+                          desc: "We operate transparently, ethically, and professionally in all transactions and partnerships."
+                      }
+                  ].map((item, idx) => (
+                      <div key={idx} className="bg-white p-10 hover:bg-gray-50 transition-colors group">
+                          <item.icon size={32} className="text-masuma-orange mb-6 group-hover:scale-110 transition-transform" />
+                          <h3 className="text-lg font-bold font-display uppercase mb-4 leading-tight">{item.title}</h3>
+                          <p className="text-gray-600 text-sm leading-relaxed">
+                              {item.desc}
+                          </p>
+                      </div>
+                  ))}
+                  {/* Empty filler for grid balance on large screens */}
+                  <div className="hidden lg:flex bg-masuma-dark p-10 items-center justify-center">
+                      <img src="/logo-white.png" alt="Masuma" className="opacity-20 grayscale brightness-200" />
+                  </div>
+              </div>
+          </div>
+      </section>
+
+      {/* 5. CORE PILLARS (Dark Section) */}
       <section className="py-24 bg-masuma-dark text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-[#222] skew-x-12 transform translate-x-1/3"></div>
           

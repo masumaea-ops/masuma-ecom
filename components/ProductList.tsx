@@ -5,6 +5,7 @@ import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
 import SourcingModal from './SourcingModal';
+import { trackProductView, trackAddToCart, trackSearch } from '../utils/analytics';
 
 interface ProductListProps {
   addToCart: (product: Product, quantity?: number) => void;
@@ -77,6 +78,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
     };
 
     const timer = setTimeout(() => {
+        if (searchQuery) trackSearch(searchQuery);
         fetchProducts();
     }, 500);
 
@@ -109,6 +111,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
 
   const handleCardClick = (e: React.MouseEvent, product: Product) => {
       e.preventDefault();
+      trackProductView(product.name, product.category);
       onProductClick(product);
   };
 
@@ -303,7 +306,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                                 <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Incl. 16% VAT</span>
                             </div>
                             <button
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation(); 
+                                    trackAddToCart(product.name, product.price);
+                                    addToCart(product); 
+                                }}
                                 disabled={!product.stock}
                                 className={`w-16 h-16 rounded-[1.5rem] transition-all duration-700 shadow-2xl flex items-center justify-center group/cart-btn ${
                                     product.stock 
