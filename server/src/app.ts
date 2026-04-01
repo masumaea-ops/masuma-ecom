@@ -13,6 +13,8 @@ declare const require: any;
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { AppDataSource } from './config/database';
+import { BlogPost } from './entities/BlogPost';
+import { Product } from './entities/Product';
 import { errorHandler } from './middleware/errorHandler'; 
 import { httpLogger } from './middleware/httpLogger'; 
 import { logger } from './utils/logger';
@@ -133,7 +135,7 @@ if (!frontendPath) {
 }
 
 // 5. CATCH-ALL
-app.get('*', (req: any, res: any) => {
+app.get('*', async (req: any, res: any) => {
     // If it's an API request that wasn't handled, return 404 JSON
     if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Endpoint not found' });
     
@@ -141,7 +143,72 @@ app.get('*', (req: any, res: any) => {
     if (frontendPath) {
         const indexPath = path.join(frontendPath, 'index.html');
         if (fs.existsSync(indexPath)) {
-            return res.sendFile(indexPath);
+            try {
+                let html = fs.readFileSync(indexPath, 'utf8');
+                
+                const postId = req.query.post;
+                const productId = req.query.product;
+                
+                let metaData = null;
+                const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+                if (postId) {
+                    try {
+                        const postRepo = AppDataSource.getRepository(BlogPost);
+                        const post = await postRepo.findOneBy({ id: postId });
+                        if (post) {
+                            metaData = {
+                                title: post.title,
+                                description: post.excerpt || post.content.substring(0, 160).replace(/<[^>]*>/g, '') + '...',
+                                image: post.image ? (post.image.startsWith('http') ? post.image : `${baseUrl}${post.image}`) : `${baseUrl}/logo.png`,
+                                url: `${baseUrl}${req.originalUrl}`
+                            };
+                        }
+                    } catch (e) {
+                        console.error('Error fetching post for meta:', e);
+                    }
+                } else if (productId) {
+                    try {
+                        const productRepo = AppDataSource.getRepository(Product);
+                        const product = await productRepo.findOneBy({ id: productId });
+                        if (product) {
+                            metaData = {
+                                title: product.name,
+                                description: product.description ? product.description.substring(0, 160).replace(/<[^>]*>/g, '') + '...' : 'Premium Autoparts',
+                                image: product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${baseUrl}${product.imageUrl}`) : `${baseUrl}/logo.png`,
+                                url: `${baseUrl}${req.originalUrl}`
+                            };
+                        }
+                    } catch (e) {
+                        console.error('Error fetching product for meta:', e);
+                    }
+                }
+
+                if (metaData) {
+                    // Inject dynamic meta tags
+                    html = html.replace(/<title>.*?<\/title>/, `<title>${metaData.title} | Masuma Africa</title>`);
+                    html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${metaData.description}" />`);
+                    
+                    const ogTags = `
+    <meta property="og:title" content="${metaData.title}" />
+    <meta property="og:description" content="${metaData.description}" />
+    <meta property="og:image" content="${metaData.image}" />
+    <meta property="og:url" content="${metaData.url}" />
+    <meta property="og:site_name" content="Masuma Africa" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${metaData.title}" />
+    <meta name="twitter:description" content="${metaData.description}" />
+    <meta name="twitter:image" content="${metaData.image}" />
+`;
+                    html = html.replace('</head>', `${ogTags}</head>`);
+                }
+
+                return res.send(html);
+            } catch (err) {
+                console.error('Error serving dynamic index.html:', err);
+                return res.sendFile(indexPath);
+            }
         }
     }
 
