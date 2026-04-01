@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, ArrowRight, BookOpen, Loader2, ChevronLeft, ChevronRight, Check, Shield } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 import SEO from './SEO';
@@ -9,9 +8,10 @@ interface BlogProps {
   addToCart: (product: Product) => void;
   initialPostId?: string | null;
   onProductClick?: (product: Product) => void;
+  onNavigateToPost?: (postId: string) => void;
 }
 
-const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick }) => {
+const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick, onNavigateToPost }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -27,19 +27,19 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
           if (initialPostId) {
               try {
                   const res = await apiClient.get(`/blog/${initialPostId}`);
-                  setSelectedPost(res.data);
+                  if (res.data) {
+                      setSelectedPost(res.data);
+                  }
               } catch (e) {
                   console.error("Deep link post not found");
+                  setSelectedPost(null);
               }
           } else {
               setSelectedPost(null);
           }
 
-          // Always fetch the list for navigation if empty
-          if (posts.length === 0) {
-              await fetchPosts(1);
-          }
-          
+          // Always fetch the list for background context
+          await fetchPosts(1);
           setIsLoading(false);
       };
       
@@ -64,17 +64,24 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
   // 2. Handle Post Selection (Update URL)
   const handleSelectPost = (e: React.MouseEvent, post: BlogPost) => {
       e.preventDefault();
-      setSelectedPost(post);
-      const newUrl = `${window.location.pathname}?post=${post.id}`;
-      window.history.pushState({ path: newUrl }, '', newUrl);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (onNavigateToPost) {
+          onNavigateToPost(post.id);
+      } else {
+          setSelectedPost(post);
+          const newUrl = `${window.location.pathname}?post=${post.id}`;
+          window.history.pushState({ path: newUrl }, '', newUrl);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
   };
 
   // 3. Handle Back Navigation (Clean URL)
   const handleBack = () => {
       setSelectedPost(null);
-      const cleanUrl = window.location.pathname;
-      window.history.pushState({ path: cleanUrl }, '', cleanUrl);
+      const params = new URLSearchParams(window.location.search);
+      params.delete('post');
+      const newSearch = params.toString();
+      const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
+      window.history.pushState({ path: newUrl }, '', newUrl);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -104,9 +111,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
 
   const handleShare = async () => {
     if (!selectedPost) return;
-
-    // Use current URL which now contains ?post=ID
-    const shareUrl = window.location.href; 
+    const shareUrl = `${window.location.origin}/?post=${selectedPost.id}`; 
 
     const shareData = {
         title: selectedPost.title,
@@ -154,9 +159,20 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
             type="article" 
             schema={articleSchema}
         />
-        <div className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden">
+        <div className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden select-none">
           <div className="absolute inset-0 bg-masuma-dark/50 z-10"></div>
-          <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
+          <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" onContextMenu={e => e.preventDefault()} />
+          
+          {/* BLOG HEADER WATERMARK */}
+          <div className="absolute inset-0 opacity-[0.05] pointer-events-none z-10">
+                <svg width="100%" height="100%">
+                    <pattern id="wm-blog-header" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                        <text x="0" y="100" className="font-display font-bold text-xl uppercase tracking-widest fill-white">MASUMA EA LTD</text>
+                    </pattern>
+                    <rect width="100%" height="100%" fill="url(#wm-blog-header)" />
+                </svg>
+          </div>
+
           <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 md:p-12 max-w-screen-2xl mx-auto">
             <button 
               onClick={handleBack}
@@ -222,15 +238,24 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
                             }}
                             className="bg-white p-3 flex gap-3 shadow-sm hover:shadow-md transition border border-gray-100 group cursor-pointer"
                          >
-                            <div className="w-16 h-16 bg-gray-100 shrink-0 overflow-hidden">
-                               <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                            <div className="w-16 h-16 bg-gray-100 shrink-0 overflow-hidden relative">
+                               <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" onContextMenu={e => e.preventDefault()} />
+                               {/* Small Thumb Watermark */}
+                               <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+                                    <svg width="100%" height="100%">
+                                        <pattern id={`wm-blog-rel-${product.id}`} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                                            <text x="0" y="20" className="font-display font-bold text-[4px] uppercase fill-masuma-dark">MASUMA EA</text>
+                                        </pattern>
+                                        <rect width="100%" height="100%" fill={`url(#wm-blog-rel-${product.id})`} />
+                                    </svg>
+                               </div>
                             </div>
                             <div className="flex-1">
                                <h4 className="font-bold text-masuma-dark text-xs uppercase leading-tight mb-1 group-hover:text-masuma-orange transition">{product.name}</h4>
                                <p className="text-masuma-orange font-bold text-sm">KES {product.price.toLocaleString()}</p>
                                <button 
                                   onClick={(e) => {
-                                      e.stopPropagation(); // Prevent opening modal if clicking Add to Cart directly
+                                      e.stopPropagation(); 
                                       addToCart(product);
                                   }}
                                   className="mt-2 text-[10px] font-bold uppercase bg-masuma-dark text-white px-3 py-1 hover:bg-masuma-orange transition w-full text-center"
@@ -279,7 +304,7 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
                    <a 
                       key={post.id}
                       href={`/?post=${post.id}`} 
-                      className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1 block"
+                      className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col h-full cursor-pointer transform hover:-translate-y-1 block select-none"
                       onClick={(e) => handleSelectPost(e, post)}
                    >
                       <div className="relative h-56 overflow-hidden">
@@ -292,7 +317,17 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick })
                             src={post.image} 
                             alt={post.title} 
                             className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700 ease-out"
+                            onContextMenu={e => e.preventDefault()}
                          />
+                         {/* CARD WATERMARK */}
+                         <div className="absolute inset-0 opacity-[0.04] pointer-events-none group-hover:opacity-[0.08] transition-opacity">
+                            <svg width="100%" height="100%">
+                                <pattern id={`wm-blog-card-${post.id}`} x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                                    <text x="0" y="50" className="font-display font-bold text-[8px] uppercase fill-white">MASUMA EA LTD</text>
+                                </pattern>
+                                <rect width="100%" height="100%" fill={`url(#wm-blog-card-${post.id})`} />
+                            </svg>
+                         </div>
                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition"></div>
                       </div>
                       

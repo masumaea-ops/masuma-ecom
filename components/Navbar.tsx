@@ -126,50 +126,50 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
       </div>
 
       {/* MAIN NAVBAR */}
-      <nav className={`sticky top-0 z-[100] transition-all duration-300 ${
+      <nav className={`sticky top-0 z-[100] transition-all duration-500 ${
           isScrolled 
-          ? 'bg-white shadow-lg border-b border-masuma-orange/20 py-2' 
+          ? 'bg-white/80 backdrop-blur-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border-b border-masuma-orange/10 py-2' 
           : 'bg-white border-b-4 border-masuma-orange py-4'
       }`}>
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
             {/* Logo Section */}
-            <a href="/" className="flex-shrink-0 cursor-pointer group" onClick={(e) => handleNav(e, 'HOME')}>
+            <a href="/" className="flex-shrink-0 cursor-pointer group transition-transform duration-500 hover:scale-105" onClick={(e) => handleNav(e, 'HOME')}>
               <Logo />
             </a>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-10">
               {navItems.map((item) => (
                   <a 
                       key={item}
                       href={`/?view=${item}`}
                       onClick={(e) => handleNav(e, item)} 
-                      className="relative text-masuma-dark font-bold uppercase tracking-wide text-xs hover:text-masuma-orange transition group"
+                      className="relative text-masuma-dark font-black uppercase tracking-[0.15em] text-[11px] hover:text-masuma-orange transition-all duration-300 group"
                   >
                       {formatNavLabel(item)}
-                      <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-masuma-orange transition-all duration-300 group-hover:w-full"></span>
+                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-1 bg-masuma-orange transition-all duration-500 group-hover:w-full rounded-full"></span>
                   </a>
               ))}
             </div>
 
             {/* Right Side Icons */}
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-8">
               <button 
                 onClick={toggleAi}
-                className="hidden md:flex items-center space-x-2 bg-gray-100 hover:bg-masuma-orange hover:text-white text-masuma-dark px-4 py-2 rounded-full transition duration-300 group border border-gray-200"
+                className="hidden md:flex items-center space-x-3 bg-masuma-dark hover:bg-masuma-orange text-white px-6 py-3 rounded-2xl transition-all duration-500 group border border-transparent shadow-xl shadow-masuma-dark/10 hover:shadow-masuma-orange/20 active:scale-95"
               >
-                <Bot size={18} className="group-hover:rotate-12 transition-transform" />
-                <span className="text-xs font-bold uppercase tracking-wide">Ask AI</span>
+                <Bot size={18} className="group-hover:rotate-[20deg] transition-transform duration-500" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Ask AI Expert</span>
               </button>
 
               <div className="relative cursor-pointer group" onClick={toggleCart}>
-                <div className="p-2 rounded-full hover:bg-gray-100 transition duration-300">
-                  <ShoppingCart className="text-masuma-dark group-hover:text-masuma-orange transition" size={24} />
+                <div className="p-3 rounded-2xl hover:bg-gray-100 transition-all duration-500 group-hover:rotate-6">
+                  <ShoppingCart className="text-masuma-dark group-hover:text-masuma-orange transition-colors duration-500" size={26} />
                 </div>
                 {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-masuma-orange text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md transform scale-100 animate-pulse-once">
+                  <span className="absolute -top-1 -right-1 bg-masuma-orange text-white text-[10px] font-black rounded-full h-6 w-6 flex items-center justify-center shadow-lg shadow-masuma-orange/40 transform scale-100 animate-bounce-subtle">
                     {cartCount}
                   </span>
                 )}
@@ -177,7 +177,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
 
               {/* Mobile Menu Button */}
               <div className="md:hidden flex items-center">
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-masuma-dark p-2">
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-masuma-dark p-2 hover:bg-gray-100 rounded-xl transition-colors">
                   {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
                 </button>
               </div>

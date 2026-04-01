@@ -14,7 +14,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
   const [message, setMessage] = useState('');
 
   const [info, setInfo] = useState({
-      about: 'Masuma Autoparts East Africa Limited. The official distributor of certified Masuma components. Engineering you can trust for the African road.',
+      about: 'Masuma Autoparts East Africa Limited. The official distributor of certified Masuma spark plugs, brake pads, and suspension components. Engineering you can trust for the African road.',
       address: 'Ruby Mall, First Floor, Behind NCBA Bank, Accra Road, Nairobi',
       phone: '+254 792 506 590',
       email: 'sales@masuma.africa'
@@ -102,8 +102,8 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
               <li><a href="/?view=ABOUT" onClick={(e) => handleNav(e, 'ABOUT')} className="hover:text-masuma-orange transition">About Us</a></li>
               <li><a href="/?view=PART_FINDER" onClick={(e) => handleNav(e, 'PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</a></li>
               <li><a href="/?view=WARRANTY" onClick={(e) => handleNav(e, 'WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</a></li>
-              <li><a href="#" className="hover:text-masuma-orange transition">Distributor Portal</a></li>
-              <li><a href="#" className="hover:text-masuma-orange transition">Download Catalog (PDF)</a></li>
+              <li><a href="/?view=CATALOG" onClick={(e) => handleNav(e, 'CATALOG')} className="hover:text-masuma-orange transition">Product Catalog</a></li>
+              <li><a href="/?view=CONTACT" onClick={(e) => handleNav(e, 'CONTACT')} className="hover:text-masuma-orange transition">Contact Support</a></li>
             </ul>
           </div>
 
@@ -176,6 +176,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
           <div className="flex space-x-6 mt-4 md:mt-0 text-[10px] font-bold uppercase tracking-widest text-gray-500">
             <a href="/?view=PRIVACY" onClick={(e) => handleNav(e, 'PRIVACY')} className="hover:text-white transition">Privacy Policy</a>
             <a href="/?view=TERMS" onClick={(e) => handleNav(e, 'TERMS')} className="hover:text-white transition">Terms of Service</a>
+            <a href="/?view=COOKIES" onClick={(e) => handleNav(e, 'COOKIES')} className="hover:text-white transition">Cookie Policy</a>
           </div>
         </div>
       </div>

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, ShieldCheck, TrendingUp, Wrench, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ArrowRight, ShieldCheck, TrendingUp, Wrench, ChevronLeft, ChevronRight, Loader2, Shield } from 'lucide-react';
 import { ViewState, HeroSlide } from '../types';
 import { apiClient } from '../utils/apiClient';
 
@@ -12,7 +11,7 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     {
         id: 'default-1',
         title: 'JAPANESE PRECISION.\nKENYAN STRENGTH.',
-        subtitle: 'The official home of genuine Masuma components in Nairobi. Engineered in Tokyo to dominate the toughest roads in East Africa.',
+        subtitle: 'The official home of genuine Masuma spark plugs, brake pads, and filters in Nairobi. Engineered in Tokyo to dominate the toughest roads in East Africa.',
         image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
         ctaText: 'View Local Inventory',
         ctaLink: 'CATALOG'
@@ -92,8 +91,11 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
       if (!id) return '';
       
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      // Added loop=1 and playlist={id} for continuous playback
       return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&origin=${encodeURIComponent(origin)}`;
   };
+
+  const isYoutube = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
 
   if (slides.length === 0) {
       return (
@@ -110,7 +112,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
             {announcement}
         </div>
     )}
-    <div className="relative bg-masuma-dark overflow-hidden h-[600px] md:h-[750px] group">
+    <div className="relative bg-masuma-dark overflow-hidden h-[600px] md:h-[750px] group select-none" onContextMenu={(e) => e.preventDefault()}>
       
       {slides.map((slide, index) => {
           const isActive = index === currentSlide;
@@ -119,30 +121,53 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
               key={slide.id}
               className={`absolute inset-0 transition-opacity duration-1000 ${isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
             >
-               <div className="absolute inset-0 bg-black">
-                   {slide.mediaType === 'youtube' && slide.videoUrl ? (
-                       isActive ? (
-                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                            <iframe 
-                                src={getYoutubeEmbedUrl(slide.videoUrl)} 
-                                className="w-full h-full object-cover opacity-90 scale-150"
-                                allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
-                                frameBorder="0"
-                                title="Background Video"
-                            ></iframe>
-                        </div>
-                       ) : null
-                   ) : (
-                       <div 
-                          className="absolute inset-0 bg-cover bg-center opacity-85"
-                          style={{ backgroundImage: `url('${slide.image}')` }}
-                       ></div>
+               <div className="absolute inset-0 bg-black pointer-events-none">
+                   {isActive && (
+                       <>
+                           {slide.mediaType === 'youtube' && slide.videoUrl ? (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                    <iframe 
+                                        src={getYoutubeEmbedUrl(slide.videoUrl)} 
+                                        className="w-full h-full object-cover opacity-90 scale-150 media-protected"
+                                        allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
+                                        frameBorder="0"
+                                        title="Background Video"
+                                    ></iframe>
+                                </div>
+                           ) : slide.mediaType === 'video' && slide.videoUrl ? (
+                               <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                   <video 
+                                       src={slide.videoUrl}
+                                       autoPlay
+                                       muted
+                                       loop
+                                       playsInline
+                                       className="w-full h-full object-cover opacity-90 media-protected"
+                                   />
+                               </div>
+                           ) : (
+                               <div 
+                                  className="absolute inset-0 bg-cover bg-center opacity-85 media-protected"
+                                  style={{ backgroundImage: `url('${slide.image}')` }}
+                               ></div>
+                           )}
+                       </>
                    )}
+                   
+                   {/* HERO DIGITAL WATERMARK - Updated Text */}
+                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-10">
+                        <svg width="100%" height="100%">
+                            <pattern id="wm-hero" x="0" y="0" width="300" height="300" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                                <text x="0" y="150" className="font-display font-bold text-4xl uppercase tracking-[0.5em] fill-white">MASUMA EA LTD</text>
+                            </pattern>
+                            <rect width="100%" height="100%" fill="url(#wm-hero)" />
+                        </svg>
+                   </div>
                </div>
                
-               <div className="absolute inset-0 bg-gradient-to-r from-masuma-dark via-masuma-dark/40 to-transparent"></div>
+               <div className="absolute inset-0 bg-gradient-to-r from-masuma-dark via-masuma-dark/40 to-transparent z-20"></div>
 
-               <div className="absolute inset-0 flex items-center">
+               <div className="absolute inset-0 flex items-center z-30">
                   <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                       <div className="max-w-3xl">
                           <div className="inline-flex items-center gap-3 bg-white/10 border-l-4 border-masuma-orange text-white text-[10px] font-bold px-4 py-2 mb-8 uppercase tracking-[0.3em] backdrop-blur-md">
@@ -151,7 +176,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                           </div>
                           
                           <h1 
-                            className="text-5xl md:text-8xl font-bold text-white mb-6 font-display uppercase tracking-tighter whitespace-pre-line leading-[0.85]"
+                            className="text-6xl md:text-[10rem] font-black text-white mb-8 font-display uppercase tracking-[-0.04em] whitespace-pre-line leading-[0.8] animate-slam-in"
                             style={{ textShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                           >
                               {slide.title}
@@ -163,13 +188,14 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                               {slide.subtitle}
                           </p>
                           
-                          <div className="flex flex-wrap gap-4">
-                              <button 
-                                  onClick={() => setView(slide.ctaLink)}
-                                  className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold px-12 py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl group/btn"
-                              >
-                                  {slide.ctaText} <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
-                              </button>
+                              <div className="flex flex-wrap gap-4">
+                                  <a 
+                                      href={`/?view=${slide.ctaLink}`}
+                                      onClick={(e) => { e.preventDefault(); setView(slide.ctaLink as ViewState); }}
+                                      className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold px-12 py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl group/btn"
+                                  >
+                                      {slide.ctaText} <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
+                                  </a>
                               
                               <div className="flex items-center gap-8 text-white ml-0 md:ml-6 drop-shadow-md opacity-80">
                                   <div className="flex flex-col items-center">
@@ -193,13 +219,13 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
           <>
             <button 
                 onClick={prevSlide}
-                className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
+                className="absolute left-6 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
             >
                 <ChevronLeft size={24} />
             </button>
             <button 
                 onClick={nextSlide}
-                className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
+                className="absolute right-6 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
             >
                 <ChevronRight size={24} />
             </button>
@@ -207,7 +233,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
       )}
 
       {slides.length > 1 && (
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex gap-4">
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 flex gap-4">
               {slides.map((_, i) => (
                   <button 
                     key={i}

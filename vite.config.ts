@@ -24,23 +24,23 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:3000',
+          target: 'http://127.0.0.1:3001',
           changeOrigin: true,
           secure: false,
         },
         '/media': {
-          target: 'http://127.0.0.1:3000',
+          target: 'http://127.0.0.1:3001',
           changeOrigin: true,
           secure: false,
         }
       }
     },
     optimizeDeps: {
-      exclude: ['jspdf', 'jspdf-autotable']
+      exclude: []
     },
     build: {
       rollupOptions: {
-        external: ['jspdf', 'jspdf-autotable']
+        external: []
       }
     },
     define: {

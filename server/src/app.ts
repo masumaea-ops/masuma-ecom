@@ -10,7 +10,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 declare const require: any;
 
-const compression = require('compression'); 
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { AppDataSource } from './config/database';
 import { errorHandler } from './middleware/errorHandler'; 
@@ -73,7 +73,9 @@ app.use(express.json() as any);
 app.use(httpLogger as any);
 
 // 1. Static Media serving
-app.use('/media', express.static(path.join((process as any).cwd(), 'media')) as any);
+const mediaPath = path.join(process.cwd(), 'media');
+if (!fs.existsSync(mediaPath)) fs.mkdirSync(mediaPath, { recursive: true });
+app.use('/media', express.static(mediaPath) as any);
 
 // 2. API Rate Limiting
 const limiter = rateLimit({

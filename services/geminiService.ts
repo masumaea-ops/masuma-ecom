@@ -34,38 +34,56 @@ export interface GeminiResponse {
 export const sendMessageToGemini = async (history: {role: string, parts: {text: string}[]}[], message: string): Promise<GeminiResponse> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Ensure history starts with 'user' role
-  const cleanHistory = history.length > 0 && history[0].role === 'model' ? history.slice(1) : history;
-
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [...cleanHistory, { role: 'user', parts: [{ text: message }] }],
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      tools: [{ googleSearch: {} }],
-    },
-  });
-
-  if (!response || !response.text) {
-      throw new Error("AI response was empty.");
-  }
-
-  const sources: { uri: string; title: string }[] = [];
-  const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+  // VALIDATION LOGIC:
+  // 1. Gemini contents must start with a 'user' role.
+  // 2. Roles must strictly alternate: user -> model -> user.
   
-  if (groundingChunks) {
-    groundingChunks.forEach((chunk: any) => {
-      if (chunk.web) {
-        sources.push({
-          uri: chunk.web.uri,
-          title: chunk.web.title || 'Verified Technical Source'
-        });
-      }
-    });
+  // Filter history and ensure it starts with a user turn
+  let contents = [...history];
+  
+  // If history starts with model (the welcome message), remove it for the API call
+  // because Gemini 'contents' must start with a 'user' message.
+  if (contents.length > 0 && contents[0].role === 'model') {
+    contents.shift();
   }
 
-  return {
-    text: response.text,
-    sources: Array.from(new Map(sources.map(s => [s.uri, s])).values())
-  };
+  // The latest user message is already in the history passed from AIAssistant.tsx
+  // We do NOT append it again here as it would create two consecutive 'user' roles.
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: contents,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    if (!response || !response.text) {
+        throw new Error("AI response was empty.");
+    }
+
+    const sources: { uri: string; title: string }[] = [];
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    
+    if (groundingChunks) {
+      groundingChunks.forEach((chunk: any) => {
+        if (chunk.web) {
+          sources.push({
+            uri: chunk.web.uri,
+            title: chunk.web.title || 'Verified Technical Source'
+          });
+        }
+      });
+    }
+
+    return {
+      text: response.text,
+      sources: Array.from(new Map(sources.map(s => [s.uri, s])).values())
+    };
+  } catch (error: any) {
+    console.error("Gemini API Error:", error);
+    throw error;
+  }
 };

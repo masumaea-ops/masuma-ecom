@@ -18,20 +18,24 @@ const PartFinder: React.FC<PartFinderProps> = ({ addToCart }) => {
 
     const handleLocalCheck = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!sku.trim()) return;
+        const trimmedSku = sku.trim();
+        if (!trimmedSku) return;
         
         setLoading(true);
         setSearchAttempted(false);
         setFoundProduct(null);
         
         try {
-            const res = await apiClient.get(`/products?q=${sku}`);
-            // FIX: Handle pagination
+            const res = await apiClient.get(`/products?q=${trimmedSku}`);
             const products = res.data.data || res.data || [];
             
             if (products && products.length > 0) {
-                // Prioritize exact SKU match
-                const exact = products.find((p: any) => p.sku.toLowerCase() === sku.toLowerCase());
+                // IMPROVED: Robust SKU normalization comparison
+                // Removes all non-alphanumeric chars for the "Exact" check
+                const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const target = normalize(trimmedSku);
+                
+                const exact = products.find((p: any) => normalize(p.sku) === target);
                 setFoundProduct(exact || products[0]);
             }
         } catch (error) {
@@ -63,7 +67,7 @@ const PartFinder: React.FC<PartFinderProps> = ({ addToCart }) => {
                                 type="text" 
                                 value={sku}
                                 onChange={e => setSku(e.target.value)}
-                                placeholder="Enter SKU (e.g. MFC-112)"
+                                placeholder="Enter SKU (e.g. MS 7460 or MS-7460)"
                                 className="flex-1 p-4 text-masuma-dark font-bold outline-none rounded-l-sm"
                             />
                             <button 

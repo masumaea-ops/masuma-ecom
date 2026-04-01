@@ -23,14 +23,19 @@ const SEO: React.FC<SEOProps> = ({
   const siteTitle = 'Masuma Autoparts East Africa';
   const fullTitle = `${title} | ${siteTitle}`;
   const currentUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
+  const defaultKeywords = 'Masuma Kenya, car parts Kenya, spare parts Nairobi, Japanese car parts Kenya, genuine car parts Nairobi';
+  const combinedKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords;
 
   return (
     <Helmet>
       {/* Standard Meta Tags */}
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
-      {keywords && <meta name="keywords" content={keywords} />}
+      <meta name="keywords" content={combinedKeywords} />
       <link rel="canonical" href={currentUrl} />
+      <meta name="robots" content="index, follow" />
+      <meta name="language" content="English" />
+      <meta name="revisit-after" content="7 days" />
 
       {/* Open Graph / Facebook / WhatsApp */}
       <meta property="og:type" content={type} />

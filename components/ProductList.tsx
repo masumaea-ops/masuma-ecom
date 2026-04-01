@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
-import { Search, AlertCircle, Eye, ShoppingBag, Plane, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, AlertCircle, Eye, ShoppingBag, Plane, ChevronLeft, ChevronRight, Filter, ShieldCheck } from 'lucide-react';
 import VinSearch from './VinSearch';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
@@ -108,61 +108,68 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
   };
 
   const handleCardClick = (e: React.MouseEvent, product: Product) => {
-      e.preventDefault(); // Prevent full page reload
-      onProductClick(product); // Trigger global modal opening and URL update
+      e.preventDefault();
+      onProductClick(product);
   };
 
   const ProductSkeleton = () => (
-    <div className="bg-white border border-gray-200 h-full flex flex-col animate-pulse">
-      <div className="h-56 bg-gray-100 w-full"></div>
-      <div className="p-5 flex-1 flex flex-col space-y-3">
-        <div className="h-6 bg-gray-100 w-3/4 rounded"></div>
-        <div className="h-4 bg-gray-100 w-1/4 rounded"></div>
-        <div className="h-12 bg-gray-100 w-full rounded mt-4"></div>
-        <div className="h-10 bg-gray-100 w-full rounded mt-auto"></div>
+    <div className="bg-white rounded-2xl border border-gray-100 h-full flex flex-col animate-pulse overflow-hidden shadow-sm">
+      <div className="h-64 bg-gray-100 w-full"></div>
+      <div className="p-6 flex-1 flex flex-col space-y-4">
+        <div className="h-6 bg-gray-100 w-3/4 rounded-lg"></div>
+        <div className="h-4 bg-gray-100 w-1/2 rounded-lg"></div>
+        <div className="h-16 bg-gray-50 w-full rounded-xl"></div>
+        <div className="flex justify-between items-center mt-auto pt-4">
+            <div className="h-8 bg-gray-100 w-24 rounded-lg"></div>
+            <div className="h-10 w-10 bg-gray-100 rounded-full"></div>
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div id="product-list-top" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div id="product-list-top" className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <SourcingModal isOpen={isSourcingOpen} onClose={() => setIsSourcingOpen(false)} />
 
-      <div className="mb-10 text-center md:text-left flex flex-col md:flex-row justify-between items-end">
-        <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-masuma-dark mb-2 font-display uppercase tracking-tight">Parts Catalog</h2>
-            <div className="h-1.5 w-24 bg-masuma-orange mb-4 mx-auto md:mx-0"></div>
-            <p className="text-gray-600 max-w-2xl">
-            Browse our extensive inventory of genuine Masuma parts. Engineered in Japan, proven in Kenya.
+      <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div className="text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-masuma-orange/10 text-masuma-orange rounded-full mb-4">
+                <Filter size={14} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Local Inventory</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-masuma-dark mb-4 font-display uppercase tracking-tight">Parts Catalog</h2>
+            <p className="text-gray-500 max-w-2xl text-lg font-light leading-relaxed">
+            High-precision components engineered for the tough East African terrain. 100% Genuine Masuma spark plugs, brake pads, filters, and suspension parts.
             </p>
         </div>
       </div>
 
       <VinSearch onVehicleIdentified={setVinFilter} />
 
-      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md p-4 shadow-lg border-t-4 border-masuma-orange mb-8 -mx-4 sm:mx-0 sm:rounded-lg transition-all">
-        <div className="flex flex-col lg:flex-row gap-6 items-center">
+      {/* Modern Floating Search/Filter Bar */}
+      <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-xl p-3 shadow-xl shadow-black/5 border border-gray-100 mb-12 rounded-2xl transition-all">
+        <div className="flex flex-col lg:flex-row gap-4 items-center">
           <div className="w-full lg:w-1/3 relative group">
             <input
               type="text"
-              placeholder="Search by Part Name, SKU, or OEM..."
+              placeholder="Search by SKU, Name, or OEM Number..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-masuma-orange rounded-none outline-none text-sm font-medium transition-colors"
+              className="w-full pl-11 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-xl outline-none text-sm font-medium transition-all"
             />
-            <Search className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={18} />
+            <Search className="absolute left-4 top-4.5 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={20} />
           </div>
 
           <div className="w-full lg:w-2/3 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 pb-1">
+            <div className="flex gap-2">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300 rounded-sm border ${
+                  className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap transition-all duration-300 rounded-xl border-2 ${
                     selectedCategory === cat
-                      ? 'bg-masuma-dark border-masuma-dark text-white shadow-md transform -translate-y-0.5'
-                      : 'bg-white border-gray-200 text-gray-500 hover:border-masuma-orange hover:text-masuma-orange'
+                      ? 'bg-masuma-dark border-masuma-dark text-white shadow-lg shadow-masuma-dark/20 translate-y-[-2px]'
+                      : 'bg-white border-gray-100 text-gray-500 hover:border-masuma-orange hover:text-masuma-orange'
                   }`}
                 >
                   {cat}
@@ -174,11 +181,11 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
       </div>
 
       {error && (
-           <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="p-6 bg-red-50 rounded-full mb-4 text-red-500"><AlertCircle size={48} /></div>
-                <h3 className="text-xl font-bold text-masuma-dark">Connection Error</h3>
-                <p className="text-gray-500 mb-6">Could not connect to the product database.</p>
-                <button onClick={() => window.location.reload()} className="px-6 py-2 bg-masuma-dark text-white rounded font-bold uppercase text-sm">Retry</button>
+           <div className="flex flex-col items-center justify-center py-24 text-center bg-red-50/50 rounded-3xl border border-red-100">
+                <div className="p-8 bg-white rounded-full mb-6 text-red-500 shadow-xl shadow-red-500/10"><AlertCircle size={56} /></div>
+                <h3 className="text-2xl font-bold text-masuma-dark font-display uppercase tracking-tight">Database Offline</h3>
+                <p className="text-gray-500 mb-8 max-w-xs mx-auto">We're experiencing a temporary connection issue with our warehouse servers.</p>
+                <button onClick={() => window.location.reload()} className="px-10 py-3 bg-masuma-dark text-white rounded-xl font-bold uppercase text-xs tracking-[0.2em] shadow-lg hover:bg-masuma-orange transition-all">Reconnect</button>
            </div>
       )}
 
@@ -187,29 +194,28 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
            {[1,2,3,4,5,6,7,8,9,10].map(i => <ProductSkeleton key={i} />)}
         </div>
       ) : !error && displayProducts.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center">
-          <div className="inline-flex p-6 bg-white rounded-full shadow-sm mb-6">
-            <Search className="text-masuma-orange" size={48} />
+        <div className="text-center py-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center">
+          <div className="inline-flex p-8 bg-white rounded-full shadow-xl mb-8">
+            <Search className="text-masuma-orange opacity-20" size={56} />
           </div>
-          <h3 className="text-2xl font-bold text-masuma-dark font-display">Part Not Found</h3>
-          <p className="text-gray-500 max-w-md mx-auto mt-2 mb-8">
-            We couldn't find a match for "{searchQuery}" {vinFilter && `compatible with ${vinFilter}`}.
-            However, we can source it directly from Masuma Japan for you.
+          <h3 className="text-3xl font-bold text-masuma-dark font-display uppercase tracking-tight">No Match Found</h3>
+          <p className="text-gray-500 max-w-md mx-auto mt-2 mb-10 text-lg font-light leading-relaxed">
+            We couldn't find a match for "{searchQuery}" {vinFilter && `for ${vinFilter}`}.
           </p>
           
-          <div className="flex gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
               <button 
                 onClick={() => {setSearchQuery(''); setSelectedCategory('All'); setVinFilter('');}}
-                className="px-8 py-3 bg-white border border-gray-300 text-gray-600 font-bold uppercase tracking-widest text-xs hover:bg-gray-50 transition"
+                className="px-8 py-4 bg-white border border-gray-200 text-gray-500 font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-gray-100 transition shadow-sm"
               >
-                Clear Filters
+                Reset Filters
               </button>
               
               <button 
                 onClick={() => setIsSourcingOpen(true)}
-                className="px-8 py-3 bg-masuma-orange text-white font-bold uppercase tracking-widest text-xs hover:bg-orange-600 transition shadow-lg flex items-center gap-2"
+                className="px-10 py-4 bg-masuma-orange text-white font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-masuma-dark transition shadow-xl shadow-masuma-orange/20 flex items-center gap-2"
               >
-                <Plane size={16} className="transform -rotate-45" /> Request Special Import
+                <Plane size={16} className="transform -rotate-45" /> Request Special Sourcing
               </button>
           </div>
         </div>
@@ -221,74 +227,92 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                     key={product.id}
                     href={`/?product=${product.id}`}
                     onClick={(e) => handleCardClick(e, product)}
-                    className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col h-full relative overflow-hidden rounded-sm cursor-pointer block"
+                    className="group bg-white border border-gray-100 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 transition-all duration-700 flex flex-col h-full relative overflow-hidden rounded-[2.5rem] cursor-pointer block shadow-sm"
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                 
-                <div className="relative h-64 bg-gray-50 p-6 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                {/* Enhanced Image Container */}
+                <div className="relative h-80 bg-gradient-to-br from-gray-50 to-white p-10 flex items-center justify-center overflow-hidden rounded-t-[2.5rem] border-b border-gray-50 select-none">
                     <img 
                     src={product.image || (product as any).images?.[0]} 
                     alt={product.name} 
-                    className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-700 ease-out"
+                    className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-1000 ease-out drop-shadow-2xl media-protected"
                     onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Masuma+Part';
                     }}
                     />
                     
-                    <div className="absolute top-0 left-0 p-3 w-full flex justify-between items-start">
-                        <span className="bg-white/90 backdrop-blur text-masuma-dark text-[10px] font-bold px-2 py-1 uppercase tracking-wider border border-gray-200 shadow-sm">
+                    {/* PREMIUM WATERMARK OVERLAY */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] transition-opacity group-hover:opacity-[0.06]">
+                        <svg width="100%" height="100%">
+                            <pattern id={`wm-card-${product.id}`} x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                                <text x="0" y="60" className="font-display font-bold text-[10px] uppercase tracking-widest fill-masuma-dark">MASUMA EA LTD</text>
+                            </pattern>
+                            <rect width="100%" height="100%" fill={`url(#wm-card-${product.id})`} />
+                        </svg>
+                    </div>
+
+                    {/* Gloss Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none"></div>
+
+                    <div className="absolute top-6 left-6 right-6 flex justify-between items-start">
+                        <span className="bg-white/90 backdrop-blur-md text-masuma-dark text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] border border-gray-100 shadow-sm">
                             {product.category}
                         </span>
                         {!product.stock && (
-                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider shadow-sm">
+                            <span className="bg-red-500 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg shadow-red-500/20">
                                 Sold Out
                             </span>
                         )}
                     </div>
 
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
+                    <div className="absolute inset-0 bg-masuma-dark/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-700 backdrop-blur-md">
                         <span 
-                            className="bg-white text-masuma-dark hover:text-masuma-orange px-6 py-3 font-bold uppercase text-xs tracking-widest flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition duration-300 shadow-lg"
+                            className="bg-white text-masuma-dark hover:bg-masuma-orange hover:text-white px-10 py-5 font-black uppercase text-[11px] tracking-[0.3em] flex items-center gap-3 transform translate-y-12 group-hover:translate-y-0 transition-all duration-500 shadow-2xl rounded-2xl active:scale-95"
                         >
-                            <Eye size={16} /> Quick View
+                            <Eye size={18} /> Quick View
                         </span>
                     </div>
                 </div>
 
-                <div className="p-6 flex-1 flex flex-col">
-                    <div className="mb-4">
-                    <div className="flex justify-between items-start mb-1">
-                        <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-12">
+                <div className="p-8 flex-1 flex flex-col">
+                    <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="w-1.5 h-1.5 bg-masuma-orange rounded-full"></div>
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Genuine Japanese Part</span>
+                        </div>
+                        <h3 className="text-2xl font-black text-masuma-dark leading-[0.9] font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tighter">
                             {product.name}
                         </h3>
-                    </div>
-                    <p className="text-xs text-gray-400 font-mono">SKU: {product.sku}</p>
+                        <p className="text-[10px] text-gray-400 font-black tracking-[0.2em] mt-3 uppercase">SKU: {product.sku}</p>
                     </div>
 
-                    <div className="mt-auto space-y-4">
-                        <div className="p-3 bg-gray-50 rounded-sm border border-gray-100 h-14">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Fits:</p>
-                            <p className="text-xs text-gray-700 line-clamp-1" title={(product.compatibility || []).join(', ')}>
+                    <div className="mt-auto space-y-6">
+                        <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100/50 h-20 flex flex-col justify-center group-hover:bg-white group-hover:border-masuma-orange/20 transition-colors">
+                            <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1.5">Compatibility:</p>
+                            <p className="text-[11px] text-gray-600 line-clamp-1 font-bold uppercase tracking-tight" title={(product.compatibility || []).join(', ')}>
                                 {(product.compatibility || []).join(', ')}
                             </p>
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
-                            <div>
-                                <span className="text-lg font-bold text-masuma-dark">
+                            <div className="flex flex-col">
+                                <span className="text-2xl font-black text-masuma-dark tracking-tighter">
                                     <Price amount={product.price} />
                                 </span>
+                                <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Incl. 16% VAT</span>
                             </div>
                             <button
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
                                 disabled={!product.stock}
-                                className={`p-3 rounded-full transition-all duration-300 ${
+                                className={`w-16 h-16 rounded-[1.5rem] transition-all duration-700 shadow-2xl flex items-center justify-center group/cart-btn ${
                                     product.stock 
-                                    ? 'bg-masuma-dark text-white group-hover:bg-masuma-orange group-hover:scale-110 shadow-md hover:shadow-lg' 
+                                    ? 'bg-masuma-dark text-white group-hover:bg-masuma-orange hover:scale-110 shadow-masuma-dark/20' 
                                     : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                                 }`}
                                 title="Add to Cart"
                             >
-                                <ShoppingBag size={18} />
+                                <ShoppingBag size={24} className="group-hover/cart-btn:rotate-12 transition-transform" />
                             </button>
                         </div>
                     </div>
@@ -297,50 +321,55 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
             ))}
             </div>
 
+            {/* Modern Curved Pagination */}
             {totalPages > 1 && (
-                <div className="mt-12 flex justify-center items-center gap-2">
-                    <button 
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pNum = i + 1;
-                        if (totalPages > 5) {
-                            if (currentPage > 3) pNum = currentPage - 2 + i;
-                            if (pNum > totalPages) pNum = totalPages - (4 - i);
-                        }
+                <div className="mt-20 flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-2xl border border-gray-100">
+                        <button 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-masuma-orange hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                        >
+                            <ChevronLeft size={22} />
+                        </button>
                         
-                        return (
-                            <button
-                                key={pNum}
-                                onClick={() => handlePageChange(pNum)}
-                                className={`w-10 h-10 text-sm font-bold rounded transition ${
-                                    currentPage === pNum 
-                                    ? 'bg-masuma-dark text-white' 
-                                    : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                                }`}
-                            >
-                                {pNum}
-                            </button>
-                        );
-                    })}
+                        <div className="flex gap-1 px-4">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                let pNum = i + 1;
+                                if (totalPages > 5) {
+                                    if (currentPage > 3) pNum = currentPage - 2 + i;
+                                    if (pNum > totalPages) pNum = totalPages - (4 - i);
+                                }
+                                
+                                return (
+                                    <button
+                                        key={pNum}
+                                        onClick={() => handlePageChange(pNum)}
+                                        className={`w-12 h-12 text-xs font-black rounded-xl transition-all ${
+                                            currentPage === pNum 
+                                            ? 'bg-masuma-dark text-white shadow-xl shadow-masuma-dark/20' 
+                                            : 'bg-transparent text-gray-400 hover:text-masuma-dark'
+                                        }`}
+                                    >
+                                        {pNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                    <button 
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
+                        <button 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-masuma-orange hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                        >
+                            <ChevronRight size={22} />
+                        </button>
+                    </div>
+                    <div className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
+                        Page {currentPage} of {totalPages} • {totalProducts} items
+                    </div>
                 </div>
             )}
-            <div className="text-center mt-4 text-xs text-gray-500">
-                Showing page {currentPage} of {totalPages} ({totalProducts} items)
-            </div>
         </>
       )}
     </div>

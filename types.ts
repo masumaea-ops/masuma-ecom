@@ -14,10 +14,10 @@ export enum Category {
 export interface Product {
   id: string;
   name: string;
-  sku: string; // Masuma Part Number
-  oemNumbers: string[]; // Original Equipment Manufacturer Numbers
+  sku: string;
+  oemNumbers: string[];
   category: string; 
-  price: number; // In KES
+  price: number; 
   wholesalePrice?: number;
   costPrice?: number;
   description: string;
@@ -27,10 +27,23 @@ export interface Product {
   videoUrl?: string;
   stock: boolean; 
   quantity?: number;
+  specs?: Record<string, string | number>;
 }
 
 export interface CartItem extends Product {
   quantity: number;
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  type: 'PERCENTAGE' | 'FIXED';
+  value: number;
+  startDate: string;
+  endDate: string;
+  usageLimit: number;
+  currentUsage: number;
+  isActive: boolean;
 }
 
 export interface BlogPost {
@@ -45,7 +58,7 @@ export interface BlogPost {
   relatedProductCategory: string; 
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS' | 'COOKIES' | 'CHECKOUT';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -93,6 +106,8 @@ export interface Order {
     paymentMethod: string;
     items: { name: string; qty: number; price: number; sku?: string }[];
     payments?: Payment[];
+    promoCodeUsed?: string;
+    discountAmount?: number;
 }
 
 export interface Sale {
@@ -176,26 +191,27 @@ export interface Quote {
     items: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[];
 }
 
+// Fix for components/admin/GradingSystem.tsx import errors
 export interface Student {
-    id: string;
-    fullName: string;
-    studentId: string;
-    currentAverage: number;
-    status: 'ACTIVE' | 'GRADUATED' | 'INACTIVE';
+  id: string;
+  fullName: string;
+  studentId: string;
+  currentAverage?: number;
+  status: 'ACTIVE' | 'INACTIVE';
 }
 
 export interface GradeScale {
-    id: string;
-    label: string;
-    minScore: number;
-    maxScore: number;
-    comment: string;
+  id: string;
+  minScore: number;
+  maxScore: number;
+  label: string;
+  comment: string;
 }
 
 export interface Assessment {
-    id: string;
-    studentId: string;
-    title: string;
-    score: number;
-    date: string;
+  id: string;
+  studentId: string;
+  title: string;
+  score: number;
+  date: string;
 }

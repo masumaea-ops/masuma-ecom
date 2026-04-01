@@ -36,17 +36,23 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
     if (!textToSend.trim()) return;
 
     const userMessage: ExtendedChatMessage = { role: 'user', text: textToSend };
-    setMessages(prev => [...prev, userMessage]);
+    
+    // Crucial: Update state first so we have the latest history
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    
     if (!overrideInput) setInput('');
     setIsLoading(true);
 
     try {
-        const history = messages.map(m => ({
+        // Map history for API
+        const history = updatedMessages.map(m => ({
             role: m.role === 'model' ? 'model' : 'user',
             parts: [{ text: m.text }]
         }));
 
-      const result = await sendMessageToGemini(history, userMessage.text);
+      // We pass the full history (including the current message) to the service
+      const result = await sendMessageToGemini(history, textToSend);
       
       setMessages(prev => [...prev, { 
         role: 'model', 
@@ -54,9 +60,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose }) => {
         sources: result.sources 
       }]);
     } catch (error) {
+      console.error("Chat Error:", error);
       setMessages(prev => [...prev, { 
         role: 'model', 
-        text: "Samahani, I'm having a connection hiccup. Please visit us at Ruby Mall, First Floor, or message our team directly on WhatsApp +254 792 506 590.", 
+        text: "Samahani, I'm having a connection hiccup. This usually happens if the conversation context is too large or there is a role mismatch. Please refresh or visit us at Ruby Mall, First Floor, or message our team directly on WhatsApp +254 792 506 590.", 
         isError: true 
       }]);
     } finally {

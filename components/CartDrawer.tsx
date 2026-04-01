@@ -1,9 +1,6 @@
-
-import React, { useState } from 'react';
-import { X, Trash2, CreditCard, Smartphone, Plus, Minus } from 'lucide-react';
+import React from 'react';
+import { X, Trash2, Smartphone, Plus, Minus, ShieldCheck, ChevronRight } from 'lucide-react';
 import { CartItem } from '../types';
-import MpesaModal from './MpesaModal';
-import CheckoutModal from './CheckoutModal';
 import Price from './Price';
 
 interface CartDrawerProps {
@@ -11,144 +8,145 @@ interface CartDrawerProps {
   onClose: () => void;
   cartItems: CartItem[];
   removeFromCart: (id: string) => void;
-  onCheckout: () => void; // This now acts as a clearer for success
+  onCheckout: () => void;
   updateQuantity: (id: string, quantity: number) => void;
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, removeFromCart, onCheckout, updateQuantity }) => {
-  const [isMpesaOpen, setIsMpesaOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  const handleSuccess = () => {
-    setIsMpesaOpen(false);
-    setIsCheckoutOpen(false);
-    onCheckout(); // Triggers app toast and clears cart
-  };
+  const basePriceTotal = total / 1.16;
+  const vatTotal = total - basePriceTotal;
 
   return (
     <>
       {/* Backdrop */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-40 transition-opacity"
+          className="fixed inset-0 bg-masuma-dark/60 backdrop-blur-sm z-[1000] transition-opacity"
           onClick={onClose}
         />
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white z-[1001] transform transition-transform duration-500 ease-out shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col h-full">
           
           {/* Header */}
-          <div className="p-5 border-b-4 border-masuma-orange flex justify-between items-center bg-masuma-dark text-white">
-            <h2 className="text-xl font-bold font-display uppercase tracking-wider">Your Cart</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white transition">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+            <div>
+                <h2 className="text-xl font-bold font-display uppercase tracking-tight text-masuma-dark">Your Order</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{cartItems.length} items selected</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition text-gray-400 hover:text-masuma-dark">
               <X size={24} />
             </button>
           </div>
 
-          {/* Items */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-gray-50">
+          {/* Items List */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50/30 scroll-smooth">
             {cartItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                <p>Your cart is empty.</p>
-                <button onClick={onClose} className="mt-4 text-masuma-orange font-bold text-sm hover:underline uppercase">Browse Catalog</button>
+              <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 text-gray-200 shadow-inner border border-gray-100">
+                    <Smartphone size={48} strokeWidth={1} />
+                </div>
+                <h3 className="font-bold text-masuma-dark uppercase text-sm tracking-widest">Your Cart is Empty</h3>
+                <p className="text-[10px] text-gray-400 mt-3 max-w-[220px] uppercase font-bold leading-relaxed">Add genuine Masuma precision parts to start your local order.</p>
+                <button onClick={onClose} className="mt-10 bg-masuma-dark text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.2em] hover:bg-masuma-orange transition-all shadow-xl shadow-masuma-dark/10 active:scale-95">Start Shopping</button>
               </div>
             ) : (
-              cartItems.map((item) => (
-                <div key={item.id} className="flex gap-4 bg-white p-3 shadow-sm border border-gray-100">
-                  <div className="h-16 w-16 bg-gray-100 overflow-hidden flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-masuma-dark line-clamp-1">{item.name}</h4>
-                    <p className="text-xs text-gray-500 mb-2">SKU: {item.sku}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-masuma-orange font-bold text-sm">
-                        <Price amount={item.price} />
-                      </span>
-                      
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center border border-gray-300 rounded-sm bg-white h-8">
+              <div className="space-y-4 pb-4">
+                {cartItems.map((item) => (
+                  <div key={item.id} className="flex gap-4 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-masuma-orange/20 group relative overflow-hidden">
+                    <div className="h-24 w-24 bg-gray-50 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-gray-50 group-hover:bg-white transition-colors">
+                      <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain p-3 transition-transform group-hover:scale-110 duration-700 ease-out" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                      <div>
+                        <div className="flex justify-between items-start gap-2">
+                            <h4 className="font-bold text-[11px] sm:text-xs text-masuma-dark line-clamp-2 leading-tight group-hover:text-masuma-orange transition-colors uppercase tracking-tight">{item.name}</h4>
                             <button 
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)} 
-                                className="px-2 h-full hover:bg-gray-100 text-gray-500 disabled:opacity-50"
-                                disabled={item.quantity <= 1}
+                              onClick={() => removeFromCart(item.id)}
+                              className="text-gray-300 hover:text-red-500 transition-colors p-1 -mr-1"
+                              title="Remove"
                             >
-                                <Minus size={12}/>
-                            </button>
-                            <span className="text-xs font-bold w-8 text-center text-masuma-dark">{item.quantity}</span>
-                            <button 
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)} 
-                                className="px-2 h-full hover:bg-gray-100 text-gray-500"
-                            >
-                                <Plus size={12}/>
+                              <X size={14} />
                             </button>
                         </div>
-
-                        <button 
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition"
-                          title="Remove Item"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <p className="text-[8px] text-gray-400 font-black tracking-[0.2em] mt-1.5 uppercase opacity-60">SKU: {item.sku}</p>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-4">
+                        <span className="text-masuma-dark font-black text-sm tracking-tighter">
+                          <Price amount={item.price} />
+                        </span>
+                        
+                        <div className="flex items-center bg-gray-100/80 rounded-2xl p-1 border border-gray-200/50 backdrop-blur-sm">
+                          <button 
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)} 
+                              className="w-8 h-8 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-xl text-gray-400 hover:text-masuma-dark transition-all disabled:opacity-30"
+                              disabled={item.quantity <= 1}
+                          >
+                              <Minus size={12} strokeWidth={3}/>
+                          </button>
+                          <span className="text-xs font-black w-8 text-center text-masuma-dark">{item.quantity}</span>
+                          <button 
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                              className="w-8 h-8 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-xl text-gray-400 hover:text-masuma-dark transition-all"
+                          >
+                              <Plus size={12} strokeWidth={3}/>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="p-5 border-t border-gray-200 bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-gray-600 font-medium uppercase text-xs">Subtotal</span>
-              <span className="text-xl font-bold text-masuma-dark"><Price amount={total} /></span>
-            </div>
-            <p className="text-[10px] text-gray-500 mb-4 text-center">
-              Secure payments powered by M-Pesa.
-            </p>
-            
-            <div className="grid grid-cols-1 gap-3">
+          {/* Footer Actions */}
+          {cartItems.length > 0 && (
+              <div className="p-6 sm:p-8 border-t border-gray-100 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
+                <div className="space-y-3 mb-8">
+                  <div className="flex justify-between items-center text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                      <span>Order Subtotal</span>
+                      <span className="text-masuma-dark"><Price amount={basePriceTotal} /></span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                      <span>VAT (16%)</span>
+                      <span className="text-masuma-dark"><Price amount={vatTotal} /></span>
+                  </div>
+                  <div className="h-px bg-gray-100 w-full my-2"></div>
+                  <div className="flex justify-between items-end">
+                      <div>
+                          <p className="text-[9px] text-masuma-orange font-black uppercase tracking-[0.3em] mb-1">Total Payable</p>
+                          <p className="text-3xl font-black text-masuma-dark tracking-tighter leading-none"><Price amount={total} /></p>
+                      </div>
+                      <div className="text-right">
+                           <div className="flex items-center gap-1.5 bg-green-50 px-2 py-1 rounded-sm border border-green-100">
+                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                               <p className="text-[8px] text-green-700 font-black uppercase tracking-widest">Taxes Included</p>
+                           </div>
+                      </div>
+                  </div>
+                </div>
+                
                 <button 
-                onClick={() => setIsMpesaOpen(true)}
-                disabled={cartItems.length === 0}
-                className="w-full bg-[#4CAF50] hover:bg-[#1B5E20] text-white font-bold py-3 rounded-none flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                  onClick={onCheckout}
+                  className="w-full bg-masuma-dark text-white py-6 rounded-3xl font-black uppercase tracking-[0.3em] text-[11px] flex items-center justify-center gap-3 hover:bg-masuma-orange hover:-translate-y-1 transition-all shadow-2xl shadow-masuma-dark/20 active:scale-95 group/btn"
                 >
-                <Smartphone size={18} />
-                Lipa Na M-Pesa
+                  Proceed to Checkout <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                 </button>
 
-                <button 
-                onClick={() => setIsCheckoutOpen(true)}
-                disabled={cartItems.length === 0}
-                className="w-full bg-white border-2 border-masuma-dark text-masuma-dark hover:bg-gray-100 font-bold py-3 rounded-none flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
-                >
-                <CreditCard size={18} />
-                Pay on Delivery / Manual
-                </button>
-            </div>
-          </div>
+                <div className="mt-6 flex items-center justify-center gap-4 opacity-30">
+                    <ShieldCheck size={16} className="text-masuma-dark" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-masuma-dark">Secure Japanese Precision Logistics</span>
+                </div>
+              </div>
+          )}
 
         </div>
       </div>
-
-      <MpesaModal 
-        isOpen={isMpesaOpen} 
-        onClose={() => setIsMpesaOpen(false)} 
-        cartItems={cartItems}
-        onSuccess={handleSuccess}
-      />
-
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        cartItems={cartItems}
-        onSuccess={handleSuccess}
-      />
     </>
   );
 };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus, ArrowRight, Share2, Facebook, Twitter, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Check, AlertTriangle, Truck, MessageCircle, Plus, Minus, Share2, ChevronLeft, ChevronRight, Play, Info, ShieldCheck, Settings, Hash, Maximize2, ZoomIn, ReceiptText, Calculator, Shield, Minimize2, ShoppingCart, ShoppingBag, Eye } from 'lucide-react';
 import { Product } from '../types';
 import QuoteModal from './QuoteModal';
 import Price from './Price';
@@ -23,411 +23,378 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [isLoadingRelated, setIsLoadingRelated] = useState(false);
-  
-  // Carousel State
   const [media, setMedia] = useState<MediaItem[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  
+  const stageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && product) {
-        // Deep linking logic
-        const newUrl = `${window.location.pathname}?product=${product.id}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-
         setQuantity(1);
-        
-        // Construct Media Gallery
+        setIsFullScreen(false);
         const items: MediaItem[] = [];
-        
-        // 1. Start with the designated "Main Image"
-        if (product.image) {
-            items.push({ url: product.image, type: 'image' });
-        }
-        
-        // 2. Add other images from the gallery, avoiding duplicate of main image
+        if (product.image) items.push({ url: product.image, type: 'image' });
         if (product.images && Array.isArray(product.images)) {
             product.images.forEach(img => {
-                if (img !== product.image) {
-                    items.push({ url: img, type: 'image' });
-                }
+                if (img !== product.image) items.push({ url: img, type: 'image' });
             });
         }
-        
-        // 3. Append Video if configured
-        if (product.videoUrl) {
-            items.push({ url: product.videoUrl, type: 'video' });
-        }
-
-        // If absolutely no images, add a placeholder to prevent broken UI
-        if (items.length === 0) {
-            items.push({ url: 'https://via.placeholder.com/600x600?text=No+Product+Image', type: 'image' });
-        }
+        if (product.videoUrl) items.push({ url: product.videoUrl, type: 'video' });
+        if (items.length === 0) items.push({ url: 'https://via.placeholder.com/800x800?text=No+Product+Image', type: 'image' });
 
         setMedia(items);
-        setActiveIndex(0);
+        setActiveMediaIndex(0);
         fetchRelatedProducts(product);
-    } else if (!isOpen) {
-        // Revert URL when closed
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
     }
   }, [isOpen, product]);
 
   const fetchRelatedProducts = async (currentProduct: Product) => {
-      setIsLoadingRelated(true);
       try {
-          const res = await apiClient.get(`/products?category=${currentProduct.category}&limit=10`);
+          const res = await apiClient.get(`/products?category=${currentProduct.category}&limit=6`);
           const allProducts = res.data.data || res.data || [];
-          const filtered = allProducts.filter((p: Product) => p.id !== currentProduct.id);
-          setRelatedProducts(filtered);
+          setRelatedProducts(allProducts.filter((p: Product) => p.id !== currentProduct.id));
       } catch (error) {
           console.error("Failed to fetch related products", error);
-          setRelatedProducts([]);
-      } finally {
-          setIsLoadingRelated(false);
       }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!stageRef.current) return;
+      const { left, top, width, height } = stageRef.current.getBoundingClientRect();
+      const x = ((e.clientX - left) / width) * 100;
+      const y = ((e.clientY - top) / height) * 100;
+      setZoomPosition({ x, y });
   };
 
   if (!isOpen || !product) return null;
 
-  const handleNext = () => setActiveIndex((prev) => (prev + 1) % media.length);
-  const handlePrev = () => setActiveIndex((prev) => (prev - 1 + media.length) % media.length);
-
-  const handleQuantityChange = (delta: number) => {
-    setQuantity(prev => Math.max(1, prev + delta));
+  const isYoutubeUrl = (url: string) => {
+      return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    onClose();
+  const getYoutubeEmbedUrl = (url: string) => {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = url.match(regExp);
+      const id = (match && match[2].length === 11) ? match[2] : null;
+      if (!id) return '';
+      
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
   };
 
   const handleSwitch = (p: Product) => {
       if (onSwitchProduct) {
-          const contentDiv = document.getElementById('quickview-content');
+          const contentDiv = document.getElementById('sidebar-content');
           if (contentDiv) contentDiv.scrollTop = 0;
           onSwitchProduct(p);
       }
   };
 
-  const getYoutubeEmbedUrl = (url: string) => {
-      if (!url) return '';
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = url.match(regExp);
-      const id = (match && match[2].length === 11) ? match[2] : null;
-      if (!id) return '';
-      return `https://www.youtube.com/embed/${id}?autoplay=1`;
-  };
-
-  // Social Share Logic
-  const shareUrl = `${window.location.origin}/?product=${product.id}`;
-  const shareText = `Check out this ${product.name} at Masuma Autoparts EA!`;
-
-  const handleSocialShare = (platform: 'whatsapp' | 'facebook' | 'twitter') => {
-      let url = '';
-      switch (platform) {
-          case 'whatsapp':
-              url = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
-              break;
-          case 'facebook':
-              url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-              break;
-          case 'twitter':
-              url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-              break;
-      }
-      window.open(url, '_blank', 'width=600,height=400');
-  };
-
-  const productSchema = {
-      "@context": "https://schema.org/",
-      "@type": "Product",
-      "name": product.name,
-      "image": media.filter(m => m.type === 'image').map(m => m.url),
-      "description": product.description,
-      "sku": product.sku,
-      "mpn": product.sku,
-      "brand": { "@type": "Brand", "name": "Masuma" },
-      "offers": {
-          "@type": "Offer",
-          "url": shareUrl,
-          "priceCurrency": "KES",
-          "price": product.price,
-          "itemCondition": "https://schema.org/NewCondition",
-          "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-          "seller": { "@type": "Organization", "name": "Masuma Autoparts East Africa" }
-      }
-  };
-
-  const activeMedia = media[activeIndex];
+  const activeMedia = media[activeMediaIndex];
+  const basePrice = product.price / 1.16;
+  const vatAmount = product.price - basePrice;
 
   return (
     <>
-      <SEO 
-        title={product.name} 
-        description={product.description.substring(0, 160)} 
-        image={product.image}
-        type="product"
-        schema={productSchema}
-      />
+      <SEO title={product.name} description={product.description} image={product.image} type="product" />
 
-      <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
-        <div 
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
-          onClick={onClose}
-        ></div>
+      {/* Product Structured Data */}
+      <script type="application/ld+json">
+      {JSON.stringify({
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": product.name,
+        "image": [product.image, ...(product.images || [])],
+        "description": product.description,
+        "sku": product.sku,
+        "brand": {
+          "@type": "Brand",
+          "name": "Masuma"
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": `${window.location.origin}/?product=${product.id}`,
+          "priceCurrency": "KES",
+          "price": product.price,
+          "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          "itemCondition": "https://schema.org/NewCondition"
+        }
+      })}
+      </script>
+
+      <div className={`fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden transition-all duration-500 ${isFullScreen ? 'p-0' : 'p-0 sm:p-4 md:p-6 lg:p-10'}`}>
+        <div className="absolute inset-0 bg-masuma-dark/98 backdrop-blur-3xl transition-opacity" onClick={onClose}></div>
         
-        <div className="relative bg-white w-full max-w-6xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-scale-up">
-          <button 
-            onClick={onClose}
-            className="absolute top-3 right-3 z-50 p-2 bg-gray-100 hover:bg-masuma-orange hover:text-white rounded-full transition shadow-md border border-gray-200 group"
-            aria-label="Close"
-          >
-            <X size={24} className="text-gray-600 group-hover:text-white" />
-          </button>
-
-          <div id="quickview-content" className="flex-1 overflow-y-auto bg-white">
-            <div className="flex flex-col lg:flex-row border-b border-gray-200">
-                
-                {/* Image & Video Carousel Gallery Section */}
-                <div className="w-full lg:w-3/5 bg-gray-50 flex flex-col border-b lg:border-b-0 lg:border-r border-gray-100">
-                    <div className="relative flex-1 flex items-center justify-center min-h-[400px] md:min-h-[500px] bg-white group/viewer">
-                        {activeMedia?.type === 'video' ? (
-                            <div className="w-full h-full aspect-video">
+        <div className={`relative bg-white w-full h-full shadow-2xl flex flex-col overflow-hidden animate-scale-up border border-white/5 transition-all duration-500 ${isFullScreen ? 'max-w-none max-h-none rounded-none' : 'max-w-[1450px] max-h-[92vh] sm:rounded-3xl'}`}>
+          
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+            {/* Media Section */}
+            <div className="w-full h-[40vh] lg:h-full lg:w-[55%] bg-[#050505] relative flex flex-col min-h-0 group/stage overflow-hidden">
+                <div className="flex-1 relative overflow-hidden flex items-center justify-center"
+                     ref={stageRef}
+                     onMouseMove={handleMouseMove}
+                     onMouseEnter={() => setIsZoomed(true)}
+                     onMouseLeave={() => setIsZoomed(false)}>
+                    
+                    {activeMedia?.type === 'video' ? (
+                        <div className="relative w-full h-full aspect-video rounded-lg shadow-2xl overflow-hidden bg-black max-w-4xl">
+                            {isYoutubeUrl(activeMedia.url) ? (
                                 <iframe 
-                                    src={getYoutubeEmbedUrl(activeMedia.url)}
-                                    className="w-full h-full"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    src={getYoutubeEmbedUrl(activeMedia.url)} 
+                                    className="w-full h-full" 
+                                    allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
+                            ) : (
+                                <video 
+                                    src={activeMedia.url} 
+                                    className="w-full h-full object-contain" 
+                                    autoPlay 
+                                    muted 
+                                    loop 
+                                    playsInline 
+                                    controls
+                                />
+                            )}
+                            <div className="absolute top-4 left-4 bg-masuma-dark/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
+                                <span className="text-[8px] font-black uppercase text-white/80 tracking-widest flex items-center gap-2">
+                                    <Shield size={10} className="text-masuma-orange"/> Masuma EA Ltd Official Content
+                                </span>
                             </div>
-                        ) : (
+                        </div>
+                    ) : (
+                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-zoom-in">
                             <img 
-                                src={activeMedia?.url || 'https://via.placeholder.com/600x600?text=No+Image'} 
+                                src={activeMedia?.url} 
                                 alt={product.name} 
-                                className="max-h-[400px] md:max-h-[500px] w-full object-contain transition-all duration-500" 
+                                style={isZoomed ? {
+                                    transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                                    transform: 'scale(2.5)'
+                                } : { transform: 'scale(1)' }} 
+                                className={`max-w-full max-h-[75vh] object-contain transition-transform duration-200 ease-out will-change-transform ${!isZoomed ? 'drop-shadow-[0_15px_35px_rgba(255,255,255,0.05)]' : ''}`} 
+                                onContextMenu={(e) => e.preventDefault()}
                             />
-                        )}
+                            
+                            {/* PREMIUM WATERMARK OVERLAY */}
+                            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] select-none">
+                                <p className="text-[12vw] font-black uppercase tracking-[0.2em] -rotate-12 whitespace-nowrap text-white">Authentic Masuma</p>
+                            </div>
 
-                        {/* Navigation Arrows */}
-                        {media.length > 1 && (
-                            <>
-                                <button 
-                                    onClick={handlePrev}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/50 hover:bg-white text-masuma-dark rounded-full shadow-lg transition-all opacity-0 group-hover/viewer:opacity-100 backdrop-blur-sm"
-                                >
-                                    <ChevronLeft size={24} />
-                                </button>
-                                <button 
-                                    onClick={handleNext}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/50 hover:bg-white text-masuma-dark rounded-full shadow-lg transition-all opacity-0 group-hover/viewer:opacity-100 backdrop-blur-sm"
-                                >
-                                    <ChevronRight size={24} />
-                                </button>
-                            </>
-                        )}
+                            {/* AUTHENTICITY BADGE */}
+                            <div className="absolute top-6 left-6 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 pointer-events-none flex items-center gap-2 shadow-2xl">
+                                <ShieldCheck size={14} className="text-masuma-orange" />
+                                <span className="text-[9px] font-black uppercase text-white tracking-[0.1em]">Verified Masuma E.A. Part</span>
+                            </div>
+
+                            {!isZoomed && activeMedia?.type === 'image' && (
+                                <div className="absolute bottom-6 flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
+                                    <ZoomIn size={12} className="text-masuma-orange" />
+                                    <span className="text-[9px] font-black uppercase text-white/60 tracking-widest">Precision Hover Zoom</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Media Controls */}
+                    <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover/stage:opacity-100 transition-all duration-500 translate-x-4 group-hover/stage:translate-x-0">
+                        <button 
+                            onClick={() => setIsFullScreen(!isFullScreen)}
+                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl"
+                            title="Toggle Cinema Mode"
+                        >
+                            {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                        </button>
+                        <button 
+                            onClick={() => window.open(`https://wa.me/?text=Check this Masuma part: ${window.location.origin}/?product=${product.id}`, '_blank')}
+                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl"
+                            title="Share Part"
+                        >
+                            <Share2 size={20} />
+                        </button>
+                        <button 
+                            onClick={onClose}
+                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl"
+                        >
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    {media.length > 1 && (
+                        <>
+                            <button onClick={() => setActiveMediaIndex((prev) => (prev - 1 + media.length) % media.length)} className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all opacity-0 group-hover/stage:opacity-100 shadow-2xl z-50"><ChevronLeft size={28} /></button>
+                            <button onClick={() => setActiveMediaIndex((prev) => (prev + 1) % media.length)} className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all opacity-0 group-hover/stage:opacity-100 shadow-2xl z-50"><ChevronRight size={28} /></button>
+                        </>
+                    )}
+                </div>
+
+                {/* Thumbnail Gallery */}
+                {media.length > 1 && (
+                    <div className="h-28 bg-black/40 backdrop-blur-2xl border-t border-white/5 flex items-center px-8 gap-4 overflow-x-auto scrollbar-hide">
+                        {media.map((item, idx) => (
+                            <button 
+                                key={idx} 
+                                onClick={() => setActiveMediaIndex(idx)} 
+                                className={`relative w-20 h-20 shrink-0 border-2 transition-all duration-500 rounded-2xl overflow-hidden group/thumb ${activeMediaIndex === idx ? 'border-masuma-orange scale-105 shadow-lg shadow-masuma-orange/20' : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30 grayscale hover:grayscale-0'}`}
+                            >
+                                {item.type === 'video' ? (
+                                    <div className="w-full h-full bg-masuma-dark flex items-center justify-center text-white">
+                                        <Play size={24} fill="currentColor" />
+                                    </div>
+                                ) : (
+                                    <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover/thumb:scale-110" alt="" />
+                                )}
+                                {activeMediaIndex === idx && (
+                                    <div className="absolute inset-0 bg-masuma-orange/10"></div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Details Section */}
+            <div id="sidebar-content" className="w-full lg:w-[45%] flex flex-col bg-white overflow-y-auto border-l border-gray-100 scrollbar-hide">
+                <div className="p-8 lg:p-12 space-y-10">
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap gap-3">
+                            <span className="bg-masuma-dark text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-[0.2em]">{product.category}</span>
+                            {product.stock ? (
+                                <span className="text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-green-50 px-3 py-1 rounded-full"><Check size={12} strokeWidth={3} /> In Stock Nairobi</span>
+                            ) : (
+                                <span className="text-red-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={12} strokeWidth={3} /> Special Order Only</span>
+                            )}
+                        </div>
+                        <h2 className="text-3xl lg:text-5xl font-black text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
                         
-                        <div className="absolute bottom-4 left-6">
-                            <span className="inline-block px-3 py-1 bg-masuma-dark text-white text-[10px] font-bold uppercase tracking-widest rounded-sm shadow-lg">
-                                {product.category}
-                            </span>
+                        <div className="pt-8 border-t border-gray-50 space-y-6">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2 flex items-center gap-2"><Calculator size={12}/> Total Price (Payable)</span>
+                                <div className="flex items-baseline gap-3">
+                                    <span className="text-5xl lg:text-7xl font-black text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
+                                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">incl. 16% VAT</span>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-gray-50 rounded-[2rem] border border-gray-100 overflow-hidden">
+                                <div className="grid grid-cols-2 divide-x divide-gray-200">
+                                    <div className="p-6">
+                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none block mb-2">Base Price</span>
+                                        <span className="text-lg font-black text-masuma-dark"><Price amount={basePrice} /></span>
+                                    </div>
+                                    <div className="p-6">
+                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none block mb-2">VAT (16%)</span>
+                                        <span className="text-lg font-black text-gray-600"><Price amount={vatAmount} /></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Thumbnail Strip */}
-                    {media.length > 1 && (
-                        <div className="bg-gray-100 p-4 border-t border-gray-200">
-                            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x justify-center md:justify-start">
-                                {media.map((item, idx) => (
-                                    <button 
-                                        key={idx}
-                                        onClick={() => setActiveIndex(idx)}
-                                        className={`relative w-20 h-20 shrink-0 border-2 rounded overflow-hidden transition-all snap-start ${activeIndex === idx ? 'border-masuma-orange ring-2 ring-masuma-orange/20 scale-105' : 'border-white hover:border-gray-300'}`}
-                                    >
-                                        {item.type === 'video' ? (
-                                            <div className="w-full h-full bg-masuma-dark flex items-center justify-center">
-                                                <Play size={20} className="text-white fill-current" />
-                                            </div>
-                                        ) : (
-                                            <img src={item.url} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
-                                        )}
-                                    </button>
+                    <div className="space-y-8">
+                        <div className="space-y-6">
+                            <h4 className="text-[10px] font-black text-masuma-dark uppercase tracking-[0.3em] flex items-center gap-3 border-l-4 border-masuma-orange pl-4">Technical Specifications</h4>
+                            <div className="grid grid-cols-2 gap-y-8 gap-x-12">
+                                <div className="group">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 group-hover:text-masuma-orange transition-colors">Global SKU</p>
+                                    <p className="text-sm font-black text-masuma-dark uppercase tracking-tight">{product.sku}</p>
+                                </div>
+                                <div className="group">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 group-hover:text-masuma-orange transition-colors">Grade</p>
+                                    <p className="text-sm font-black text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
+                                </div>
+                                {Object.entries(product.specs || {}).map(([key, value]) => (
+                                    <div key={key} className="group">
+                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 group-hover:text-masuma-orange transition-colors">{key}</p>
+                                        <p className="text-sm font-black text-masuma-dark uppercase tracking-tight">{String(value)}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <h4 className="text-[10px] font-black text-masuma-dark uppercase tracking-[0.3em] opacity-60">Part Description</h4>
+                            <p className="text-sm text-gray-500 leading-relaxed font-medium">{product.description}</p>
+                        </div>
+
+                        <div className="bg-masuma-dark text-white p-8 rounded-[2.5rem] shadow-2xl border-l-8 border-masuma-orange relative overflow-hidden group/fitment">
+                            <div className="absolute top-[-20px] right-[-20px] opacity-10 rotate-12 group-hover/fitment:scale-110 transition-transform duration-700"><Check size={80}/></div>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
+                            <p className="text-sm text-gray-200 font-bold leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
+                            <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-2">
+                                <AlertTriangle size={14} className="text-masuma-orange"/>
+                                <span className="text-[9px] text-masuma-orange uppercase font-black tracking-widest italic">Chassis verification recommended</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 space-y-8">
+                        <div className="flex gap-4">
+                            {product.stock && (
+                                <div className="flex items-center bg-gray-100 rounded-2xl p-1.5 border border-gray-200">
+                                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-12 h-12 flex items-center justify-center hover:bg-white hover:shadow-md rounded-xl text-masuma-dark transition-all disabled:opacity-30" disabled={quantity <= 1}><Minus size={18} strokeWidth={3} /></button>
+                                    <span className="w-12 text-center font-black text-masuma-dark text-lg">{quantity}</span>
+                                    <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-12 flex items-center justify-center hover:bg-white hover:shadow-md rounded-xl text-masuma-dark transition-all"><Plus size={18} strokeWidth={3} /></button>
+                                </div>
+                            )}
+                            <button 
+                                onClick={() => { addToCart(product, quantity); onClose(); }} 
+                                disabled={!product.stock} 
+                                className={`flex-1 h-16 font-black uppercase tracking-[0.3em] text-[11px] transition-all shadow-2xl rounded-2xl active:scale-95 flex items-center justify-center gap-3 ${product.stock ? 'bg-masuma-dark text-white hover:bg-masuma-orange shadow-masuma-dark/20' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                            >
+                                <ShoppingCart size={20} /> {product.stock ? 'Add to Cart' : 'Out of Stock'}
+                            </button>
+                            <button onClick={() => setIsQuoteModalOpen(true)} className="w-16 h-16 bg-gray-100 text-masuma-dark hover:bg-masuma-orange hover:text-white transition-all flex items-center justify-center rounded-2xl shadow-xl active:scale-95 border border-gray-200" title="Technical Inquiry"><MessageCircle size={24} /></button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="flex items-center gap-4 group/feat">
+                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover/feat:bg-masuma-orange transition-all duration-500 group-hover/feat:rotate-12 shadow-sm">
+                                    <Truck size={20} className="text-masuma-orange group-hover/feat:text-white" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-masuma-dark">Same-Day</span>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Nairobi Delivery</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 group/feat">
+                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover/feat:bg-masuma-orange transition-all duration-500 group-hover/feat:rotate-12 shadow-sm">
+                                    <ShieldCheck size={20} className="text-masuma-orange group-hover/feat:text-white" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-masuma-dark">12 Month</span>
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Limited Warranty</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {relatedProducts.length > 0 && (
+                        <div className="pt-10 space-y-6">
+                            <div className="flex justify-between items-end border-b border-gray-100 pb-4">
+                                <h4 className="text-[10px] font-black text-masuma-dark uppercase tracking-[0.3em]">Complementary Parts</h4>
+                                <span className="text-[9px] text-masuma-orange font-black uppercase tracking-widest">Local Stock</span>
+                            </div>
+                            <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x">
+                                {relatedProducts.map(rp => (
+                                    <div key={rp.id} onClick={() => handleSwitch(rp)} className="min-w-[160px] w-[160px] bg-white border border-gray-100 p-4 hover:border-masuma-orange hover:shadow-2xl transition-all cursor-pointer snap-start rounded-[2rem] group/card">
+                                        <div className="aspect-square flex items-center justify-center mb-4 bg-gray-50 overflow-hidden rounded-2xl"><img src={rp.image} className="max-h-full max-w-full object-contain p-4 group-hover/card:scale-110 transition-transform duration-700" alt="" /></div>
+                                        <div className="text-[10px] font-black text-masuma-dark line-clamp-2 h-8 leading-tight mb-2 uppercase tracking-tight">{rp.name}</div>
+                                        <div className="text-xs font-black text-masuma-orange tracking-tighter">KES {rp.price.toLocaleString()}</div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     )}
                 </div>
-
-                {/* Details Section */}
-                <div className="w-full lg:w-2/5 p-6 md:p-10 flex flex-col">
-                    <div className="mb-8">
-                        <div className="flex justify-between items-start gap-4 mb-2">
-                            <h2 className="text-2xl md:text-4xl font-bold text-masuma-dark font-display leading-[1.1]">{product.name}</h2>
-                        </div>
-                        <div className="flex flex-wrap gap-2 items-center">
-                            <span className="px-3 py-1 bg-masuma-orange text-white text-[10px] font-mono font-bold rounded-sm uppercase tracking-wider">SKU: {product.sku}</span>
-                            {product.stock ? (
-                                <span className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase tracking-widest bg-green-50 px-2 py-1 rounded-sm">
-                                    <Check size={12} /> In Stock
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-1 text-red-600 text-[10px] font-bold uppercase tracking-widest bg-red-50 px-2 py-1 rounded-sm">
-                                    <AlertTriangle size={12} /> Out of Stock
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="mb-8 p-6 bg-gray-50 border-l-4 border-masuma-orange rounded-r-lg">
-                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Local Retail Price</h3>
-                        <div className="flex items-baseline gap-2">
-                            <p className="text-4xl font-bold text-masuma-dark">
-                                <Price amount={product.price} />
-                            </p>
-                            <span className="text-xs text-gray-400 font-bold uppercase">Incl. VAT</span>
-                        </div>
-                    </div>
-
-                    <div className="space-y-8 flex-1">
-                        <div>
-                            <h3 className="text-xs font-bold text-masuma-dark uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Description</h3>
-                            <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-6">
-                            <div>
-                                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">OEM Fitment Guide</h3>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {(product.oemNumbers || []).map((oem, i) => (
-                                        <span key={i} className="px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-mono rounded-sm shadow-sm">{oem}</span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Tested Compatibility</h3>
-                                <p className="text-sm text-gray-700 leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Social & Actions */}
-                    <div className="mt-10 pt-8 border-t border-gray-100">
-                        <div className="flex items-center gap-3 mb-6">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Share Part:</span>
-                            <button onClick={() => handleSocialShare('whatsapp')} className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-600 hover:text-white transition shadow-sm">
-                                <MessageCircle size={18} />
-                            </button>
-                            <button onClick={() => handleSocialShare('facebook')} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition shadow-sm">
-                                <Facebook size={18} />
-                            </button>
-                            <button onClick={() => handleSocialShare('twitter')} className="p-2 bg-gray-50 text-masuma-dark rounded-full hover:bg-masuma-dark hover:text-white transition shadow-sm">
-                                <Twitter size={18} />
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            {product.stock && (
-                                <div className="flex items-center border-2 border-masuma-dark rounded-sm h-[52px] shrink-0 bg-white">
-                                    <button 
-                                        onClick={() => handleQuantityChange(-1)}
-                                        className="px-4 h-full text-gray-500 hover:bg-gray-100 transition"
-                                    >
-                                        <Minus size={16} />
-                                    </button>
-                                    <span className="w-12 text-center font-bold text-masuma-dark text-lg">{quantity}</span>
-                                    <button 
-                                        onClick={() => handleQuantityChange(1)}
-                                        className="px-4 h-full text-gray-500 hover:bg-gray-100 transition"
-                                    >
-                                        <Plus size={16} />
-                                    </button>
-                                </div>
-                            )}
-
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={!product.stock}
-                                className={`flex-1 h-[52px] font-bold uppercase tracking-[0.2em] text-xs transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1 ${
-                                    product.stock 
-                                    ? 'bg-masuma-dark text-white hover:bg-masuma-orange' 
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                }`}
-                            >
-                                {product.stock ? 'Buy Locally' : 'Sold Out'}
-                            </button>
-                            
-                            <button
-                                onClick={() => setIsQuoteModalOpen(true)}
-                                className="flex-1 h-[52px] font-bold uppercase tracking-[0.2em] text-xs transition-all bg-white border-2 border-masuma-dark text-masuma-dark hover:bg-masuma-dark hover:text-white flex items-center justify-center gap-2"
-                            >
-                                <MessageCircle size={20} />
-                                Quote
-                            </button>
-                        </div>
-                        
-                        <div className="mt-6 flex items-center justify-center lg:justify-start gap-4">
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <Truck size={18} className="text-masuma-orange" />
-                                <span className="text-[10px] uppercase font-black tracking-widest">Nairobi: Fast Delivery</span>
-                            </div>
-                            <div className="w-px h-4 bg-gray-200"></div>
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <Check size={18} className="text-masuma-orange" />
-                                <span className="text-[10px] uppercase font-black tracking-widest">1 Year Warranty</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            {/* Related Products Section */}
-            {relatedProducts.length > 0 && (
-                <div className="p-8 md:p-12 bg-gray-50 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-bold text-masuma-dark uppercase tracking-tight font-display">
-                            Related Parts
-                        </h3>
-                        <ArrowRight size={24} className="text-masuma-orange" />
-                    </div>
-                    
-                    <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x">
-                        {isLoadingRelated ? (
-                            <div className="w-full text-center text-xs text-gray-400 py-12">Checking warehouse...</div>
-                        ) : (
-                            relatedProducts.map(rp => (
-                                <div 
-                                    key={rp.id} 
-                                    onClick={() => handleSwitch(rp)}
-                                    className="min-w-[220px] w-[220px] bg-white border border-gray-200 rounded-sm hover:shadow-2xl transition-all duration-300 cursor-pointer snap-start group flex flex-col"
-                                >
-                                    <div className="h-40 overflow-hidden bg-white relative p-4 flex items-center justify-center">
-                                        <img src={rp.image} alt={rp.name} className="max-h-full max-w-full object-contain group-hover:scale-110 transition duration-700" />
-                                    </div>
-                                    <div className="p-5 flex-1 flex flex-col border-t border-gray-50">
-                                        <div className="text-[9px] text-gray-400 uppercase font-black mb-1 tracking-widest">{rp.sku}</div>
-                                        <h4 className="text-xs font-bold text-masuma-dark leading-tight line-clamp-2 mb-3 group-hover:text-masuma-orange transition">
-                                            {rp.name}
-                                        </h4>
-                                        <div className="mt-auto">
-                                            <Price amount={rp.price} className="text-sm font-black text-masuma-dark" />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            )}
           </div>
         </div>
       </div>
 
-      <QuoteModal 
-        isOpen={isQuoteModalOpen} 
-        onClose={() => setIsQuoteModalOpen(false)} 
-        product={product} 
-      />
+      <QuoteModal isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} product={product} />
     </>
   );
 };

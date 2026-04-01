@@ -62,7 +62,12 @@ export class ProductService {
       }
 
       if (query) {
-        const searchTerm = `%${query}%`;
+        // Robust Search Logic:
+        // 1. Trim whitespace
+        // 2. Replace spaces with wildcards to handle "ms 7460" -> "MS-7460"
+        const sanitizedQuery = query.trim().replace(/\s+/g, '%');
+        const searchTerm = `%${sanitizedQuery}%`;
+        
         qb.andWhere(
           '(product.name LIKE :search OR product.sku LIKE :search OR oem.code LIKE :search OR vehicle.model LIKE :search)',
           { search: searchTerm }

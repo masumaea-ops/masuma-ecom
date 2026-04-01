@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,6 +23,14 @@ h1, h2, h3, h4, h5, h6 {
       scrollbar-width: none;
   }
   
+  .media-protected {
+    @apply select-none pointer-events-none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+  }
+
   .animate-slide-up {
     animation: slideUp 0.4s ease-out;
   }
@@ -43,9 +50,17 @@ h1, h2, h3, h4, h5, h6 {
   .animate-pulse-once {
     animation: pulseOnce 0.5s ease-in-out;
   }
+
+  .animate-slam-in {
+    animation: slamIn 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s infinite ease-in-out;
+  }
 }
 
-/* Manual Prose Styling (Fallback for missing @tailwindcss/typography) */
+/* Manual Prose Styling */
 .prose h1 { @apply text-3xl font-bold mb-4 text-masuma-dark font-display uppercase; }
 .prose h2 { @apply text-2xl font-bold mb-3 mt-6 text-masuma-dark font-display uppercase; }
 .prose h3 { @apply text-xl font-bold mb-2 mt-4 text-masuma-dark font-display uppercase; }
@@ -83,9 +98,18 @@ h1, h2, h3, h4, h5, h6 {
   50% { transform: scale(1.2); }
 }
 
+@keyframes slamIn {
+  0% { transform: scale(2) translateY(-100px) skewX(-10deg); opacity: 0; }
+  100% { transform: scale(1) translateY(0) skewX(0); opacity: 1; }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
 /* --- ROBUST PRINT STYLES --- */
 @media print {
-  /* 1. Reset Body: Force white background and auto sizing */
   body {
     background: white !important;
     height: auto !important;
@@ -95,14 +119,10 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0 !important;
   }
 
-  /* 2. Hide Everything Else by default using visibility */
-  /* We DO NOT use display: none on high-level elements because it kills child rendering inside modals */
   body * {
     visibility: hidden;
   }
 
-  /* 3. Force The Print Container to Show */
-  /* This targets the container wrapping InvoiceTemplate in modals */
   .print-force-container {
     visibility: visible !important;
     position: fixed !important; 
@@ -113,34 +133,24 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
-    z-index: 99999 !important; /* Maximum Z-Index to overlap everything */
-    display: block !important; /* Override tailwind .hidden */
+    z-index: 99999 !important;
+    display: block !important;
     overflow: visible !important;
   }
 
-  /* 4. Show Children of Print Container */
   .print-force-container * {
     visibility: visible !important;
   }
 
-  /* 5. Specific Hiding - Only hide elements that definitely interfere and are NOT parents of the print container */
-  nav, 
-  header, 
-  footer, 
-  button, 
-  input, 
-  select,
-  .no-print {
+  nav, header, footer, button, input, select, .no-print {
     display: none !important;
   }
   
-  /* 6. Ensure Graphics Print Correctly */
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   
-  /* 7. Reset Page Margins */
   @page {
     margin: 0;
     size: auto;
