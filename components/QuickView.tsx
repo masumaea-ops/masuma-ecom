@@ -229,24 +229,27 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                     )}
 
                     {/* Media Controls */}
-                    <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover/stage:opacity-100 transition-all duration-500 translate-x-4 group-hover/stage:translate-x-0">
+                    <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover/stage:opacity-100 transition-all duration-500 translate-x-4 group-hover/stage:translate-x-0 z-[100]">
                         <button 
                             onClick={() => setIsFullScreen(!isFullScreen)}
-                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl"
+                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
                             title="Toggle Cinema Mode"
+                            aria-label={isFullScreen ? "Exit cinema mode" : "Enter cinema mode"}
                         >
                             {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                         </button>
                         <button 
                             onClick={() => window.open(`https://wa.me/?text=Check this Masuma part: ${window.location.origin}/?product=${product.id}`, '_blank')}
-                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl"
+                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
                             title="Share Part"
+                            aria-label="Share this product on WhatsApp"
                         >
                             <Share2 size={20} />
                         </button>
                         <button 
                             onClick={onClose}
-                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl"
+                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
+                            aria-label="Close quick view"
                         >
                             <X size={24} />
                         </button>
@@ -254,8 +257,20 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
 
                     {media.length > 1 && (
                         <>
-                            <button onClick={() => setActiveMediaIndex((prev) => (prev - 1 + media.length) % media.length)} className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all opacity-0 group-hover/stage:opacity-100 shadow-2xl z-50"><ChevronLeft size={28} /></button>
-                            <button onClick={() => setActiveMediaIndex((prev) => (prev + 1) % media.length)} className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all opacity-0 group-hover/stage:opacity-100 shadow-2xl z-50"><ChevronRight size={28} /></button>
+                            <button 
+                                onClick={() => setActiveMediaIndex((prev) => (prev - 1 + media.length) % media.length)} 
+                                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all opacity-0 group-hover/stage:opacity-100 shadow-2xl z-50 focus-ring touch-target"
+                                aria-label="Previous image"
+                            >
+                                <ChevronLeft size={28} />
+                            </button>
+                            <button 
+                                onClick={() => setActiveMediaIndex((prev) => (prev + 1) % media.length)} 
+                                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all opacity-0 group-hover/stage:opacity-100 shadow-2xl z-50 focus-ring touch-target"
+                                aria-label="Next image"
+                            >
+                                <ChevronRight size={28} />
+                            </button>
                         </>
                     )}
                 </div>
@@ -267,7 +282,9 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             <button 
                                 key={idx} 
                                 onClick={() => setActiveMediaIndex(idx)} 
-                                className={`relative w-20 h-20 shrink-0 border-2 transition-all duration-500 rounded-2xl overflow-hidden group/thumb ${activeMediaIndex === idx ? 'border-masuma-orange scale-105 shadow-lg shadow-masuma-orange/20' : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30 grayscale hover:grayscale-0'}`}
+                                className={`relative w-20 h-20 shrink-0 border-2 transition-all duration-500 rounded-2xl overflow-hidden group/thumb focus-ring touch-target ${activeMediaIndex === idx ? 'border-masuma-orange scale-105 shadow-lg shadow-masuma-orange/20' : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30 grayscale hover:grayscale-0'}`}
+                                aria-label={`View ${item.type} ${idx + 1}`}
+                                aria-pressed={activeMediaIndex === idx}
                             >
                                 {item.type === 'video' ? (
                                     <div className="w-full h-full bg-masuma-dark flex items-center justify-center text-white">

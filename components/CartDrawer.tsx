@@ -78,7 +78,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                               className="text-gray-300 hover:text-red-500 transition-colors p-1 -mr-1 focus-ring touch-target"
                               aria-label={`Remove ${item.name} from cart`}
                             >
-                              <X size={16} />
+                              <X size={18} />
                             </button>
                         </div>
                         <p className="text-xs text-gray-400 font-bold tracking-wider mt-1.5 uppercase opacity-60">SKU: {item.sku}</p>
@@ -144,7 +144,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                 
                 <button 
                   onClick={onCheckout}
-                  className="w-full bg-masuma-dark text-white py-6 rounded-3xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-masuma-orange hover:-translate-y-1 transition-all shadow-2xl shadow-masuma-dark/20 active:scale-95 group/btn focus-ring"
+                  className="w-full bg-masuma-dark text-white py-6 rounded-3xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-masuma-orange hover:-translate-y-1 transition-all shadow-2xl shadow-masuma-dark/20 active:scale-95 group/btn focus-ring touch-target"
+                  aria-label="Proceed to checkout"
                 >
                   Proceed to Checkout <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                 </button>

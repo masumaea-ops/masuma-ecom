@@ -340,7 +340,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                         <button 
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-masuma-orange hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                            className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-masuma-orange hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm focus-ring touch-target"
+                            aria-label="Previous page"
                         >
                             <ChevronLeft size={22} />
                         </button>
@@ -357,11 +358,13 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                                     <button
                                         key={pNum}
                                         onClick={() => handlePageChange(pNum)}
-                                        className={`w-12 h-12 text-xs font-black rounded-xl transition-all ${
+                                        className={`w-12 h-12 text-xs font-black rounded-xl transition-all focus-ring touch-target ${
                                             currentPage === pNum 
                                             ? 'bg-masuma-dark text-white shadow-xl shadow-masuma-dark/20' 
                                             : 'bg-transparent text-gray-400 hover:text-masuma-dark'
                                         }`}
+                                        aria-label={`Go to page ${pNum}`}
+                                        aria-current={currentPage === pNum ? 'page' : undefined}
                                     >
                                         {pNum}
                                     </button>
@@ -372,7 +375,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                         <button 
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-masuma-orange hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                            className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-masuma-orange hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm focus-ring touch-target"
+                            aria-label="Next page"
                         >
                             <ChevronRight size={22} />
                         </button>

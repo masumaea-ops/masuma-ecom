@@ -232,13 +232,15 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
           <>
             <button 
                 onClick={prevSlide}
-                className="absolute left-6 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
+                className="absolute left-6 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10 focus-ring touch-target"
+                aria-label="Previous slide"
             >
                 <ChevronLeft size={24} />
             </button>
             <button 
                 onClick={nextSlide}
-                className="absolute right-6 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10"
+                className="absolute right-6 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full bg-white/5 hover:bg-masuma-orange text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm border border-white/10 focus-ring touch-target"
+                aria-label="Next slide"
             >
                 <ChevronRight size={24} />
             </button>
@@ -251,7 +253,9 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                   <button 
                     key={i}
                     onClick={() => setCurrentSlide(i)}
-                    className={`h-1 transition-all rounded-full ${i === currentSlide ? 'w-12 bg-masuma-orange' : 'w-4 bg-white/30 hover:bg-white/60'}`}
+                    className={`h-1 transition-all rounded-full focus-ring touch-target ${i === currentSlide ? 'w-12 bg-masuma-orange' : 'w-4 bg-white/30 hover:bg-white/60'}`}
+                    aria-label={`Go to slide ${i + 1}`}
+                    aria-pressed={i === currentSlide}
                   ></button>
               ))}
           </div>

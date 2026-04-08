@@ -140,13 +140,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
             </a>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-10">
+            <div className="hidden md:flex items-center space-x-10" role="navigation" aria-label="Main Navigation">
               {navItems.map((item) => (
                   <a 
                       key={item}
                       href={`/?view=${item}`}
                       onClick={(e) => handleNav(e, item)} 
-                      className="relative text-masuma-dark font-bold uppercase tracking-wider text-sm hover:text-masuma-orange transition-all duration-300 group"
+                      className="relative text-masuma-dark font-bold uppercase tracking-wider text-sm hover:text-masuma-orange transition-all duration-300 group focus-ring p-1"
                       aria-label={`Navigate to ${formatNavLabel(item)}`}
                   >
                       {formatNavLabel(item)}
@@ -166,7 +166,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                   <span className="text-xs font-bold uppercase tracking-wider">Ask AI Expert</span>
                 </button>
 
-                <div className="relative cursor-pointer group touch-target" onClick={toggleCart} aria-label={`View Cart with ${cartCount} items`}>
+                <div className="relative cursor-pointer group touch-target focus-ring" onClick={toggleCart} aria-label={`View Cart with ${cartCount} items`} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && toggleCart()}>
                   <div className="p-2 rounded-xl hover:bg-gray-100 transition-all duration-500 group-hover:rotate-6">
                     <ShoppingCart className="text-masuma-dark group-hover:text-masuma-orange transition-colors duration-500" size={24} />
                   </div>

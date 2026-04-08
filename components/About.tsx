@@ -231,63 +231,6 @@ const About: React.FC<AboutProps> = ({ setView }) => {
           </div>
       </section>
 
-      {/* 5. PRODUCT CATEGORY DEEP DIVE */}
-      <section className="py-24 bg-gray-50">
-          <div className="max-w-screen-2xl mx-auto px-6 lg:px-12">
-              <div className="flex flex-col md:flex-row justify-between items-end mb-16">
-                  <div>
-                      <h2 className="text-4xl font-bold text-masuma-dark font-display uppercase">Engineered to Outlast</h2>
-                      <p className="text-gray-500 mt-2">Specific adaptations for the African market.</p>
-                  </div>
-                  <a 
-                    href="/?view=CATALOG"
-                    onClick={(e) => handleNav(e, 'CATALOG')}
-                    className="hidden md:flex items-center gap-2 text-masuma-orange font-bold uppercase text-xs tracking-widest hover:text-masuma-dark transition"
-                  >
-                      View Full Catalog <Activity size={16} />
-                  </a>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {/* Suspension */}
-                  <div className="bg-white p-8 shadow-sm border-t-4 border-masuma-orange hover:shadow-xl transition group">
-                      <h3 className="text-2xl font-bold font-display text-masuma-dark mb-4">Suspension</h3>
-                      <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                          Our bushings use a high-density rubber compound that resists cracking under heavy vibration. Ball joints feature mirror-polished studs and high-performance grease to reduce friction and wear on rough roads.
-                      </p>
-                      <ul className="space-y-2">
-                          <li className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><CheckCircle size={12} className="text-masuma-orange"/> Reinforced Rubber</li>
-                          <li className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><CheckCircle size={12} className="text-masuma-orange"/> Dust-Sealed Joints</li>
-                      </ul>
-                  </div>
-
-                  {/* Brakes */}
-                  <div className="bg-white p-8 shadow-sm border-t-4 border-masuma-dark hover:shadow-xl transition group">
-                      <h3 className="text-2xl font-bold font-display text-masuma-dark mb-4">Braking Systems</h3>
-                      <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                          Masuma ceramic brake pads are formulated to handle high heat without fading. They produce minimal dust and include anti-squeal shims, providing quiet, confident stopping power in Nairobi traffic.
-                      </p>
-                      <ul className="space-y-2">
-                          <li className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><CheckCircle size={12} className="text-masuma-dark"/> Low Dust Ceramic</li>
-                          <li className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><CheckCircle size={12} className="text-masuma-dark"/> High Temp Resistance</li>
-                      </ul>
-                  </div>
-
-                  {/* Filtration */}
-                  <div className="bg-white p-8 shadow-sm border-t-4 border-gray-400 hover:shadow-xl transition group">
-                      <h3 className="text-2xl font-bold font-display text-masuma-dark mb-4">Filtration</h3>
-                      <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                          Protect your engine from dust and bad fuel. Our filters use multi-layer media that traps 99% of contaminants while maintaining high flow rates, essential for preserving engine life in dusty environments.
-                      </p>
-                      <ul className="space-y-2">
-                          <li className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><CheckCircle size={12} className="text-gray-400"/> Multi-layer Media</li>
-                          <li className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><CheckCircle size={12} className="text-gray-400"/> High Pressure Valve</li>
-                      </ul>
-                  </div>
-              </div>
-          </div>
-      </section>
-
       {/* 6. COUNTERFEIT WARNING */}
       <section className="py-20 bg-white border-y border-gray-100">
           <div className="max-w-4xl mx-auto px-6 text-center">
