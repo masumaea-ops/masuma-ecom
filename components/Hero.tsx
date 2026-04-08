@@ -110,7 +110,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
   return (
     <>
     {announcement && (
-        <div style={{ backgroundColor: announcementColor }} className="text-white text-center text-[10px] font-black py-2.5 uppercase tracking-[0.2em] relative z-20 shadow-md">
+        <div style={{ backgroundColor: announcementColor }} className="text-white text-center text-xs font-bold py-2.5 uppercase tracking-widest relative z-20 shadow-md">
             {announcement}
         </div>
     )}
@@ -172,13 +172,13 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                <div className="absolute inset-0 flex items-center z-30">
                   <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                       <div className="max-w-3xl">
-                          <div className="inline-flex items-center gap-3 bg-white/10 border-l-4 border-masuma-orange text-white text-[10px] font-bold px-4 py-2 mb-8 uppercase tracking-[0.3em] backdrop-blur-md">
+                          <div className="inline-flex items-center gap-3 bg-white/10 border-l-4 border-masuma-orange text-white text-xs font-bold px-4 py-2 mb-8 uppercase tracking-widest backdrop-blur-md">
                               <span className="w-2 h-2 bg-masuma-orange rounded-full animate-pulse"></span>
                               <span>Authentic Masuma Limited</span>
                           </div>
                           
                           <h1 
-                            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 font-display uppercase tracking-[-0.04em] whitespace-pre-line leading-[0.9] animate-slam-in"
+                            className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[0.9] animate-slam-in text-balance"
                             style={{ textShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                           >
                               {slide.title}
@@ -194,7 +194,8 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                                   <a 
                                       href={`/?view=${slide.ctaLink}`}
                                       onClick={(e) => { e.preventDefault(); setView(slide.ctaLink as ViewState); }}
-                                      className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold px-12 py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl group/btn"
+                                      className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold px-8 md:px-12 py-4 md:py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-sm flex items-center gap-3 shadow-2xl group/btn"
+                                      aria-label={slide.ctaText}
                                   >
                                       {slide.ctaText} <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
                                   </a>
@@ -203,7 +204,8 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                                       href="https://wa.me/254792506590?text=Hello%20Masuma%20East%20Africa,%20I%20am%20interested%20in%20genuine%20Japanese%20spare%20parts."
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-[#25D366] hover:border-[#25D366] text-white font-bold px-12 py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl"
+                                      className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-[#25D366] hover:border-[#25D366] text-white font-bold px-8 md:px-12 py-4 md:py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-sm flex items-center gap-3 shadow-2xl"
+                                      aria-label="Chat on WhatsApp"
                                   >
                                       Chat on WhatsApp
                                   </a>
@@ -211,11 +213,11 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                               <div className="flex items-center gap-8 text-white ml-0 md:ml-6 drop-shadow-md opacity-80">
                                   <div className="flex flex-col items-center">
                                       <ShieldCheck size={28} className="text-masuma-orange mb-1" />
-                                      <span className="text-[9px] uppercase font-black tracking-widest">1Yr Warranty</span>
+                                      <span className="text-xs uppercase font-bold tracking-wider">1Yr Warranty</span>
                                   </div>
                                   <div className="flex flex-col items-center">
                                       <TrendingUp size={28} className="text-masuma-orange mb-1" />
-                                      <span className="text-[9px] uppercase font-black tracking-widest">OE Quality</span>
+                                      <span className="text-xs uppercase font-bold tracking-wider">OE Quality</span>
                                   </div>
                               </div>
                           </div>

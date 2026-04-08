@@ -14,13 +14,29 @@ export default {
     extend: {
       colors: {
         masuma: {
-          orange: '#E0621B',
-          dark: '#1A1A1A',
+          orange: {
+            DEFAULT: '#E0621B',
+            light: '#F5823B',
+            dark: '#B84D12',
+          },
+          dark: {
+            DEFAULT: '#1A1A1A',
+            lighter: '#2D2D2D',
+            darker: '#0D0D0D',
+          },
         }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        display: ['Oswald', 'sans-serif'],
+        display: ['Space Grotesk', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
+      },
+      fontSize: {
+        'xxs': '0.625rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

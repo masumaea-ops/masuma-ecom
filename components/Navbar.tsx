@@ -66,7 +66,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
   return (
     <>
       {/* TOP UTILITY BAR */}
-      <div className="bg-masuma-dark text-white text-[10px] md:text-xs font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors relative z-[102]">
+      <div className="bg-masuma-dark text-white text-xs font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors relative z-[102]">
          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             {/* Left: Contact & Chat */}
             <div className="flex items-center space-x-6">
@@ -146,7 +146,8 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       key={item}
                       href={`/?view=${item}`}
                       onClick={(e) => handleNav(e, item)} 
-                      className="relative text-masuma-dark font-black uppercase tracking-[0.15em] text-[11px] hover:text-masuma-orange transition-all duration-300 group"
+                      className="relative text-masuma-dark font-bold uppercase tracking-wider text-sm hover:text-masuma-orange transition-all duration-300 group"
+                      aria-label={`Navigate to ${formatNavLabel(item)}`}
                   >
                       {formatNavLabel(item)}
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-1 bg-masuma-orange transition-all duration-500 group-hover:w-full rounded-full"></span>
@@ -155,33 +156,39 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
             </div>
 
             {/* Right Side Icons */}
-            <div className="flex items-center space-x-8">
-              <button 
-                onClick={toggleAi}
-                className="hidden md:flex items-center space-x-3 bg-masuma-dark hover:bg-masuma-orange text-white px-6 py-3 rounded-2xl transition-all duration-500 group border border-transparent shadow-xl shadow-masuma-dark/10 hover:shadow-masuma-orange/20 active:scale-95"
-              >
-                <Bot size={18} className="group-hover:rotate-[20deg] transition-transform duration-500" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Ask AI Expert</span>
-              </button>
-
-              <div className="relative cursor-pointer group" onClick={toggleCart}>
-                <div className="p-3 rounded-2xl hover:bg-gray-100 transition-all duration-500 group-hover:rotate-6">
-                  <ShoppingCart className="text-masuma-dark group-hover:text-masuma-orange transition-colors duration-500" size={26} />
-                </div>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-masuma-orange text-white text-[10px] font-black rounded-full h-6 w-6 flex items-center justify-center shadow-lg shadow-masuma-orange/40 transform scale-100 animate-bounce-subtle">
-                    {cartCount}
-                  </span>
-                )}
-              </div>
-
-              {/* Mobile Menu Button */}
-              <div className="md:hidden flex items-center">
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-masuma-dark p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                  {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              <div className="flex items-center space-x-6">
+                <button 
+                  onClick={toggleAi}
+                  className="hidden lg:flex items-center space-x-3 bg-masuma-dark hover:bg-masuma-orange text-white px-6 py-3 rounded-xl transition-all duration-500 group border border-transparent shadow-xl shadow-masuma-dark/10 hover:shadow-masuma-orange/20 active:scale-95 focus-ring"
+                  aria-label="Open AI Assistant"
+                >
+                  <Bot size={18} className="group-hover:rotate-[20deg] transition-transform duration-500" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Ask AI Expert</span>
                 </button>
+
+                <div className="relative cursor-pointer group touch-target" onClick={toggleCart} aria-label={`View Cart with ${cartCount} items`}>
+                  <div className="p-2 rounded-xl hover:bg-gray-100 transition-all duration-500 group-hover:rotate-6">
+                    <ShoppingCart className="text-masuma-dark group-hover:text-masuma-orange transition-colors duration-500" size={24} />
+                  </div>
+                  {cartCount > 0 && (
+                    <span className="absolute top-1 right-1 bg-masuma-orange text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-masuma-orange/40 transform scale-100 animate-bounce-subtle">
+                      {cartCount}
+                    </span>
+                  )}
+                </div>
+
+                {/* Mobile Menu Button */}
+                <div className="md:hidden flex items-center">
+                  <button 
+                    onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                    className="text-masuma-dark p-2 hover:bg-gray-100 rounded-xl transition-colors touch-target"
+                    aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
+                    aria-expanded={isMenuOpen}
+                  >
+                    {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
         </div>
 

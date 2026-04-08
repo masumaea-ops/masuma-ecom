@@ -289,94 +289,114 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
             <div id="sidebar-content" className="w-full lg:w-[45%] flex flex-col bg-white overflow-y-auto border-l border-gray-100 scrollbar-hide">
                 <div className="p-8 lg:p-12 space-y-10">
                     <div className="space-y-4">
-                        <div className="flex flex-wrap gap-3">
-                            <span className="bg-masuma-dark text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-[0.2em]">{product.category}</span>
-                            {product.stock ? (
-                                <span className="text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-green-50 px-3 py-1 rounded-full"><Check size={12} strokeWidth={3} /> In Stock Nairobi</span>
-                            ) : (
-                                <span className="text-red-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={12} strokeWidth={3} /> Special Order Only</span>
-                            )}
-                        </div>
+                    <div className="flex flex-wrap gap-3">
+                        <span className="bg-masuma-dark text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{product.category}</span>
+                        {product.stock ? (
+                            <span className="text-green-600 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 bg-green-50 px-3 py-1 rounded-full"><Check size={14} strokeWidth={3} /> In Stock Nairobi</span>
+                        ) : (
+                            <span className="text-red-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={14} strokeWidth={3} /> Special Order Only</span>
+                        )}
+                    </div>
                         <h2 className="text-3xl lg:text-5xl font-black text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
                         
                         <div className="pt-8 border-t border-gray-50 space-y-6">
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2 flex items-center gap-2"><Calculator size={12}/> Total Price (Payable)</span>
+                                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Payable)</span>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-5xl lg:text-7xl font-black text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
-                                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">incl. 16% VAT</span>
+                                    <span className="text-5xl lg:text-7xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
+                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
                                 </div>
                             </div>
                             
-                            <div className="bg-gray-50 rounded-[2rem] border border-gray-100 overflow-hidden">
+                            <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
                                 <div className="grid grid-cols-2 divide-x divide-gray-200">
                                     <div className="p-6">
-                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none block mb-2">Base Price</span>
-                                        <span className="text-lg font-black text-masuma-dark"><Price amount={basePrice} /></span>
+                                        <span className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">Base Price</span>
+                                        <span className="text-xl font-bold text-masuma-dark"><Price amount={basePrice} /></span>
                                     </div>
                                     <div className="p-6">
-                                        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none block mb-2">VAT (16%)</span>
-                                        <span className="text-lg font-black text-gray-600"><Price amount={vatAmount} /></span>
+                                        <span className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">VAT (16%)</span>
+                                        <span className="text-xl font-bold text-gray-600"><Price amount={vatAmount} /></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-8">
-                        <div className="space-y-6">
-                            <h4 className="text-[10px] font-black text-masuma-dark uppercase tracking-[0.3em] flex items-center gap-3 border-l-4 border-masuma-orange pl-4">Technical Specifications</h4>
-                            <div className="grid grid-cols-2 gap-y-8 gap-x-12">
-                                <div className="group">
-                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 group-hover:text-masuma-orange transition-colors">Global SKU</p>
-                                    <p className="text-sm font-black text-masuma-dark uppercase tracking-tight">{product.sku}</p>
-                                </div>
-                                <div className="group">
-                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 group-hover:text-masuma-orange transition-colors">Grade</p>
-                                    <p className="text-sm font-black text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
-                                </div>
-                                {Object.entries(product.specs || {}).map(([key, value]) => (
-                                    <div key={key} className="group">
-                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 group-hover:text-masuma-orange transition-colors">{key}</p>
-                                        <p className="text-sm font-black text-masuma-dark uppercase tracking-tight">{String(value)}</p>
+                        <div className="space-y-8">
+                            <div className="space-y-6">
+                                <h4 className="text-xs font-bold text-masuma-dark uppercase tracking-widest flex items-center gap-3 border-l-4 border-masuma-orange pl-4">Technical Specifications</h4>
+                                <div className="grid grid-cols-2 gap-y-8 gap-x-12">
+                                    <div className="group">
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Global SKU</p>
+                                        <p className="text-base font-bold text-masuma-dark uppercase tracking-tight">{product.sku}</p>
                                     </div>
-                                ))}
+                                    <div className="group">
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Grade</p>
+                                        <p className="text-base font-bold text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
+                                    </div>
+                                    {Object.entries(product.specs || {}).map(([key, value]) => (
+                                        <div key={key} className="group">
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">{key}</p>
+                                            <p className="text-base font-bold text-masuma-dark uppercase tracking-tight">{String(value)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <h4 className="text-xs font-bold text-masuma-dark uppercase tracking-widest opacity-60">Part Description</h4>
+                                <p className="text-base text-gray-600 leading-relaxed font-normal">{product.description}</p>
+                            </div>
+
+                            <div className="bg-masuma-dark text-white p-8 rounded-3xl shadow-2xl border-l-8 border-masuma-orange relative overflow-hidden group/fitment">
+                                <div className="absolute top-[-20px] right-[-20px] opacity-10 rotate-12 group-hover/fitment:scale-110 transition-transform duration-700"><Check size={80}/></div>
+                                <h4 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
+                                <p className="text-base text-gray-200 font-bold leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
+                                <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-2">
+                                    <AlertTriangle size={14} className="text-masuma-orange"/>
+                                    <span className="text-xs text-masuma-orange uppercase font-bold tracking-wider italic">Chassis verification recommended</span>
+                                </div>
                             </div>
                         </div>
-
-                        <div className="space-y-6">
-                            <h4 className="text-[10px] font-black text-masuma-dark uppercase tracking-[0.3em] opacity-60">Part Description</h4>
-                            <p className="text-sm text-gray-500 leading-relaxed font-medium">{product.description}</p>
-                        </div>
-
-                        <div className="bg-masuma-dark text-white p-8 rounded-[2.5rem] shadow-2xl border-l-8 border-masuma-orange relative overflow-hidden group/fitment">
-                            <div className="absolute top-[-20px] right-[-20px] opacity-10 rotate-12 group-hover/fitment:scale-110 transition-transform duration-700"><Check size={80}/></div>
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
-                            <p className="text-sm text-gray-200 font-bold leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
-                            <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-2">
-                                <AlertTriangle size={14} className="text-masuma-orange"/>
-                                <span className="text-[9px] text-masuma-orange uppercase font-black tracking-widest italic">Chassis verification recommended</span>
-                            </div>
-                        </div>
-                    </div>
 
                     <div className="pt-4 space-y-8">
                         <div className="flex gap-4">
                             {product.stock && (
                                 <div className="flex items-center bg-gray-100 rounded-2xl p-1.5 border border-gray-200">
-                                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-12 h-12 flex items-center justify-center hover:bg-white hover:shadow-md rounded-xl text-masuma-dark transition-all disabled:opacity-30" disabled={quantity <= 1}><Minus size={18} strokeWidth={3} /></button>
-                                    <span className="w-12 text-center font-black text-masuma-dark text-lg">{quantity}</span>
-                                    <button onClick={() => setQuantity(q => q + 1)} className="w-12 h-12 flex items-center justify-center hover:bg-white hover:shadow-md rounded-xl text-masuma-dark transition-all"><Plus size={18} strokeWidth={3} /></button>
+                                    <button 
+                                        onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                                        className="w-12 h-12 flex items-center justify-center hover:bg-white hover:shadow-md rounded-xl text-masuma-dark transition-all disabled:opacity-30 touch-target focus-ring" 
+                                        disabled={quantity <= 1}
+                                        aria-label="Decrease quantity"
+                                    >
+                                        <Minus size={18} strokeWidth={3} />
+                                    </button>
+                                    <span className="w-12 text-center font-bold text-masuma-dark text-lg" aria-live="polite">{quantity}</span>
+                                    <button 
+                                        onClick={() => setQuantity(q => q + 1)} 
+                                        className="w-12 h-12 flex items-center justify-center hover:bg-white hover:shadow-md rounded-xl text-masuma-dark transition-all touch-target focus-ring"
+                                        aria-label="Increase quantity"
+                                    >
+                                        <Plus size={18} strokeWidth={3} />
+                                    </button>
                                 </div>
                             )}
                             <button 
                                 onClick={() => { addToCart(product, quantity); onClose(); }} 
                                 disabled={!product.stock} 
-                                className={`flex-1 h-16 font-black uppercase tracking-[0.3em] text-[11px] transition-all shadow-2xl rounded-2xl active:scale-95 flex items-center justify-center gap-3 ${product.stock ? 'bg-masuma-dark text-white hover:bg-masuma-orange shadow-masuma-dark/20' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                className={`flex-1 h-16 font-bold uppercase tracking-widest text-sm transition-all shadow-2xl rounded-2xl active:scale-95 flex items-center justify-center gap-3 focus-ring ${product.stock ? 'bg-masuma-dark text-white hover:bg-masuma-orange shadow-masuma-dark/20' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                aria-label={product.stock ? `Add ${quantity} ${product.name} to cart` : 'Product out of stock'}
                             >
                                 <ShoppingCart size={20} /> {product.stock ? 'Add to Cart' : 'Out of Stock'}
                             </button>
-                            <button onClick={() => setIsQuoteModalOpen(true)} className="w-16 h-16 bg-gray-100 text-masuma-dark hover:bg-masuma-orange hover:text-white transition-all flex items-center justify-center rounded-2xl shadow-xl active:scale-95 border border-gray-200" title="Technical Inquiry"><MessageCircle size={24} /></button>
+                            <button 
+                                onClick={() => setIsQuoteModalOpen(true)} 
+                                className="w-16 h-16 bg-gray-100 text-masuma-dark hover:bg-masuma-orange hover:text-white transition-all flex items-center justify-center rounded-2xl shadow-xl active:scale-95 border border-gray-200 focus-ring" 
+                                aria-label="Request technical inquiry"
+                            >
+                                <MessageCircle size={24} />
+                            </button>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-6">

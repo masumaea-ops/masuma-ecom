@@ -138,10 +138,10 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
         <div className="text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-masuma-orange/10 text-masuma-orange rounded-full mb-4">
                 <Filter size={14} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Local Inventory</span>
+                <span className="text-xs font-bold uppercase tracking-widest">Local Inventory</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-masuma-dark mb-4 font-display uppercase tracking-tight">Parts Catalog</h2>
-            <p className="text-gray-500 max-w-2xl text-lg font-light leading-relaxed">
+            <p className="text-gray-600 max-w-2xl text-lg font-normal leading-relaxed">
             High-precision components engineered for the tough East African terrain. 100% Genuine Masuma spark plugs, brake pads, filters, and suspension parts.
             </p>
         </div>
@@ -155,25 +155,28 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
           <div className="w-full lg:w-1/3 relative group">
             <input
               type="text"
-              placeholder="Search by SKU, Name, or OEM Number..."
+              placeholder="Search by SKU, Name, or OEM..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-xl outline-none text-sm font-medium transition-all"
+              className="w-full pl-11 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-xl outline-none text-sm font-medium transition-all focus-ring"
+              aria-label="Search product catalog"
             />
             <Search className="absolute left-4 top-4.5 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={20} />
           </div>
 
           <div className="w-full lg:w-2/3 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2">
+            <div className="flex gap-2 p-1">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-3 text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap transition-all duration-300 rounded-xl border-2 ${
+                  className={`px-5 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300 rounded-xl border-2 touch-target ${
                     selectedCategory === cat
                       ? 'bg-masuma-dark border-masuma-dark text-white shadow-lg shadow-masuma-dark/20 translate-y-[-2px]'
-                      : 'bg-white border-gray-100 text-gray-500 hover:border-masuma-orange hover:text-masuma-orange'
+                      : 'bg-white border-gray-100 text-gray-600 hover:border-masuma-orange hover:text-masuma-orange'
                   }`}
+                  aria-label={`Filter by ${cat}`}
+                  aria-pressed={selectedCategory === cat}
                 >
                   {cat}
                 </button>
@@ -260,11 +263,11 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none"></div>
 
                     <div className="absolute top-6 left-6 right-6 flex justify-between items-start">
-                        <span className="bg-white/90 backdrop-blur-md text-masuma-dark text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] border border-gray-100 shadow-sm">
+                        <span className="bg-white/90 backdrop-blur-md text-masuma-dark text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider border border-gray-100 shadow-sm">
                             {product.category}
                         </span>
                         {!product.stock && (
-                            <span className="bg-red-500 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg shadow-red-500/20">
+                            <span className="bg-red-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-red-500/20">
                                 Sold Out
                             </span>
                         )}
@@ -282,29 +285,29 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                 <div className="p-8 flex-1 flex flex-col">
                     <div className="mb-6">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="w-1.5 h-1.5 bg-masuma-orange rounded-full"></div>
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Genuine Japanese Part</span>
+                            <div className="w-2 h-2 bg-masuma-orange rounded-full"></div>
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Genuine Japanese Part</span>
                         </div>
-                        <h3 className="text-2xl font-black text-masuma-dark leading-[0.9] font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tighter">
+                        <h3 className="text-2xl font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tight">
                             {product.name}
                         </h3>
-                        <p className="text-[10px] text-gray-400 font-black tracking-[0.2em] mt-3 uppercase">SKU: {product.sku}</p>
+                        <p className="text-xs text-gray-400 font-bold tracking-wider mt-3 uppercase">SKU: {product.sku}</p>
                     </div>
 
                     <div className="mt-auto space-y-6">
                         <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100/50 h-20 flex flex-col justify-center group-hover:bg-white group-hover:border-masuma-orange/20 transition-colors">
-                            <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1.5">Compatibility:</p>
-                            <p className="text-[11px] text-gray-600 line-clamp-1 font-bold uppercase tracking-tight" title={(product.compatibility || []).join(', ')}>
+                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1.5">Compatibility:</p>
+                            <p className="text-xs text-gray-700 line-clamp-1 font-semibold uppercase tracking-tight" title={(product.compatibility || []).join(', ')}>
                                 {(product.compatibility || []).join(', ')}
                             </p>
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
                             <div className="flex flex-col">
-                                <span className="text-2xl font-black text-masuma-dark tracking-tighter">
+                                <span className="text-2xl font-bold text-masuma-dark tracking-tighter">
                                     <Price amount={product.price} />
                                 </span>
-                                <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Incl. 16% VAT</span>
+                                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Incl. 16% VAT</span>
                             </div>
                             <button
                                 onClick={(e) => { 
@@ -314,12 +317,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                                     addToCart(product); 
                                 }}
                                 disabled={!product.stock}
-                                className={`w-16 h-16 rounded-[1.5rem] transition-all duration-700 shadow-2xl flex items-center justify-center group/cart-btn ${
+                                className={`w-16 h-16 rounded-2xl transition-all duration-700 shadow-2xl flex items-center justify-center group/cart-btn focus-ring ${
                                     product.stock 
                                     ? 'bg-masuma-dark text-white group-hover:bg-masuma-orange hover:scale-110 shadow-masuma-dark/20' 
                                     : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                                 }`}
-                                title="Add to Cart"
+                                aria-label={`Add ${product.name} to cart`}
                             >
                                 <ShoppingBag size={24} className="group-hover/cart-btn:rotate-12 transition-transform" />
                             </button>

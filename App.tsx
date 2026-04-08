@@ -44,6 +44,7 @@ import Toast, { ToastType } from './components/Toast';
 import SEO from './components/SEO';
 import QuickView from './components/QuickView';
 import WhatsAppButton from './components/WhatsAppButton';
+import MobileBottomNav from './components/MobileBottomNav';
 import { ViewState, Product, CartItem } from './types';
 import { apiClient } from './utils/apiClient';
 import { initGA, trackPageView } from './utils/analytics';
@@ -324,6 +325,7 @@ const App: React.FC = () => {
             <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
             <QuickView product={selectedProduct} isOpen={!!selectedProduct} onClose={closeProduct} addToCart={(p) => setCart([...cart, {...p, quantity: 1}])} onSwitchProduct={setSelectedProduct} />
             <WhatsAppButton />
+            <MobileBottomNav currentView={view} setView={setView} cartCount={cart.reduce((a, b) => a + b.quantity, 0)} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
         </div>
     );
   };

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,14 +8,27 @@ body {
   font-family: 'Inter', sans-serif; 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  @apply text-gray-900 bg-gray-50;
 }
 
 h1, h2, h3, h4, h5, h6 { 
-  font-family: 'Oswald', sans-serif; 
+  font-family: 'Space Grotesk', sans-serif; 
+  @apply tracking-tight;
 }
 
 /* Custom Utilities */
 @layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-masuma-orange focus-visible:ring-offset-2;
+  }
+
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
   .scrollbar-hide::-webkit-scrollbar {
       display: none;
   }
