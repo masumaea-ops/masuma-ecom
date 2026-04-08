@@ -84,4 +84,33 @@ router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
     }
 });
 
+// GET /api/newsletter/unsubscribe - Public
+router.get('/unsubscribe', async (req, res) => {
+    try {
+        const { email } = req.query;
+        if (!email) return res.status(400).send('Email is required');
+        
+        if (!AppDataSource.isInitialized) await AppDataSource.initialize();
+        const subscriberRepo = AppDataSource.getRepository(Subscriber);
+        
+        const subscriber = await subscriberRepo.findOneBy({ email: String(email).toLowerCase().trim() });
+        if (subscriber) {
+            subscriber.isActive = false;
+            await subscriberRepo.save(subscriber);
+            await AuditService.log('NEWSLETTER_UNSUBSCRIBE', subscriber.id, `Subscriber left: ${email}`);
+        }
+        
+        res.send(`
+            <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                <h1 style="color: #1A1A1A;">Unsubscribed Successfully</h1>
+                <p style="color: #666;">You will no longer receive our newsletter. Jambo!</p>
+                <a href="/" style="color: #E0621B; text-decoration: none; font-weight: bold;">Return to Masuma Africa</a>
+            </div>
+        `);
+    } catch (error: any) {
+        logger.error('Newsletter Unsubscribe Error:', error.message);
+        res.status(500).send('Failed to unsubscribe. Please try again later.');
+    }
+});
+
 export default router;

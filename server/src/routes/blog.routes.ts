@@ -1,12 +1,45 @@
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { BlogPost } from '../entities/BlogPost';
+import { Subscriber } from '../entities/Subscriber';
+import { EmailService } from '../services/emailService';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
+import { logger } from '../utils/logger';
 
 const router = Router();
-const blogRepo = AppDataSource.getRepository(BlogPost);
+
+// Helper to get repositories safely
+const getBlogRepo = () => AppDataSource.getRepository(BlogPost);
+const getSubscriberRepo = () => AppDataSource.getRepository(Subscriber);
+
+// Helper to notify subscribers
+async function notifySubscribers(post: BlogPost, origin: string) {
+    try {
+        if (!AppDataSource.isInitialized) await AppDataSource.initialize();
+        const subscriberRepo = getSubscriberRepo();
+        const subscribers = await subscriberRepo.find({ where: { isActive: true } });
+        
+        logger.info(`[BLOG] Notifying ${subscribers.length} subscribers about new post: ${post.title}`);
+        
+        // Send emails in parallel batches to avoid blocking too long
+        const emailPromises = subscribers.map(sub => 
+            EmailService.sendEmail('NEW_BLOG_POST', {
+                email: sub.email,
+                title: post.title,
+                excerpt: post.excerpt,
+                image: post.image,
+                id: post.id,
+                origin
+            })
+        );
+        
+        await Promise.all(emailPromises);
+    } catch (error: any) {
+        logger.error('[BLOG] Subscriber Notification Failed:', error.message);
+    }
+}
 
 // Schema
 const blogSchema = z.object({
@@ -22,6 +55,7 @@ const blogSchema = z.object({
 // GET /api/blog/:id (Public - Single Post)
 router.get('/:id', async (req, res) => {
     try {
+        const blogRepo = getBlogRepo();
         const post = await blogRepo.findOneBy({ id: req.params.id });
         if (!post) return res.status(404).json({ error: 'Post not found' });
         
@@ -39,6 +73,7 @@ router.get('/:id', async (req, res) => {
 // GET /api/blog (Public - List)
 router.get('/', async (req, res) => {
     try {
+        const blogRepo = getBlogRepo();
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 6; // Default 6 posts per page
         const skip = (page - 1) * limit;
@@ -72,8 +107,16 @@ router.get('/', async (req, res) => {
 // POST /api/blog (Admin)
 router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogSchema), async (req, res) => {
     try {
+        const blogRepo = getBlogRepo();
         const post = blogRepo.create(req.body);
         await blogRepo.save(post);
+
+        // Notify subscribers if published
+        if (post.isPublished) {
+            const origin = req.get('origin') || req.get('referer') || 'https://masuma.africa';
+            notifySubscribers(post, origin).catch(err => logger.error('Notification Error:', err));
+        }
+
         res.status(201).json(post);
     } catch (error) {
         res.status(500).json({ error: 'Failed to create post' });
@@ -83,11 +126,20 @@ router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogSch
 // PUT /api/blog/:id (Admin)
 router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogSchema.partial()), async (req, res) => {
     try {
+        const blogRepo = getBlogRepo();
         const post = await blogRepo.findOneBy({ id: req.params.id });
         if (!post) return res.status(404).json({ error: 'Post not found' });
 
+        const wasPublished = post.isPublished;
         blogRepo.merge(post, req.body);
         await blogRepo.save(post);
+
+        // Notify if it was just published
+        if (!wasPublished && post.isPublished) {
+            const origin = req.get('origin') || req.get('referer') || 'https://masuma.africa';
+            notifySubscribers(post, origin).catch(err => logger.error('Notification Error:', err));
+        }
+
         res.json(post);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update post' });
@@ -97,6 +149,7 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogS
 // DELETE /api/blog/:id (Admin)
 router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
+        const blogRepo = getBlogRepo();
         await blogRepo.delete(req.params.id);
         res.json({ message: 'Post deleted' });
     } catch (error) {

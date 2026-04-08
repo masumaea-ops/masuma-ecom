@@ -150,30 +150,30 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
       <VinSearch onVehicleIdentified={setVinFilter} />
 
       {/* Modern Floating Search/Filter Bar */}
-      <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-xl p-3 shadow-xl shadow-black/5 border border-gray-100 mb-12 rounded-2xl transition-all">
-        <div className="flex flex-col lg:flex-row gap-4 items-center">
+      <div className="sticky top-24 md:top-28 z-30 bg-white/95 backdrop-blur-xl p-4 shadow-2xl shadow-black/5 border border-gray-100 mb-12 rounded-3xl transition-all">
+        <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-center">
           <div className="w-full lg:w-1/3 relative group">
             <input
               type="text"
               placeholder="Search by SKU, Name, or OEM..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-xl outline-none text-xs font-medium transition-all focus-ring"
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-2xl outline-none text-xs font-bold transition-all focus-ring"
               aria-label="Search product catalog"
             />
-            <Search className="absolute left-4 top-4.5 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={20} />
           </div>
 
-          <div className="w-full lg:w-2/3 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 p-1">
+          <div className="w-full lg:w-2/3">
+            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-3 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap transition-all duration-300 rounded-xl border-2 touch-target ${
+                  className={`px-4 py-2.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 rounded-xl border-2 ${
                     selectedCategory === cat
-                      ? 'bg-masuma-dark border-masuma-dark text-white shadow-lg shadow-masuma-dark/20 translate-y-[-2px]'
-                      : 'bg-white border-gray-100 text-gray-600 hover:border-masuma-orange hover:text-masuma-orange'
+                      ? 'bg-masuma-dark border-masuma-dark text-white shadow-lg shadow-masuma-dark/20 scale-105'
+                      : 'bg-white border-gray-100 text-gray-500 hover:border-masuma-orange hover:text-masuma-orange hover:bg-masuma-orange/5'
                   }`}
                   aria-label={`Filter by ${cat}`}
                   aria-pressed={selectedCategory === cat}

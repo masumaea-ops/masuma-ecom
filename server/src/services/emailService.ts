@@ -115,6 +115,31 @@ export class EmailService {
                     <p style="font-size: 10px; color: #999; margin-top: 20px;">Link: ${resetUrl}</p>
                 </div>
             `;
+        } else if (type === 'NEW_BLOG_POST') {
+            subject = `New on Masuma Blog: ${data.title}`;
+            const blogUrl = `${data.origin}/?view=BLOG_DETAIL&id=${data.id}`;
+            html = `
+                <div style="font-family: sans-serif; max-width: 600px; padding: 0; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                    <div style="background: #1A1A1A; padding: 20px; text-align: center;">
+                        <h1 style="color: #E0621B; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Masuma Insights</h1>
+                    </div>
+                    <div style="padding: 30px;">
+                        <img src="${data.image}" alt="${data.title}" style="width: 100%; height: auto; border-radius: 4px; margin-bottom: 20px;" />
+                        <h2 style="color: #1A1A1A; margin-top: 0;">${data.title}</h2>
+                        <p style="color: #666; line-height: 1.6;">${data.excerpt}</p>
+                        <div style="margin-top: 30px; text-align: center;">
+                            <a href="${blogUrl}" style="background: #E0621B; color: white; padding: 12px 25px; text-decoration: none; display: inline-block; font-weight: bold; border-radius: 4px; text-transform: uppercase; font-size: 14px;">Read Full Article</a>
+                        </div>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+                        <p style="font-size: 12px; color: #999; margin: 0;">You are receiving this because you subscribed to Masuma Autoparts East Africa updates.</p>
+                        <p style="font-size: 12px; color: #999; margin: 10px 0 0 0;">
+                            <a href="${data.origin}/api/newsletter/unsubscribe?email=${encodeURIComponent(data.email)}" style="color: #E0621B; text-decoration: underline;">Unsubscribe</a>
+                        </p>
+                        <p style="font-size: 12px; color: #999; margin: 10px 0 0 0;">&copy; 2026 Masuma Autoparts EA. Ruby Mall, Nairobi.</p>
+                    </div>
+                </div>
+            `;
         }
 
         if (to && subject && html) {
