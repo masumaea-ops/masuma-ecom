@@ -238,7 +238,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                 <div className="relative h-80 bg-gradient-to-br from-gray-50 to-white p-10 flex items-center justify-center overflow-hidden rounded-t-[2.5rem] border-b border-gray-50 select-none">
                     <img 
                     src={product.image || (product as any).images?.[0]} 
-                    alt={product.name} 
+                    alt={`${product.name} - Masuma Genuine Part Kenya`} 
+                    loading="lazy"
                     className="max-w-full max-h-full object-contain transform group-hover:scale-110 transition duration-1000 ease-out drop-shadow-2xl media-protected"
                     onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Masuma+Part';

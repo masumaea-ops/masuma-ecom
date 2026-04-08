@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /login/
+Disallow: /checkout/success
+Disallow: /checkout/cancel
 
 Sitemap: https://masuma.africa/sitemap.xml

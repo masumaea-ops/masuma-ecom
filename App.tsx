@@ -216,6 +216,24 @@ const App: React.FC = () => {
                     title="Genuine Japanese Spare Parts in Nairobi" 
                     description="Masuma Autoparts East Africa. Official distributor of Japanese precision automotive parts in Nairobi, Kenya. 12-month warranty on filters, brakes, spark plugs, and suspension." 
                     keywords="Masuma Kenya, car parts Nairobi, Japanese spare parts Kenya, Toyota parts Kenya, Nissan parts Kenya, genuine spark plugs Kenya, Masuma spark plugs Nairobi, brake pads Kenya, oil filters Nairobi"
+                    schema={{
+                        "@context": "https://schema.org",
+                        "@type": "Organization",
+                        "name": "Masuma Autoparts East Africa",
+                        "url": "https://masuma.africa",
+                        "logo": "https://masuma.africa/logo.png",
+                        "contactPoint": {
+                            "@type": "ContactPoint",
+                            "telephone": "+254-792-506590",
+                            "contactType": "customer service",
+                            "areaServed": "KE",
+                            "availableLanguage": "en"
+                        },
+                        "sameAs": [
+                            "https://www.facebook.com/masumakenya",
+                            "https://www.instagram.com/masumakenya"
+                        ]
+                    }}
                 />
                 <Hero setView={setView} />
                 

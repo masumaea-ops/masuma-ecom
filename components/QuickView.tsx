@@ -103,26 +103,52 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
 
       {/* Product Structured Data */}
       <script type="application/ld+json">
-      {JSON.stringify({
-        "@context": "https://schema.org/",
-        "@type": "Product",
-        "name": product.name,
-        "image": [product.image, ...(product.images || [])],
-        "description": product.description,
-        "sku": product.sku,
-        "brand": {
-          "@type": "Brand",
-          "name": "Masuma"
+      {JSON.stringify([
+        {
+          "@context": "https://schema.org/",
+          "@type": "Product",
+          "name": product.name,
+          "image": [product.image, ...(product.images || [])],
+          "description": product.description,
+          "sku": product.sku,
+          "brand": {
+            "@type": "Brand",
+            "name": "Masuma"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": `${window.location.origin}/?product=${product.id}`,
+            "priceCurrency": "KES",
+            "price": product.price,
+            "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "itemCondition": "https://schema.org/NewCondition"
+          }
         },
-        "offers": {
-          "@type": "Offer",
-          "url": `${window.location.origin}/?product=${product.id}`,
-          "priceCurrency": "KES",
-          "price": product.price,
-          "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-          "itemCondition": "https://schema.org/NewCondition"
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": window.location.origin
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": product.category,
+              "item": `${window.location.origin}/?view=CATALOG&category=${product.category}`
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": product.name,
+              "item": `${window.location.origin}/?product=${product.id}`
+            }
+          ]
         }
-      })}
+      ])}
       </script>
 
       <div className={`fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden transition-all duration-500 ${isFullScreen ? 'p-0' : 'p-0 sm:p-4 md:p-6 lg:p-10'}`}>
