@@ -14,7 +14,7 @@ interface SEOProps {
 const SEO: React.FC<SEOProps> = ({ 
   title, 
   description, 
-  image = 'https://masuma.africa/og-default.jpg', 
+  image = 'https://masuma.africa/og-image.jpg', 
   url, 
   type = 'website',
   schema,

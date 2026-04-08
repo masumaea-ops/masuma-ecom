@@ -100,6 +100,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
   if (slides.length === 0) {
       return (
         <div className="h-[600px] bg-masuma-dark flex items-center justify-center">
+            <h1 className="sr-only">Masuma Autoparts East Africa - Genuine Japanese Spare Parts</h1>
             <Loader2 className="animate-spin text-masuma-orange" size={48} />
         </div>
       );
@@ -195,6 +196,15 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                                       className="bg-masuma-orange hover:bg-white hover:text-masuma-orange text-white font-bold px-12 py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl group/btn"
                                   >
                                       {slide.ctaText} <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
+                                  </a>
+                                  
+                                  <a 
+                                      href="https://wa.me/254792506590?text=Hello%20Masuma%20East%20Africa,%20I%20am%20interested%20in%20genuine%20Japanese%20spare%20parts."
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-[#25D366] hover:border-[#25D366] text-white font-bold px-12 py-5 rounded-none transition duration-300 uppercase tracking-[0.2em] text-xs flex items-center gap-3 shadow-2xl"
+                                  >
+                                      Chat on WhatsApp
                                   </a>
                               
                               <div className="flex items-center gap-8 text-white ml-0 md:ml-6 drop-shadow-md opacity-80">

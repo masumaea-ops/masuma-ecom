@@ -42,7 +42,7 @@ const WhatsAppButton: React.FC = () => {
     if (!isVisible) return null;
 
     return (
-        <div className="fixed bottom-6 left-6 z-[1000] flex flex-col items-start gap-3 pointer-events-none">
+        <div className="fixed bottom-6 right-6 z-[1000] flex flex-col items-end gap-3 pointer-events-none">
             {showTooltip && (
                 <div className="bg-white text-masuma-dark p-4 rounded-2xl shadow-2xl border border-gray-100 animate-scale-up pointer-events-auto relative max-w-[240px]">
                     <button 
@@ -55,7 +55,7 @@ const WhatsAppButton: React.FC = () => {
                         Need help finding a part? <br/>
                         <span className="text-masuma-orange">Chat with our experts on WhatsApp!</span>
                     </p>
-                    <div className="absolute -bottom-2 left-6 w-4 h-4 bg-white border-r border-b border-gray-100 rotate-45"></div>
+                    <div className="absolute -bottom-2 right-6 w-4 h-4 bg-white border-l border-b border-gray-100 rotate-45"></div>
                 </div>
             )}
             
@@ -68,7 +68,7 @@ const WhatsAppButton: React.FC = () => {
                 aria-label="Chat on WhatsApp"
             >
                 <MessageCircle size={28} fill="currentColor" />
-                <span className="absolute left-full ml-4 bg-masuma-dark text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+                <span className="absolute right-full mr-4 bg-masuma-dark text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
                     WhatsApp Support
                 </span>
                 

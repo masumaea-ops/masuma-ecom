@@ -10,45 +10,37 @@
     <meta name="geo.region" content="KE" />
     <meta name="geo.placename" content="Nairobi" />
     
+    <link rel="canonical" href="https://masuma.africa" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+
+    <!-- Default Open Graph (Fallback) -->
+    <meta property="og:site_name" content="Masuma Autoparts East Africa" />
+    <meta property="og:title" content="Genuine Japanese Spare Parts in Nairobi | Masuma Kenya" />
+    <meta property="og:description" content="Official distributor of Masuma automotive parts in Kenya. High-quality Japanese engineered parts for Toyota, Nissan, Subaru, and more." />
+    <meta property="og:image" content="https://masuma.africa/og-image.jpg" />
+    <meta name="twitter:image" content="https://masuma.africa/og-image.jpg" />
+    
     <!-- Structured Data for Local Business -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "AutoPartsStore",
       "name": "Masuma Autoparts East Africa Limited",
-      "image": "https://masuma.africa/logo.png",
-      "@id": "https://masuma.africa",
+      "description": "Official distributor of Japanese precision automotive parts in Nairobi, Kenya. 12-month warranty on filters, brakes, spark plugs, and suspension.",
+      "image": "https://masuma.africa/og-image.jpg",
       "url": "https://masuma.africa",
-      "telephone": "+254700000000",
+      "telephone": "+254792506590",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "Kirinyaga Road",
+        "streetAddress": "Ruby Mall, Accra Road",
         "addressLocality": "Nairobi",
-        "postalCode": "00100",
         "addressCountry": "KE"
       },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": -1.2833,
-        "longitude": 36.8167
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday"
-        ],
-        "opens": "08:00",
-        "closes": "18:00"
-      },
-      "sameAs": [
-        "https://facebook.com/masumakenya",
-        "https://instagram.com/masumakenya"
-      ]
+      "openingHours": "Mo-Sa 08:00-18:00",
+      "priceRange": "KES"
     }
     </script>
     
@@ -93,7 +85,22 @@
 </script>
 </head>
   <body class="bg-gray-50 text-masuma-dark antialiased selection:bg-masuma-orange selection:text-white">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static SEO Fallback for Crawlers -->
+      <header style="display:none">
+        <h1>Masuma Autoparts East Africa Limited - Genuine Japanese Spare Parts in Nairobi</h1>
+        <h2>Official Distributor of Masuma Kenya</h2>
+        <p>High-quality Japanese engineered parts for Toyota, Nissan, Subaru, and more. 12-month warranty on filters, brakes, spark plugs, and suspension.</p>
+        <nav>
+          <a href="/?view=CATALOG">Product Catalog</a>
+          <a href="/?view=PART_FINDER">VIN & Part Finder</a>
+          <a href="/?view=BLOG">Automotive Blog</a>
+          <a href="/?view=ABOUT">About Masuma Kenya</a>
+          <a href="/?view=CONTACT">Contact Us</a>
+        </nav>
+        <img src="https://masuma.africa/og-image.jpg" alt="Masuma Autoparts East Africa Warehouse" />
+      </header>
+    </div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
