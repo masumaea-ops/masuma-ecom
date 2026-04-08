@@ -90,9 +90,10 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
       const id = (match && match[2].length === 11) ? match[2] : null;
       if (!id) return '';
       
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      // Added loop=1 and playlist={id} for continuous playback
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&widgetid=1&origin=${encodeURIComponent(origin)}`;
+      const referrer = typeof window !== 'undefined' ? window.location.href : '';
+      // Using youtube-nocookie.com and removing enablejsapi/origin to fix Error 153
+      // Added widget_referrer for better view tracking
+      return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&widget_referrer=${encodeURIComponent(referrer)}`;
   };
 
   const isYoutube = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');

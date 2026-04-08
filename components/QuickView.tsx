@@ -81,8 +81,11 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
       const id = (match && match[2].length === 11) ? match[2] : null;
       if (!id) return '';
       
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+      // Use youtube-nocookie.com for better compatibility and privacy
+      // Removed enablejsapi and origin to prevent Error 153 (Configuration Error)
+      // Added widget_referrer to help with view attribution
+      const referrer = typeof window !== 'undefined' ? window.location.href : '';
+      return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&modestbranding=1&widget_referrer=${encodeURIComponent(referrer)}`;
   };
 
   const handleSwitch = (p: Product) => {
@@ -173,6 +176,8 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                                     className="w-full h-full" 
                                     allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
+                                    loading="lazy"
+                                    title={`${product.name} Video`}
                                 ></iframe>
                             ) : (
                                 <video 
