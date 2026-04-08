@@ -63,7 +63,7 @@ router.delete('/bulk/rollback/:batchId', authenticate, authorize(['ADMIN', 'MANA
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-        const products = await queryRunner.manager.findBy(Product, { importBatchId: batchId });
+        const products = await queryRunner.manager.findBy(Product, { importBatchId: batchId as any });
         for (const p of products) {
             await queryRunner.manager.delete(ProductStock, { product: { id: p.id } } as any);
             await queryRunner.manager.delete(OemNumber, { product: { id: p.id } } as any);
@@ -112,7 +112,7 @@ router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(createP
 router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(updateProductSchema), async (req, res) => {
     try {
         const payload = { ...req.body, branchId: req.user?.branch?.id };
-        const product = await ProductService.updateProduct(req.params.id, payload);
+        const product = await ProductService.updateProduct(req.params.id as any, payload);
         res.json(product);
     } catch (error: any) {
         res.status(500).json({ error: error.message || 'Failed to update product' });
@@ -121,7 +121,7 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(updat
 
 router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
-        await ProductService.deleteProduct(req.params.id);
+        await ProductService.deleteProduct(req.params.id as any);
         res.json({ message: 'Product deleted successfully' });
     } catch (error: any) {
         res.status(500).json({ error: error.message || 'Failed to delete product' });

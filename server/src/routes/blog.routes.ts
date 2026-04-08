@@ -56,7 +56,7 @@ const blogSchema = z.object({
 router.get('/:id', async (req, res) => {
     try {
         const blogRepo = getBlogRepo();
-        const post = await blogRepo.findOneBy({ id: req.params.id });
+        const post = await blogRepo.findOneBy({ id: req.params.id as any });
         if (!post) return res.status(404).json({ error: 'Post not found' });
         
         const formatted = {
@@ -108,7 +108,7 @@ router.get('/', async (req, res) => {
 router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogSchema), async (req, res) => {
     try {
         const blogRepo = getBlogRepo();
-        const post = blogRepo.create(req.body);
+        const post = blogRepo.create(req.body as any) as unknown as BlogPost;
         await blogRepo.save(post);
 
         // Notify subscribers if published
@@ -127,7 +127,7 @@ router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogSch
 router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogSchema.partial()), async (req, res) => {
     try {
         const blogRepo = getBlogRepo();
-        const post = await blogRepo.findOneBy({ id: req.params.id });
+        const post = await blogRepo.findOneBy({ id: req.params.id as any });
         if (!post) return res.status(404).json({ error: 'Post not found' });
 
         const wasPublished = post.isPublished;

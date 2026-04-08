@@ -36,7 +36,7 @@ transporter.verify((error, success) => {
 
 let emailQueue: Queue | null = null;
 if (redis && process.env.DISABLE_EMAIL_QUEUE !== 'true') {
-    emailQueue = new Queue('email-queue', { connection: redis });
+    emailQueue = new Queue('email-queue', { connection: redis as any });
 }
 
 export class EmailService {

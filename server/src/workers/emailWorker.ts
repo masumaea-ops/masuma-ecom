@@ -21,7 +21,7 @@ export const startEmailWorker = () => {
             throw err; // Re-throw to trigger BullMQ fail listener
         }
     }, { 
-        connection: redis,
+        connection: redis as any,
         concurrency: 5,
         // Ensure worker doesn't stall on closed connections
         removeOnComplete: { count: 100 },

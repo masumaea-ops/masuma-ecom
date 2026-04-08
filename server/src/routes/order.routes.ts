@@ -138,7 +138,7 @@ router.patch('/:id/status', authenticate, authorize(['ADMIN', 'MANAGER']), valid
     try {
         const { status } = req.body;
         const order = await orderRepo.findOne({ 
-            where: { id: req.params.id },
+            where: { id: req.params.id as any },
             relations: ['items', 'items.product'] 
         });
         

@@ -70,14 +70,14 @@ router.post('/', authenticate, authorize(['ADMIN']), validate(createUserSchema),
 // DELETE /api/users/:id
 router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
     try {
-        const user = await userRepo.findOneBy({ id: req.params.id });
+        const user = await userRepo.findOneBy({ id: req.params.id as any });
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         await userRepo.remove(user);
         
         await AuditService.log(
             'DELETE_USER', 
-            req.params.id, 
+            req.params.id as any, 
             `Deleted user ${user.email}`, 
             req.user, 
             req.ip

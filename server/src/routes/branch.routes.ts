@@ -41,7 +41,7 @@ router.post('/', authenticate, authorize(['ADMIN']), validate(branchSchema), asy
 // PUT /api/branches/:id (Admin)
 router.put('/:id', authenticate, authorize(['ADMIN']), validate(branchSchema.partial()), async (req, res) => {
     try {
-        const branch = await branchRepo.findOneBy({ id: req.params.id });
+        const branch = await branchRepo.findOneBy({ id: req.params.id as any });
         if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
         branchRepo.merge(branch, req.body);

@@ -156,7 +156,7 @@ const updateQuoteSchema = z.object({
 
 router.patch('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(updateQuoteSchema), async (req, res) => {
     try {
-        const quote = await quoteRepo.findOneBy({ id: req.params.id });
+        const quote = await quoteRepo.findOneBy({ id: req.params.id as any });
         if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
         if (req.body.status) quote.status = req.body.status;
@@ -175,7 +175,7 @@ router.patch('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(upd
 router.post('/:id/convert', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
         const quote = await quoteRepo.findOne({ 
-            where: { id: req.params.id },
+            where: { id: req.params.id as any },
             relations: ['customer']
         });
 

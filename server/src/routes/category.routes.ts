@@ -42,7 +42,7 @@ router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(categor
 router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
     try {
         const category = await categoryRepo.findOne({ 
-            where: { id: req.params.id },
+            where: { id: req.params.id as any },
             relations: ['products']
         });
 

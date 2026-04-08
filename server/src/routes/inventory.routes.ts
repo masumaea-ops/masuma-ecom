@@ -58,7 +58,7 @@ const updateStockSchema = z.object({
 router.patch('/:productId', authenticate, authorize(['ADMIN', 'MANAGER']), validate(updateStockSchema), async (req, res) => {
     try {
         const { branchId, quantity, operation } = req.body;
-        const updated = await InventoryService.updateStock(req.params.productId, branchId, quantity, operation);
+        const updated = await InventoryService.updateStock(req.params.productId as any, branchId, quantity, operation);
         res.json(updated);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update stock' });
