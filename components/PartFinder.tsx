@@ -54,8 +54,8 @@ const PartFinder: React.FC<PartFinderProps> = ({ addToCart }) => {
             <div className="bg-masuma-dark text-white py-8 border-b-4 border-masuma-orange">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div>
-                        <h1 className="text-2xl font-bold font-display uppercase tracking-wide mb-1">Part Finder</h1>
-                        <p className="text-sm text-gray-400">
+                        <h1 className="text-xl font-bold font-display uppercase tracking-wide mb-1">Part Finder</h1>
+                        <p className="text-xs text-gray-400">
                             Step 1: Find your part number below. <br/> 
                             Step 2: Enter the SKU here to check local stock.
                         </p>
@@ -68,7 +68,7 @@ const PartFinder: React.FC<PartFinderProps> = ({ addToCart }) => {
                                 value={sku}
                                 onChange={e => setSku(e.target.value)}
                                 placeholder="Enter SKU (e.g. MS 7460 or MS-7460)"
-                                className="flex-1 p-4 text-masuma-dark font-bold outline-none rounded-l-sm"
+                                className="flex-1 p-4 text-masuma-dark font-medium text-sm outline-none rounded-l-sm"
                             />
                             <button 
                                 type="submit" 
@@ -89,17 +89,17 @@ const PartFinder: React.FC<PartFinderProps> = ({ addToCart }) => {
                                             <img src={foundProduct.image} alt={foundProduct.name} className="w-full h-full object-cover" />
                                         </div>
                                         <div className="flex-1">
-                                            <h4 className="font-bold text-sm uppercase text-green-600 flex items-center gap-1">
+                                            <h4 className="font-bold text-[10px] uppercase text-green-600 flex items-center gap-1">
                                                 <CheckCircle size={14} /> Stock Found!
                                             </h4>
-                                            <p className="font-bold text-masuma-dark">{foundProduct.name}</p>
-                                            <p className="text-xs text-gray-500">SKU: {foundProduct.sku}</p>
+                                            <p className="font-bold text-sm text-masuma-dark">{foundProduct.name}</p>
+                                            <p className="text-[10px] text-gray-500">SKU: {foundProduct.sku}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-masuma-orange text-lg"><Price amount={foundProduct.price} /></p>
+                                            <p className="font-bold text-masuma-orange text-base"><Price amount={foundProduct.price} /></p>
                                             <button 
                                                 onClick={() => addToCart(foundProduct)}
-                                                className="mt-1 bg-masuma-dark text-white px-4 py-2 text-xs font-bold uppercase rounded hover:bg-masuma-orange transition flex items-center gap-2"
+                                                className="mt-1 bg-masuma-dark text-white px-4 py-2 text-[10px] font-bold uppercase rounded hover:bg-masuma-orange transition flex items-center gap-2"
                                             >
                                                 <ShoppingBag size={14} /> Add
                                             </button>

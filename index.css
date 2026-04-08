@@ -8,12 +8,12 @@ body {
   font-family: 'Inter', sans-serif; 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply text-gray-900 bg-gray-50;
+  @apply text-gray-900 bg-gray-50 text-[15px] font-light leading-relaxed;
 }
 
 h1, h2, h3, h4, h5, h6 { 
   font-family: 'Space Grotesk', sans-serif; 
-  @apply tracking-tight;
+  @apply tracking-tight font-medium;
 }
 
 /* Custom Utilities */

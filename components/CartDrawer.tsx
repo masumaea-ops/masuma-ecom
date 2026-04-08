@@ -34,8 +34,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
           {/* Header */}
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
             <div>
-                <h2 className="text-xl font-bold font-display uppercase tracking-tight text-masuma-dark">Your Order</h2>
-                <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{cartItems.length} items selected</p>
+                <h2 className="text-lg font-bold font-display uppercase tracking-tight text-masuma-dark">Your Order</h2>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{cartItems.length} items selected</p>
             </div>
             <button 
               onClick={onClose} 
@@ -72,7 +72,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                       <div>
                         <div className="flex justify-between items-start gap-2">
-                            <h4 className="font-bold text-sm text-masuma-dark line-clamp-2 leading-tight group-hover:text-masuma-orange transition-colors uppercase tracking-tight">{item.name}</h4>
+                            <h4 className="font-bold text-xs text-masuma-dark line-clamp-2 leading-tight group-hover:text-masuma-orange transition-colors uppercase tracking-tight">{item.name}</h4>
                             <button 
                               onClick={() => removeFromCart(item.id)}
                               className="text-gray-300 hover:text-red-500 transition-colors p-1 -mr-1 focus-ring touch-target"
@@ -81,11 +81,11 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                               <X size={18} />
                             </button>
                         </div>
-                        <p className="text-xs text-gray-400 font-bold tracking-wider mt-1.5 uppercase opacity-60">SKU: {item.sku}</p>
+                        <p className="text-[10px] text-gray-400 font-bold tracking-wider mt-1.5 uppercase opacity-60">SKU: {item.sku}</p>
                       </div>
                       
                       <div className="flex justify-between items-center mt-4">
-                        <span className="text-masuma-dark font-black text-sm tracking-tighter">
+                        <span className="text-masuma-dark font-bold text-xs tracking-tighter">
                           <Price amount={item.price} />
                         </span>
                         
@@ -130,8 +130,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                   <div className="h-px bg-gray-100 w-full my-2"></div>
                   <div className="flex justify-between items-end">
                       <div>
-                          <p className="text-xs text-masuma-orange font-bold uppercase tracking-widest mb-1">Total Payable</p>
-                          <p className="text-2xl font-bold text-masuma-dark tracking-tighter leading-none"><Price amount={total} /></p>
+                          <p className="text-[10px] text-masuma-orange font-bold uppercase tracking-widest mb-1">Total Payable</p>
+                          <p className="text-xl font-bold text-masuma-dark tracking-tighter leading-none"><Price amount={total} /></p>
                       </div>
                       <div className="text-right">
                            <div className="flex items-center gap-1.5 bg-green-50 px-2 py-1 rounded-sm border border-green-100">

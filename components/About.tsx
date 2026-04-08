@@ -40,11 +40,11 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                     <span className="w-2 h-2 bg-masuma-orange rounded-full animate-pulse"></span>
                     <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">Official Distributor • East Africa</span>
                 </div>
-                <h1 className="text-4xl md:text-6xl font-bold font-display uppercase leading-[0.9] mb-8 tracking-tighter">
+                <h1 className="text-3xl md:text-5xl font-bold font-display uppercase leading-[0.9] mb-8 tracking-tighter">
                     Built for the <br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-500">Long Road.</span>
                 </h1>
-                <p className="text-gray-300 text-lg md:text-xl font-light leading-relaxed max-w-2xl mb-10 border-l-4 border-masuma-orange pl-6">
+                <p className="text-gray-300 text-base md:text-lg font-light leading-relaxed max-w-2xl mb-10 border-l-4 border-masuma-orange pl-6">
                     Masuma Autoparts East Africa is the bridge between Japanese precision engineering and the rugged demands of the African continent. We don't just sell parts; we provide reliability.
                 </p>
                 <a 
@@ -67,8 +67,8 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                       <div className="bg-masuma-orange/10 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                           <Target size={24} className="text-masuma-orange" />
                       </div>
-                      <h3 className="text-xl font-bold font-display uppercase text-masuma-dark mb-3">Our Mission</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
+                      <h3 className="text-lg font-bold font-display uppercase text-masuma-dark mb-3">Our Mission</h3>
+                      <p className="text-gray-600 text-xs leading-relaxed">
                           To supply durable, precision-engineered automotive parts that meet global standards, while delivering expert support, fair pricing, and efficient availability to mechanics, workshops, and vehicle owners across East Africa.
                       </p>
                   </div>
@@ -78,8 +78,8 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                       <div className="bg-masuma-dark/10 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                           <Eye size={24} className="text-masuma-dark" />
                       </div>
-                      <h3 className="text-xl font-bold font-display uppercase text-masuma-dark mb-3">Our Vision</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
+                      <h3 className="text-lg font-bold font-display uppercase text-masuma-dark mb-3">Our Vision</h3>
+                      <p className="text-gray-600 text-xs leading-relaxed">
                           To become East Africa’s most trusted and accessible provider of high-quality automotive parts, powering reliable mobility across the region.
                       </p>
                   </div>
@@ -89,8 +89,8 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                       <div className="bg-blue-50 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                           <Truck size={24} className="text-blue-600" />
                       </div>
-                      <h3 className="text-xl font-bold font-display uppercase text-masuma-dark mb-3">Our Reach</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
+                      <h3 className="text-lg font-bold font-display uppercase text-masuma-dark mb-3">Our Reach</h3>
+                      <p className="text-gray-600 text-xs leading-relaxed">
                           From our central warehouse in Nairobi, we serve a network of over 600 partner garages and retailers across Kenya, Uganda, Tanzania, and Rwanda.
                       </p>
                   </div>
@@ -176,8 +176,8 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                   ].map((item, idx) => (
                       <div key={idx} className="bg-white p-10 hover:bg-gray-50 transition-colors group">
                           <item.icon size={32} className="text-masuma-orange mb-6 group-hover:scale-110 transition-transform" />
-                          <h3 className="text-lg font-bold font-display uppercase mb-4 leading-tight">{item.title}</h3>
-                          <p className="text-gray-600 text-sm leading-relaxed">
+                          <h3 className="text-base font-bold font-display uppercase mb-4 leading-tight">{item.title}</h3>
+                          <p className="text-gray-600 text-xs leading-relaxed">
                               {item.desc}
                           </p>
                       </div>
@@ -221,8 +221,8 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                   ].map((item, idx) => (
                       <div key={idx} className="bg-white/5 p-10 border border-white/10 hover:border-masuma-orange hover:bg-white/10 transition duration-500 group">
                           <item.icon size={48} className="text-masuma-orange mb-6 group-hover:scale-110 transition-transform" />
-                          <h3 className="text-xl font-bold font-display uppercase mb-4 tracking-wide">{item.title}</h3>
-                          <p className="text-gray-400 leading-relaxed text-sm">
+                          <h3 className="text-lg font-bold font-display uppercase mb-4 tracking-wide">{item.title}</h3>
+                          <p className="text-gray-400 leading-relaxed text-xs">
                               {item.desc}
                           </p>
                       </div>

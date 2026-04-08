@@ -85,7 +85,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
             <div className="mb-4">
                 <Logo variant="white" />
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            <p className="text-gray-400 text-xs leading-relaxed mb-6">
               {info.about}
             </p>
             <div className="flex space-x-3">
@@ -98,8 +98,8 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
 
           {/* Links */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Quick Links</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
+            <h3 className="text-sm font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Quick Links</h3>
+            <ul className="space-y-2 text-xs text-gray-400">
               <li><a href="/?view=ABOUT" onClick={(e) => handleNav(e, 'ABOUT')} className="hover:text-masuma-orange transition">About Us</a></li>
               <li><a href="/?view=PART_FINDER" onClick={(e) => handleNav(e, 'PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</a></li>
               <li><a href="/?view=WARRANTY" onClick={(e) => handleNav(e, 'WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</a></li>
@@ -110,8 +110,8 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
 
           {/* Contact */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Contact Us</h3>
-            <ul className="space-y-4 text-sm text-gray-400">
+            <h3 className="text-sm font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Contact Us</h3>
+            <ul className="space-y-4 text-xs text-gray-400">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-masuma-orange flex-shrink-0 mt-0.5" />
                 <span>{info.address}</span>
@@ -129,8 +129,8 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
 
           {/* Newsletter */}
           <div>
-             <h3 className="text-lg font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Stay Updated</h3>
-             <p className="text-xs text-gray-400 mb-4">Subscribe for price alerts, new shipments, and Japanese maintenance tips.</p>
+             <h3 className="text-sm font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Stay Updated</h3>
+             <p className="text-[10px] text-gray-400 mb-4">Subscribe for price alerts, new shipments, and Japanese maintenance tips.</p>
              
              {status === 'success' ? (
                  <div className="bg-green-600/20 border border-green-600/50 p-4 rounded text-xs text-green-400 flex items-center gap-3 animate-scale-up">
@@ -147,7 +147,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email" 
                             disabled={status === 'loading'}
-                            className={`bg-white/5 border ${status === 'error' ? 'border-red-500' : 'border-white/10 group-hover:border-masuma-orange/50'} text-white px-4 py-4 text-sm focus:outline-none focus:border-masuma-orange transition w-full outline-none`}
+                            className={`bg-white/5 border ${status === 'error' ? 'border-red-500' : 'border-white/10 group-hover:border-masuma-orange/50'} text-white px-4 py-4 text-xs focus:outline-none focus:border-masuma-orange transition w-full outline-none`}
                         />
                         <Mail size={16} className={`absolute right-4 top-4 transition-colors ${status === 'error' ? 'text-red-500' : 'text-white/20'}`} />
                     </div>

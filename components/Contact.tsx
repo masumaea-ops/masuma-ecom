@@ -37,9 +37,9 @@ const Contact: React.FC = () => {
       {/* Header */}
       <div className="bg-masuma-dark text-white py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold font-display uppercase tracking-wider mb-2">Contact Us</h1>
+          <h1 className="text-3xl font-bold font-display uppercase tracking-wider mb-2">Contact Us</h1>
           <div className="h-1 w-24 bg-masuma-orange mx-auto mb-6"></div>
-          <p className="text-gray-400">Get in touch with our sales team or visit our showroom.</p>
+          <p className="text-gray-400 text-sm">Get in touch with our sales team or visit our showroom.</p>
         </div>
       </div>
 
@@ -47,7 +47,7 @@ const Contact: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Info */}
           <div>
-            <h3 className="text-2xl font-bold text-masuma-dark font-display uppercase mb-8">Get In Touch</h3>
+            <h3 className="text-xl font-bold text-masuma-dark font-display uppercase mb-8">Get In Touch</h3>
             
             <div className="space-y-8">
               <div className="flex items-start gap-4">
@@ -55,8 +55,8 @@ const Contact: React.FC = () => {
                   <MapPin size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-masuma-dark uppercase mb-1">Headquarters & Showroom</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <h4 className="text-sm font-bold text-masuma-dark uppercase mb-1">Headquarters & Showroom</h4>
+                  <p className="text-gray-600 text-xs leading-relaxed">
                     Ruby Mall, Shop FF25 First Floor<br />
                     Behind NCBA Bank, Accra Road<br />
                     Nairobi, Kenya
@@ -69,18 +69,18 @@ const Contact: React.FC = () => {
                   <Phone size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-masuma-dark uppercase mb-1">Phone & WhatsApp</h4>
-                  <p className="text-gray-600 text-sm mb-1">General Inquiries: <a href="tel:+254792506590" className="font-bold hover:text-masuma-orange">+254 792 506 590</a></p>
+                  <h4 className="text-sm font-bold text-masuma-dark uppercase mb-1">Phone & WhatsApp</h4>
+                  <p className="text-gray-600 text-xs mb-1">General Inquiries: <a href="tel:+254792506590" className="font-bold hover:text-masuma-orange">+254 792 506 590</a></p>
                   <a 
                     href="https://wa.me/254792506590" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => trackWhatsAppClick('Contact Page')}
-                    className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#128C7E] transition mt-2 shadow-md"
+                    className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#128C7E] transition mt-2 shadow-md"
                   >
                     <MessageCircle size={16} fill="currentColor" /> Chat on WhatsApp
                   </a>
-                  <p className="text-xs text-gray-500 mt-2">Mon - Sat: 8:00 AM - 6:00 PM</p>
+                  <p className="text-[10px] text-gray-500 mt-2">Mon - Sat: 8:00 AM - 6:00 PM</p>
                 </div>
               </div>
 
@@ -89,8 +89,8 @@ const Contact: React.FC = () => {
                   <Mail size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-masuma-dark uppercase mb-1">Email Support</h4>
-                  <p className="text-gray-600 text-sm">
+                  <h4 className="text-sm font-bold text-masuma-dark uppercase mb-1">Email Support</h4>
+                  <p className="text-gray-600 text-xs">
                     Orders: <a href="mailto:sales@masuma.africa" className="font-bold hover:text-masuma-orange">sales@masuma.africa</a>
                   </p>
                 </div>
@@ -114,7 +114,7 @@ const Contact: React.FC = () => {
 
           {/* Contact Form */}
           <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-100 h-fit">
-            <h3 className="text-2xl font-bold text-masuma-dark font-display uppercase mb-6 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-masuma-dark font-display uppercase mb-6 flex items-center gap-2">
               <MessageSquare size={24} className="text-masuma-orange" /> Send a Message
             </h3>
 
@@ -209,7 +209,7 @@ const Contact: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={status === 'submitting'}
-                  className="w-full bg-masuma-dark text-white font-bold uppercase tracking-widest py-4 rounded hover:bg-masuma-orange transition flex items-center justify-center gap-2 disabled:opacity-70"
+                  className="w-full bg-masuma-dark text-white font-bold uppercase tracking-widest py-4 rounded hover:bg-masuma-orange transition flex items-center justify-center gap-2 disabled:opacity-70 text-xs"
                 >
                   {status === 'submitting' ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
                   Send Message

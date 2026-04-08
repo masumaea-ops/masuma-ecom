@@ -186,10 +186,10 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick, o
             <span className="text-masuma-orange font-bold uppercase tracking-widest text-xs mb-3 bg-black/60 w-fit px-3 py-1 backdrop-blur-sm">
               {selectedPost.category}
             </span>
-            <h1 className="text-3xl md:text-5xl font-bold text-white font-display max-w-4xl leading-tight mb-4">
+            <h1 className="text-2xl md:text-4xl font-bold text-white font-display max-w-4xl leading-tight mb-4">
               {selectedPost.title}
             </h1>
-            <div className="flex items-center gap-6 text-gray-300 text-sm font-medium">
+            <div className="flex items-center gap-6 text-gray-300 text-xs font-medium">
                <span className="flex items-center gap-2"><Calendar size={16} className="text-masuma-orange" /> {selectedPost.date}</span>
                <span className="flex items-center gap-2"><Clock size={16} className="text-masuma-orange" /> {selectedPost.readTime}</span>
             </div>
@@ -285,10 +285,10 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick, o
       <div className="bg-masuma-dark text-white py-20 relative overflow-hidden">
          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
          <div className="max-w-screen-2xl mx-auto px-4 relative z-10 text-center">
-            <span className="text-masuma-orange font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Masuma Knowledge Center</span>
-            <h1 className="text-4xl md:text-6xl font-bold font-display uppercase tracking-tight mb-6">Expert Insights</h1>
+            <span className="text-masuma-orange font-bold uppercase tracking-[0.2em] text-[10px] mb-4 block">Masuma Knowledge Center</span>
+            <h1 className="text-3xl md:text-5xl font-bold font-display uppercase tracking-tight mb-6">Expert Insights</h1>
             <div className="h-1 w-24 bg-masuma-orange mx-auto mb-6"></div>
-            <p className="text-gray-400 max-w-2xl mx-auto text-lg font-light">
+            <p className="text-gray-400 max-w-2xl mx-auto text-base font-light">
                Technical advice, maintenance tips, and industry news from the engineers who know your car best.
             </p>
          </div>
@@ -334,17 +334,17 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick, o
                       </div>
                       
                       <div className="p-6 flex-1 flex flex-col">
-                         <div className="flex items-center gap-4 text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">
+                         <div className="flex items-center gap-4 text-[10px] text-gray-400 mb-3 font-medium uppercase tracking-wide">
                             <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
                             <span className="flex items-center gap-1"><Clock size={12} /> {post.readTime}</span>
                          </div>
-                         <h3 className="text-xl font-bold text-masuma-dark font-display mb-3 leading-tight group-hover:text-masuma-orange transition-colors">
+                         <h3 className="text-lg font-bold text-masuma-dark font-display mb-3 leading-tight group-hover:text-masuma-orange transition-colors">
                             {post.title}
                          </h3>
-                         <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-1 leading-relaxed">
+                         <p className="text-gray-600 text-xs line-clamp-3 mb-6 flex-1 leading-relaxed">
                             {post.excerpt}
                          </p>
-                         <div className="flex items-center text-masuma-dark font-bold uppercase text-xs tracking-widest group-hover:text-masuma-orange transition mt-auto">
+                         <div className="flex items-center text-masuma-dark font-bold uppercase text-[10px] tracking-widest group-hover:text-masuma-orange transition mt-auto">
                             Read Article <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-2 transition" />
                          </div>
                       </div>

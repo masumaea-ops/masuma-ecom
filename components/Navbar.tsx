@@ -66,7 +66,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
   return (
     <>
       {/* TOP UTILITY BAR */}
-      <div className="bg-masuma-dark text-white text-xs font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors relative z-[102]">
+      <div className="bg-masuma-dark text-white text-[10px] font-medium py-2.5 border-b border-gray-800 hidden md:block transition-colors relative z-[102]">
          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             {/* Left: Contact & Chat */}
             <div className="flex items-center space-x-6">
@@ -146,7 +146,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       key={item}
                       href={`/?view=${item}`}
                       onClick={(e) => handleNav(e, item)} 
-                      className="relative text-masuma-dark font-bold uppercase tracking-wider text-sm hover:text-masuma-orange transition-all duration-300 group focus-ring p-1"
+                      className="relative text-masuma-dark font-medium uppercase tracking-wider text-xs hover:text-masuma-orange transition-all duration-300 group focus-ring p-1"
                       aria-label={`Navigate to ${formatNavLabel(item)}`}
                   >
                       {formatNavLabel(item)}
@@ -163,7 +163,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                   aria-label="Open AI Assistant"
                 >
                   <Bot size={18} className="group-hover:rotate-[20deg] transition-transform duration-500" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Ask AI Expert</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Ask AI Expert</span>
                 </button>
 
                 <div className="relative cursor-pointer group touch-target focus-ring" onClick={toggleCart} aria-label={`View Cart with ${cartCount} items`} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && toggleCart()}>

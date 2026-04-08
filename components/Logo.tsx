@@ -16,7 +16,7 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'default', className = '' 
     <div className={`flex items-center gap-3 ${className}`}>
       <div className="flex flex-col">
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold tracking-tighter font-display leading-none" style={{ color: textColor }}>
+          <span className="text-3xl font-bold tracking-tighter font-display leading-none" style={{ color: textColor }}>
             MASUMA
           </span>
           <div className="h-2 w-2 bg-masuma-orange rounded-full"></div>

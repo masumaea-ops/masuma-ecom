@@ -33,7 +33,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           aria-label="Home"
         >
           <Home size={22} />
-          <span className="text-[11px] font-bold uppercase tracking-tight font-display">Home</span>
+          <span className="text-[10px] font-medium uppercase tracking-tight font-display">Home</span>
         </button>
         
         <button 
@@ -42,7 +42,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           aria-label="Catalog"
         >
           <Search size={22} />
-          <span className="text-[11px] font-bold uppercase tracking-tight font-display">Search</span>
+          <span className="text-[10px] font-medium uppercase tracking-tight font-display">Search</span>
         </button>
 
         <button 
@@ -53,7 +53,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <div className="bg-masuma-dark text-white p-3.5 rounded-full shadow-lg border-4 border-white active:scale-95 transition-transform">
             <Bot size={26} />
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-tight mt-1 text-masuma-dark font-display">Expert</span>
+          <span className="text-[10px] font-medium uppercase tracking-tight mt-1 text-masuma-dark font-display">Expert</span>
         </button>
 
         <button 
@@ -69,7 +69,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               </span>
             )}
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-tight font-display">Cart</span>
+          <span className="text-[10px] font-medium uppercase tracking-tight font-display">Cart</span>
         </button>
 
         <button 
@@ -78,7 +78,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           aria-label="Account"
         >
           <User size={22} />
-          <span className="text-[11px] font-bold uppercase tracking-tight font-display">Account</span>
+          <span className="text-[10px] font-medium uppercase tracking-tight font-display">Account</span>
         </button>
       </div>
     </div>

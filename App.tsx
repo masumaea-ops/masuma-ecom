@@ -134,7 +134,7 @@ const App: React.FC = () => {
       params.delete('product');
       const newSearch = params.toString();
       const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
-      window.history.pushState({ path: newUrl }, '', newUrl);
+      window.history.replaceState({ path: newUrl }, '', newUrl);
   };
 
   const navigateToPost = (postId: string) => {
@@ -323,7 +323,7 @@ const App: React.FC = () => {
             <Footer setView={setView} />
             <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} removeFromCart={(id) => setCart(cart.filter(i => i.id !== id))} onCheckout={() => { setIsCartOpen(false); setView('CHECKOUT'); }} updateQuantity={(id, q) => setCart(cart.map(i => i.id === id ? {...i, quantity: q} : i))} />
             <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-            <QuickView product={selectedProduct} isOpen={!!selectedProduct} onClose={closeProduct} addToCart={(p) => setCart([...cart, {...p, quantity: 1}])} onSwitchProduct={setSelectedProduct} />
+            <QuickView product={selectedProduct} isOpen={!!selectedProduct} onClose={closeProduct} addToCart={(p) => setCart([...cart, {...p, quantity: 1}])} onSwitchProduct={openProduct} />
             <WhatsAppButton />
             <MobileBottomNav currentView={view} setView={setView} cartCount={cart.reduce((a, b) => a + b.quantity, 0)} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
         </div>

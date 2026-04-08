@@ -32,6 +32,14 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   const stageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  useEffect(() => {
     if (isOpen && product) {
         setQuantity(1);
         setIsFullScreen(false);
@@ -248,9 +256,10 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                         </button>
                         <button 
                             onClick={onClose}
-                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
+                            className="h-12 px-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center gap-2 hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
                             aria-label="Close quick view"
                         >
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Close</span>
                             <X size={24} />
                         </button>
                     </div>
@@ -305,6 +314,15 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
             {/* Details Section */}
             <div id="sidebar-content" className="w-full lg:w-[45%] flex flex-col bg-white overflow-y-auto border-l border-gray-100 scrollbar-hide">
                 <div className="p-8 lg:p-12 space-y-10">
+                    <button 
+                        onClick={onClose}
+                        className="flex items-center gap-2 text-gray-400 hover:text-masuma-orange transition-colors group/back mb-2"
+                        aria-label="Back to product list"
+                    >
+                        <ChevronLeft size={20} className="group-hover/back:-translate-x-1 transition-transform" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Back to Catalog</span>
+                    </button>
+
                     <div className="space-y-4">
                     <div className="flex flex-wrap gap-3">
                         <span className="bg-masuma-dark text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{product.category}</span>
@@ -314,26 +332,26 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             <span className="text-red-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={14} strokeWidth={3} /> Special Order Only</span>
                         )}
                     </div>
-                        <h2 className="text-2xl lg:text-4xl font-black text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
+                        <h2 className="text-xl lg:text-3xl font-bold text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
                         
                         <div className="pt-8 border-t border-gray-50 space-y-6">
                             <div className="flex flex-col">
-                                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Payable)</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Payable)</span>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-4xl lg:text-5xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
-                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
+                                    <span className="text-3xl lg:text-4xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
                                 </div>
                             </div>
                             
                             <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
                                 <div className="grid grid-cols-2 divide-x divide-gray-200">
                                     <div className="p-6">
-                                        <span className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">Base Price</span>
-                                        <span className="text-xl font-bold text-masuma-dark"><Price amount={basePrice} /></span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">Base Price</span>
+                                        <span className="text-lg font-bold text-masuma-dark"><Price amount={basePrice} /></span>
                                     </div>
                                     <div className="p-6">
-                                        <span className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">VAT (16%)</span>
-                                        <span className="text-xl font-bold text-gray-600"><Price amount={vatAmount} /></span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">VAT (16%)</span>
+                                        <span className="text-lg font-bold text-gray-600"><Price amount={vatAmount} /></span>
                                     </div>
                                 </div>
                             </div>
@@ -345,31 +363,31 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                                 <h4 className="text-xs font-bold text-masuma-dark uppercase tracking-widest flex items-center gap-3 border-l-4 border-masuma-orange pl-4">Technical Specifications</h4>
                                 <div className="grid grid-cols-2 gap-y-8 gap-x-12">
                                     <div className="group">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Global SKU</p>
-                                        <p className="text-base font-bold text-masuma-dark uppercase tracking-tight">{product.sku}</p>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Global SKU</p>
+                                        <p className="text-sm font-bold text-masuma-dark uppercase tracking-tight">{product.sku}</p>
                                     </div>
                                     <div className="group">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Grade</p>
-                                        <p className="text-base font-bold text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Grade</p>
+                                        <p className="text-sm font-bold text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
                                     </div>
                                     {Object.entries(product.specs || {}).map(([key, value]) => (
                                         <div key={key} className="group">
-                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">{key}</p>
-                                            <p className="text-base font-bold text-masuma-dark uppercase tracking-tight">{String(value)}</p>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">{key}</p>
+                                            <p className="text-sm font-bold text-masuma-dark uppercase tracking-tight">{String(value)}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="space-y-6">
-                                <h4 className="text-xs font-bold text-masuma-dark uppercase tracking-widest opacity-60">Part Description</h4>
-                                <p className="text-base text-gray-600 leading-relaxed font-normal">{product.description}</p>
+                                <h4 className="text-[10px] font-bold text-masuma-dark uppercase tracking-widest opacity-60">Part Description</h4>
+                                <p className="text-sm text-gray-600 leading-relaxed font-normal">{product.description}</p>
                             </div>
 
                             <div className="bg-masuma-dark text-white p-8 rounded-3xl shadow-2xl border-l-8 border-masuma-orange relative overflow-hidden group/fitment">
                                 <div className="absolute top-[-20px] right-[-20px] opacity-10 rotate-12 group-hover/fitment:scale-110 transition-transform duration-700"><Check size={80}/></div>
-                                <h4 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
-                                <p className="text-base text-gray-200 font-bold leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
+                                <p className="text-sm text-gray-200 font-bold leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
                                 <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-2">
                                     <AlertTriangle size={14} className="text-masuma-orange"/>
                                     <span className="text-xs text-masuma-orange uppercase font-bold tracking-wider italic">Chassis verification recommended</span>
@@ -455,6 +473,15 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             </div>
                         </div>
                     )}
+
+                    <div className="pt-10 border-t border-gray-100">
+                        <button 
+                            onClick={onClose}
+                            className="w-full py-4 rounded-2xl border-2 border-masuma-dark text-masuma-dark font-black uppercase tracking-widest text-xs hover:bg-masuma-dark hover:text-white transition-all active:scale-95 focus-ring touch-target"
+                        >
+                            Continue Shopping
+                        </button>
+                    </div>
                 </div>
             </div>
           </div>
