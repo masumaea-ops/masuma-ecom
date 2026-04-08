@@ -314,13 +314,13 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             <span className="text-red-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={14} strokeWidth={3} /> Special Order Only</span>
                         )}
                     </div>
-                        <h2 className="text-3xl lg:text-5xl font-black text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
+                        <h2 className="text-2xl lg:text-4xl font-black text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
                         
                         <div className="pt-8 border-t border-gray-50 space-y-6">
                             <div className="flex flex-col">
                                 <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Payable)</span>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-5xl lg:text-7xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
+                                    <span className="text-4xl lg:text-5xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
                                 </div>
                             </div>

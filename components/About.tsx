@@ -40,7 +40,7 @@ const About: React.FC<AboutProps> = ({ setView }) => {
                     <span className="w-2 h-2 bg-masuma-orange rounded-full animate-pulse"></span>
                     <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">Official Distributor • East Africa</span>
                 </div>
-                <h1 className="text-5xl md:text-7xl font-bold font-display uppercase leading-[0.9] mb-8 tracking-tighter">
+                <h1 className="text-4xl md:text-6xl font-bold font-display uppercase leading-[0.9] mb-8 tracking-tighter">
                     Built for the <br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-masuma-orange to-orange-500">Long Road.</span>
                 </h1>
@@ -103,7 +103,7 @@ const About: React.FC<AboutProps> = ({ setView }) => {
           <div className="max-w-screen-2xl mx-auto px-6 lg:px-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                   <div>
-                      <h2 className="text-4xl font-bold text-masuma-dark font-display uppercase mb-6 leading-none">
+                      <h2 className="text-3xl font-bold text-masuma-dark font-display uppercase mb-6 leading-none">
                           Japanese Roots, <br/>
                           <span className="text-gray-400">Global Standard</span>
                       </h2>
@@ -132,7 +132,7 @@ const About: React.FC<AboutProps> = ({ setView }) => {
           <div className="max-w-screen-2xl mx-auto px-6 lg:px-12">
               <div className="text-center max-w-3xl mx-auto mb-20">
                   <span className="text-masuma-orange font-bold uppercase tracking-widest text-xs">Our Foundation</span>
-                  <h2 className="text-4xl md:text-5xl font-bold font-display uppercase mt-2">Core Values</h2>
+                  <h2 className="text-3xl md:text-4xl font-bold font-display uppercase mt-2">Core Values</h2>
                   <div className="w-20 h-1 bg-masuma-orange mx-auto mt-6"></div>
               </div>
 

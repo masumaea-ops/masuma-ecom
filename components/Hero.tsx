@@ -178,14 +178,14 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                           </div>
                           
                           <h1 
-                            className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[0.9] animate-slam-in text-balance"
+                            className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[0.9] animate-slam-in text-balance"
                             style={{ textShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                           >
                               {slide.title}
                           </h1>
                           
                           <p 
-                            className="text-lg md:text-xl text-gray-200 mb-10 max-w-xl font-medium leading-relaxed drop-shadow-md border-l border-white/20 pl-6"
+                            className="text-base md:text-lg text-gray-200 mb-10 max-w-xl font-medium leading-relaxed drop-shadow-md border-l border-white/20 pl-6"
                           >
                               {slide.subtitle}
                           </p>

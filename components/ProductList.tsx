@@ -189,7 +189,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
       {error && (
            <div className="flex flex-col items-center justify-center py-24 text-center bg-red-50/50 rounded-3xl border border-red-100">
                 <div className="p-8 bg-white rounded-full mb-6 text-red-500 shadow-xl shadow-red-500/10"><AlertCircle size={56} /></div>
-                <h3 className="text-2xl font-bold text-masuma-dark font-display uppercase tracking-tight">Database Offline</h3>
+                <h3 className="text-xl font-bold text-masuma-dark font-display uppercase tracking-tight">Database Offline</h3>
                 <p className="text-gray-500 mb-8 max-w-xs mx-auto">We're experiencing a temporary connection issue with our warehouse servers.</p>
                 <button onClick={() => window.location.reload()} className="px-10 py-3 bg-masuma-dark text-white rounded-xl font-bold uppercase text-xs tracking-[0.2em] shadow-lg hover:bg-masuma-orange transition-all">Reconnect</button>
            </div>
@@ -204,7 +204,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
           <div className="inline-flex p-8 bg-white rounded-full shadow-xl mb-8">
             <Search className="text-masuma-orange opacity-20" size={56} />
           </div>
-          <h3 className="text-3xl font-bold text-masuma-dark font-display uppercase tracking-tight">No Match Found</h3>
+          <h3 className="text-2xl font-bold text-masuma-dark font-display uppercase tracking-tight">No Match Found</h3>
           <p className="text-gray-500 max-w-md mx-auto mt-2 mb-10 text-lg font-light leading-relaxed">
             We couldn't find a match for "{searchQuery}" {vinFilter && `for ${vinFilter}`}.
           </p>
@@ -288,7 +288,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                             <div className="w-2 h-2 bg-masuma-orange rounded-full"></div>
                             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Genuine Japanese Part</span>
                         </div>
-                        <h3 className="text-2xl font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tight">
+                        <h3 className="text-xl font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tight">
                             {product.name}
                         </h3>
                         <p className="text-xs text-gray-400 font-bold tracking-wider mt-3 uppercase">SKU: {product.sku}</p>

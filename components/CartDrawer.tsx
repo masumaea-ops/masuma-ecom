@@ -131,7 +131,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                   <div className="flex justify-between items-end">
                       <div>
                           <p className="text-xs text-masuma-orange font-bold uppercase tracking-widest mb-1">Total Payable</p>
-                          <p className="text-3xl font-bold text-masuma-dark tracking-tighter leading-none"><Price amount={total} /></p>
+                          <p className="text-2xl font-bold text-masuma-dark tracking-tighter leading-none"><Price amount={total} /></p>
                       </div>
                       <div className="text-right">
                            <div className="flex items-center gap-1.5 bg-green-50 px-2 py-1 rounded-sm border border-green-100">
