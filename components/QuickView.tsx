@@ -81,11 +81,10 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
       const id = (match && match[2].length === 11) ? match[2] : null;
       if (!id) return '';
       
-      // Use youtube-nocookie.com for better compatibility and privacy
-      // Removed enablejsapi and origin to prevent Error 153 (Configuration Error)
-      // Added widget_referrer to help with view attribution
-      const referrer = typeof window !== 'undefined' ? window.location.href : '';
-      return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&modestbranding=1&widget_referrer=${encodeURIComponent(referrer)}`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      // Fix Error 153 by using standard youtube.com and providing the origin parameter
+      // This is required for the YouTube IFrame API to handshake correctly
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
   };
 
   const handleSwitch = (p: Product) => {

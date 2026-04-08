@@ -47,7 +47,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {
@@ -85,9 +85,11 @@
 </script>
 </head>
   <body class="bg-gray-50 text-masuma-dark antialiased selection:bg-masuma-orange selection:text-white">
-    <div id="root">
-      <!-- Static SEO Fallback for Crawlers -->
-      <header style="display:none">
+    <div id="root"></div>
+
+    <!-- Static SEO Fallback for Crawlers (Hidden from Users) -->
+    <div style="display:none" aria-hidden="true">
+      <header>
         <h1>Masuma Autoparts East Africa Limited - Genuine Japanese Spare Parts in Nairobi</h1>
         <h2>Official Distributor of Masuma Kenya</h2>
         <p>High-quality Japanese engineered parts for Toyota, Nissan, Subaru, and more. 12-month warranty on filters, brakes, spark plugs, and suspension.</p>
@@ -101,6 +103,7 @@
         <img src="https://masuma.africa/og-image.jpg" alt="Masuma Autoparts East Africa Warehouse" />
       </header>
     </div>
+
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -90,10 +90,10 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
       const id = (match && match[2].length === 11) ? match[2] : null;
       if (!id) return '';
       
-      const referrer = typeof window !== 'undefined' ? window.location.href : '';
-      // Using youtube-nocookie.com and removing enablejsapi/origin to fix Error 153
-      // Added widget_referrer for better view tracking
-      return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&widget_referrer=${encodeURIComponent(referrer)}`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      // Fix Error 153 by using standard youtube.com and providing the origin parameter
+      // This is required for the YouTube IFrame API to handshake correctly
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
   };
 
   const isYoutube = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
@@ -178,7 +178,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                           </div>
                           
                           <h1 
-                            className="text-6xl md:text-[10rem] font-black text-white mb-8 font-display uppercase tracking-[-0.04em] whitespace-pre-line leading-[0.8] animate-slam-in"
+                            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 font-display uppercase tracking-[-0.04em] whitespace-pre-line leading-[0.9] animate-slam-in"
                             style={{ textShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                           >
                               {slide.title}

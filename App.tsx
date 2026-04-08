@@ -237,36 +237,6 @@ const App: React.FC = () => {
                 />
                 <Hero setView={setView} />
                 
-                {/* Popular Categories Section for SEO */}
-                <section className="bg-white py-12 border-b border-gray-100">
-                    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
-                            <h2 className="text-2xl font-bold text-masuma-dark font-display uppercase tracking-tight">Popular Categories</h2>
-                            <button onClick={() => setView('CATALOG')} className="text-masuma-orange font-bold text-xs uppercase tracking-widest hover:underline">View All Parts</button>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {[
-                                { name: 'Spark Plugs', icon: '⚡' },
-                                { name: 'Brake Pads', icon: '🛑' },
-                                { name: 'Oil Filters', icon: '🛢️' },
-                                { name: 'Suspension', icon: '🏎️' },
-                                { name: 'Belts', icon: '➰' },
-                                { name: 'Wipers', icon: '🌧️' }
-                            ].map((cat) => (
-                                <a 
-                                    key={cat.name}
-                                    href="/?view=CATALOG"
-                                    onClick={(e) => { e.preventDefault(); setView('CATALOG'); }}
-                                    className="flex flex-col items-center p-6 bg-gray-50 rounded-2xl hover:bg-masuma-orange hover:text-white transition-all group"
-                                >
-                                    <span className="text-3xl mb-3 group-hover:scale-110 transition-transform">{cat.icon}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-center">{cat.name}</span>
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
                 <ProductList addToCart={(p) => setCart([...cart, {...p, quantity: 1}])} onProductClick={openProduct} />
                 </>
             )}
