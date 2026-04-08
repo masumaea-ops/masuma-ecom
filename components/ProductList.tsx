@@ -140,8 +140,8 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                 <Filter size={14} />
                 <span className="text-xs font-bold uppercase tracking-widest">Local Inventory</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-masuma-dark mb-4 font-display uppercase tracking-tight">Parts Catalog</h2>
-            <p className="text-gray-600 max-w-2xl text-lg font-normal leading-relaxed">
+            <h2 className="text-3xl md:text-4xl font-bold text-masuma-dark mb-4 font-display uppercase tracking-tight">Parts Catalog</h2>
+            <p className="text-gray-600 max-w-2xl text-base font-normal leading-relaxed">
             High-precision components engineered for the tough East African terrain. 100% Genuine Masuma spark plugs, brake pads, filters, and suspension parts.
             </p>
         </div>
@@ -158,7 +158,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
               placeholder="Search by SKU, Name, or OEM..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-xl outline-none text-sm font-medium transition-all focus-ring"
+              className="w-full pl-11 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-masuma-orange rounded-xl outline-none text-xs font-medium transition-all focus-ring"
               aria-label="Search product catalog"
             />
             <Search className="absolute left-4 top-4.5 text-gray-400 group-focus-within:text-masuma-orange transition-colors" size={20} />
@@ -170,7 +170,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300 rounded-xl border-2 touch-target ${
+                  className={`px-5 py-3 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap transition-all duration-300 rounded-xl border-2 touch-target ${
                     selectedCategory === cat
                       ? 'bg-masuma-dark border-masuma-dark text-white shadow-lg shadow-masuma-dark/20 translate-y-[-2px]'
                       : 'bg-white border-gray-100 text-gray-600 hover:border-masuma-orange hover:text-masuma-orange'
@@ -288,26 +288,26 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                             <div className="w-2 h-2 bg-masuma-orange rounded-full"></div>
                             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Genuine Japanese Part</span>
                         </div>
-                        <h3 className="text-xl font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tight">
+                        <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tight">
                             {product.name}
                         </h3>
-                        <p className="text-xs text-gray-400 font-bold tracking-wider mt-3 uppercase">SKU: {product.sku}</p>
+                        <p className="text-[10px] text-gray-400 font-bold tracking-wider mt-3 uppercase">SKU: {product.sku}</p>
                     </div>
 
                     <div className="mt-auto space-y-6">
                         <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100/50 h-20 flex flex-col justify-center group-hover:bg-white group-hover:border-masuma-orange/20 transition-colors">
-                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1.5">Compatibility:</p>
-                            <p className="text-xs text-gray-700 line-clamp-1 font-semibold uppercase tracking-tight" title={(product.compatibility || []).join(', ')}>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">Compatibility:</p>
+                            <p className="text-[10px] text-gray-700 line-clamp-1 font-semibold uppercase tracking-tight" title={(product.compatibility || []).join(', ')}>
                                 {(product.compatibility || []).join(', ')}
                             </p>
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
                             <div className="flex flex-col">
-                                <span className="text-2xl font-bold text-masuma-dark tracking-tighter">
+                                <span className="text-xl font-bold text-masuma-dark tracking-tighter">
                                     <Price amount={product.price} />
                                 </span>
-                                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Incl. 16% VAT</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Incl. 16% VAT</span>
                             </div>
                             <button
                                 onClick={(e) => { 

@@ -98,8 +98,8 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
 
           {/* Links */}
           <div>
-            <h3 className="text-sm font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Quick Links</h3>
-            <ul className="space-y-2 text-xs text-gray-400">
+            <h3 className="text-xs font-medium mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Quick Links</h3>
+            <ul className="space-y-2 text-[10px] text-gray-400">
               <li><a href="/?view=ABOUT" onClick={(e) => handleNav(e, 'ABOUT')} className="hover:text-masuma-orange transition">About Us</a></li>
               <li><a href="/?view=PART_FINDER" onClick={(e) => handleNav(e, 'PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</a></li>
               <li><a href="/?view=WARRANTY" onClick={(e) => handleNav(e, 'WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</a></li>
@@ -110,8 +110,8 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Contact Us</h3>
-            <ul className="space-y-4 text-xs text-gray-400">
+            <h3 className="text-xs font-medium mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Contact Us</h3>
+            <ul className="space-y-4 text-[10px] text-gray-400">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-masuma-orange flex-shrink-0 mt-0.5" />
                 <span>{info.address}</span>
@@ -129,7 +129,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
 
           {/* Newsletter */}
           <div>
-             <h3 className="text-sm font-bold mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Stay Updated</h3>
+             <h3 className="text-xs font-medium mb-4 text-white font-display uppercase tracking-wide border-l-2 border-masuma-orange pl-3">Stay Updated</h3>
              <p className="text-[10px] text-gray-400 mb-4">Subscribe for price alerts, new shipments, and Japanese maintenance tips.</p>
              
              {status === 'success' ? (

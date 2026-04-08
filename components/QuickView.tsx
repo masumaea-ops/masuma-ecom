@@ -332,14 +332,14 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             <span className="text-red-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={14} strokeWidth={3} /> Special Order Only</span>
                         )}
                     </div>
-                        <h2 className="text-xl lg:text-3xl font-bold text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
+                        <h2 className="text-lg lg:text-2xl font-bold text-masuma-dark uppercase tracking-tight leading-[0.9]">{product.name}</h2>
                         
                         <div className="pt-8 border-t border-gray-50 space-y-6">
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Payable)</span>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-3xl lg:text-4xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
+                                    <span className="text-2xl lg:text-3xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
                                 </div>
                             </div>
                             
@@ -360,34 +360,34 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
 
                         <div className="space-y-8">
                             <div className="space-y-6">
-                                <h4 className="text-xs font-bold text-masuma-dark uppercase tracking-widest flex items-center gap-3 border-l-4 border-masuma-orange pl-4">Technical Specifications</h4>
+                                <h4 className="text-[10px] font-medium text-masuma-dark uppercase tracking-widest flex items-center gap-3 border-l-4 border-masuma-orange pl-4">Technical Specifications</h4>
                                 <div className="grid grid-cols-2 gap-y-8 gap-x-12">
                                     <div className="group">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Global SKU</p>
-                                        <p className="text-sm font-bold text-masuma-dark uppercase tracking-tight">{product.sku}</p>
+                                        <p className="text-xs font-medium text-masuma-dark uppercase tracking-tight">{product.sku}</p>
                                     </div>
                                     <div className="group">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">Grade</p>
-                                        <p className="text-sm font-bold text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
+                                        <p className="text-xs font-medium text-masuma-dark uppercase tracking-tight">Japanese OE Std</p>
                                     </div>
                                     {Object.entries(product.specs || {}).map(([key, value]) => (
                                         <div key={key} className="group">
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-masuma-orange transition-colors">{key}</p>
-                                            <p className="text-sm font-bold text-masuma-dark uppercase tracking-tight">{String(value)}</p>
+                                            <p className="text-xs font-medium text-masuma-dark uppercase tracking-tight">{String(value)}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="space-y-6">
-                                <h4 className="text-[10px] font-bold text-masuma-dark uppercase tracking-widest opacity-60">Part Description</h4>
+                                <h4 className="text-[10px] font-medium text-masuma-dark uppercase tracking-widest opacity-60">Part Description</h4>
                                 <p className="text-sm text-gray-600 leading-relaxed font-normal">{product.description}</p>
                             </div>
 
                             <div className="bg-masuma-dark text-white p-8 rounded-3xl shadow-2xl border-l-8 border-masuma-orange relative overflow-hidden group/fitment">
                                 <div className="absolute top-[-20px] right-[-20px] opacity-10 rotate-12 group-hover/fitment:scale-110 transition-transform duration-700"><Check size={80}/></div>
-                                <h4 className="text-[10px] font-bold uppercase tracking-widest mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
-                                <p className="text-sm text-gray-200 font-bold leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
+                                <h4 className="text-[10px] font-medium uppercase tracking-widest mb-4 flex items-center gap-3">Verified Vehicle Fitment</h4>
+                                <p className="text-xs text-gray-200 font-medium leading-relaxed">{(product.compatibility || []).join(' • ')}</p>
                                 <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-2">
                                     <AlertTriangle size={14} className="text-masuma-orange"/>
                                     <span className="text-xs text-masuma-orange uppercase font-bold tracking-wider italic">Chassis verification recommended</span>

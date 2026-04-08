@@ -37,7 +37,7 @@ const Contact: React.FC = () => {
       {/* Header */}
       <div className="bg-masuma-dark text-white py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold font-display uppercase tracking-wider mb-2">Contact Us</h1>
+          <h1 className="text-2xl font-bold font-display uppercase tracking-wider mb-2">Contact Us</h1>
           <div className="h-1 w-24 bg-masuma-orange mx-auto mb-6"></div>
           <p className="text-gray-400 text-sm">Get in touch with our sales team or visit our showroom.</p>
         </div>
@@ -47,7 +47,7 @@ const Contact: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Info */}
           <div>
-            <h3 className="text-xl font-bold text-masuma-dark font-display uppercase mb-8">Get In Touch</h3>
+            <h3 className="text-lg font-medium text-masuma-dark font-display uppercase mb-8">Get In Touch</h3>
             
             <div className="space-y-8">
               <div className="flex items-start gap-4">
@@ -55,7 +55,7 @@ const Contact: React.FC = () => {
                   <MapPin size={24} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-masuma-dark uppercase mb-1">Headquarters & Showroom</h4>
+                  <h4 className="text-xs font-medium text-masuma-dark uppercase mb-1">Headquarters & Showroom</h4>
                   <p className="text-gray-600 text-xs leading-relaxed">
                     Ruby Mall, Shop FF25 First Floor<br />
                     Behind NCBA Bank, Accra Road<br />
@@ -69,7 +69,7 @@ const Contact: React.FC = () => {
                   <Phone size={24} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-masuma-dark uppercase mb-1">Phone & WhatsApp</h4>
+                  <h4 className="text-xs font-medium text-masuma-dark uppercase mb-1">Phone & WhatsApp</h4>
                   <p className="text-gray-600 text-xs mb-1">General Inquiries: <a href="tel:+254792506590" className="font-bold hover:text-masuma-orange">+254 792 506 590</a></p>
                   <a 
                     href="https://wa.me/254792506590" 
@@ -89,7 +89,7 @@ const Contact: React.FC = () => {
                   <Mail size={24} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-masuma-dark uppercase mb-1">Email Support</h4>
+                  <h4 className="text-xs font-medium text-masuma-dark uppercase mb-1">Email Support</h4>
                   <p className="text-gray-600 text-xs">
                     Orders: <a href="mailto:sales@masuma.africa" className="font-bold hover:text-masuma-orange">sales@masuma.africa</a>
                   </p>
@@ -114,7 +114,7 @@ const Contact: React.FC = () => {
 
           {/* Contact Form */}
           <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-100 h-fit">
-            <h3 className="text-xl font-bold text-masuma-dark font-display uppercase mb-6 flex items-center gap-2">
+            <h3 className="text-lg font-medium text-masuma-dark font-display uppercase mb-6 flex items-center gap-2">
               <MessageSquare size={24} className="text-masuma-orange" /> Send a Message
             </h3>
 
@@ -138,7 +138,7 @@ const Contact: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Full Name *</label>
+                    <label className="text-[10px] font-medium text-gray-500 uppercase">Full Name *</label>
                     <input 
                       type="text" 
                       name="name"
@@ -150,7 +150,7 @@ const Contact: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Phone Number</label>
+                    <label className="text-[10px] font-medium text-gray-500 uppercase">Phone Number</label>
                     <input 
                       type="tel" 
                       name="phone"
@@ -163,7 +163,7 @@ const Contact: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Email Address *</label>
+                  <label className="text-[10px] font-medium text-gray-500 uppercase">Email Address *</label>
                   <input 
                     type="email" 
                     name="email"
@@ -176,7 +176,7 @@ const Contact: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Subject *</label>
+                  <label className="text-[10px] font-medium text-gray-500 uppercase">Subject *</label>
                   <input 
                     type="text" 
                     name="subject"
@@ -189,7 +189,7 @@ const Contact: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Message *</label>
+                  <label className="text-[10px] font-medium text-gray-500 uppercase">Message *</label>
                   <textarea 
                     name="message"
                     required

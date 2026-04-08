@@ -178,14 +178,14 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                           </div>
                           
                           <h1 
-                            className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[0.9] animate-slam-in text-balance"
+                            className="text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-bold text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[0.9] animate-slam-in text-balance"
                             style={{ textShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                           >
                               {slide.title}
                           </h1>
                           
                           <p 
-                            className="text-base md:text-lg text-gray-200 mb-10 max-w-xl font-medium leading-relaxed drop-shadow-md border-l border-white/20 pl-6"
+                            className="text-sm md:text-base text-gray-200 mb-10 max-w-xl font-normal leading-relaxed drop-shadow-md border-l border-white/20 pl-6"
                           >
                               {slide.subtitle}
                           </p>
@@ -213,11 +213,11 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                               <div className="flex items-center gap-8 text-white ml-0 md:ml-6 drop-shadow-md opacity-80">
                                   <div className="flex flex-col items-center">
                                       <ShieldCheck size={28} className="text-masuma-orange mb-1" />
-                                      <span className="text-xs uppercase font-bold tracking-wider">1Yr Warranty</span>
+                                      <span className="text-[10px] uppercase font-medium tracking-wider">1Yr Warranty</span>
                                   </div>
                                   <div className="flex flex-col items-center">
                                       <TrendingUp size={28} className="text-masuma-orange mb-1" />
-                                      <span className="text-xs uppercase font-bold tracking-wider">OE Quality</span>
+                                      <span className="text-[10px] uppercase font-medium tracking-wider">OE Quality</span>
                                   </div>
                               </div>
                           </div>
