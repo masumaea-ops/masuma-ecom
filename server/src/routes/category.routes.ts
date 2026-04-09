@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
 router.post('/', authenticate, authorize(['ADMIN', 'MANAGER']), validate(categorySchema), async (req, res) => {
     try {
         const { name } = req.body;
-        const existing = await categoryRepo.findOneBy({ name });
+        const existing = await categoryRepo.findOneBy({ name: name as any });
         if (existing) return res.status(400).json({ error: 'Category already exists' });
 
         const category = categoryRepo.create({ name });

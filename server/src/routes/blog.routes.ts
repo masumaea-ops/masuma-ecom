@@ -150,7 +150,7 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), validate(blogS
 router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
     try {
         const blogRepo = getBlogRepo();
-        await blogRepo.delete(req.params.id);
+        await blogRepo.delete(req.params.id as any);
         res.json({ message: 'Post deleted' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete post' });

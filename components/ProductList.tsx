@@ -165,12 +165,12 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
           </div>
 
           <div className="w-full lg:w-2/3">
-            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+            <div className="flex overflow-x-auto pb-2 lg:pb-0 flex-nowrap gap-2 justify-start scrollbar-hide">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 rounded-xl border-2 ${
+                  className={`px-4 py-2.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 rounded-xl border-2 flex-shrink-0 ${
                     selectedCategory === cat
                       ? 'bg-masuma-dark border-masuma-dark text-white shadow-lg shadow-masuma-dark/20 scale-105'
                       : 'bg-white border-gray-100 text-gray-500 hover:border-masuma-orange hover:text-masuma-orange hover:bg-masuma-orange/5'

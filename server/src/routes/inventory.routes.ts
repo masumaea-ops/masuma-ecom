@@ -81,7 +81,7 @@ router.post('/transfer', authenticate, authorize(['ADMIN', 'MANAGER']), validate
             return res.status(400).json({ error: 'Cannot transfer to the same branch' });
         }
 
-        await InventoryService.transferStock(productId, fromBranchId, toBranchId, quantity, req.user!.id);
+        await InventoryService.transferStock(productId as any, fromBranchId as any, toBranchId as any, quantity, req.user!.id);
         res.json({ message: 'Transfer successful' });
     } catch (error: any) {
         res.status(400).json({ error: error.message || 'Transfer failed' });

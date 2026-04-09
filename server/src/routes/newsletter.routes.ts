@@ -40,7 +40,7 @@ router.post('/subscribe', validate(subscribeSchema), async (req, res) => {
         const subscriberRepo = AppDataSource.getRepository(Subscriber);
         
         const emailLower = email.toLowerCase().trim();
-        const existing = await subscriberRepo.findOneBy({ email: emailLower });
+        const existing = await subscriberRepo.findOneBy({ email: emailLower as any });
         
         if (existing) {
             return res.status(200).json({ 
@@ -76,7 +76,7 @@ router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
     try {
         if (!AppDataSource.isInitialized) await AppDataSource.initialize();
         const subscriberRepo = AppDataSource.getRepository(Subscriber);
-        await subscriberRepo.delete(req.params.id);
+        await subscriberRepo.delete(req.params.id as any);
         res.json({ message: 'Subscriber removed.' });
     } catch (error: any) {
         logger.error('Newsletter Delete Error:', error.message);
@@ -93,7 +93,7 @@ router.get('/unsubscribe', async (req, res) => {
         if (!AppDataSource.isInitialized) await AppDataSource.initialize();
         const subscriberRepo = AppDataSource.getRepository(Subscriber);
         
-        const subscriber = await subscriberRepo.findOneBy({ email: String(email).toLowerCase().trim() });
+        const subscriber = await subscriberRepo.findOneBy({ email: String(email).toLowerCase().trim() as any });
         if (subscriber) {
             subscriber.isActive = false;
             await subscriberRepo.save(subscriber);

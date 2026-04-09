@@ -75,8 +75,8 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
         // 1. Find or Create Customer
         let customer = await customerRepo.findOne({
             where: [
-                { email: email },
-                { phone: phone }
+                { email: email as any },
+                { phone: phone as any }
             ]
         });
 

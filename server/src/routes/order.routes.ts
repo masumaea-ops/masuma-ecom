@@ -16,7 +16,7 @@ router.get('/:id/status', async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const order = await orderRepo.findOne({
-      where: { id: id },
+      where: { id: id as any },
       select: ['id', 'status', 'orderNumber']
     });
 
