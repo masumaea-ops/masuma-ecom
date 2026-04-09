@@ -113,7 +113,7 @@ router.patch('/:id/status', authenticate, authorize(['ADMIN', 'MANAGER']), async
     const returnRepo = AppDataSource.getRepository(ReturnRequest);
     
     const returnRequest = await returnRepo.findOne({
-      where: { id: req.params.id },
+      where: { id: req.params.id as any },
       relations: ['order', 'items', 'items.product']
     });
 

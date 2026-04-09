@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { ImportRequest, ImportRequestStatus } from '../entities/ImportRequest';
-import { authenticateToken, isAdmin } from '../middleware/auth';
+import { authenticate, isAdmin } from '../middleware/auth';
 
 const router = Router();
 const importRepo = AppDataSource.getRepository(ImportRequest);
 
 // POST /api/import-requests
-router.post('/', authenticateToken, async (req: any, res) => {
+router.post('/', authenticate, async (req: any, res) => {
   try {
     const { make, model, minYear, budgetKes, sourceCountry, additionalNotes } = req.body;
     const userId = req.user.id;
@@ -36,7 +36,7 @@ router.post('/', authenticateToken, async (req: any, res) => {
 });
 
 // GET /api/import-requests/my
-router.get('/my', authenticateToken, async (req: any, res) => {
+router.get('/my', authenticate, async (req: any, res) => {
   try {
     const requests = await importRepo.find({
       where: { userId: req.user.id },
@@ -49,7 +49,7 @@ router.get('/my', authenticateToken, async (req: any, res) => {
 });
 
 // GET /api/import-requests (Admin only)
-router.get('/', authenticateToken, isAdmin, async (req, res) => {
+router.get('/', authenticate, isAdmin, async (req, res) => {
   try {
     const requests = await importRepo.find({
       relations: ['user'],
@@ -62,12 +62,12 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // PATCH /api/import-requests/:id (Admin only)
-router.patch('/:id', authenticateToken, isAdmin, async (req, res) => {
+router.patch('/:id', authenticate, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, adminResponse } = req.body;
 
-    const requestObj = await importRepo.findOneBy({ id });
+    const requestObj = await importRepo.findOneBy({ id: id as any });
     if (!requestObj) {
       return res.status(404).json({ error: 'Request not found' });
     }

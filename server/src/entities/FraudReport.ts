@@ -21,42 +21,42 @@ export enum FraudReportStatus {
 @Entity('fraud_reports')
 export class FraudReport {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  listingId: string;
+  listingId!: string;
 
   @ManyToOne(() => VehicleListing, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'listingId' })
-  listing: VehicleListing;
+  listing!: VehicleListing;
 
   @Column({ type: 'uuid' })
-  reporterId: string;
+  reporterId!: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'reporterId' })
-  reporter: User;
+  reporter!: User;
 
   @Column({
     type: 'enum',
     enum: FraudReportReason,
     default: FraudReportReason.OTHER
   })
-  reason: FraudReportReason;
+  reason!: FraudReportReason;
 
   @Column({ type: 'text' })
-  description: string;
+  description!: string;
 
   @Column({
     type: 'enum',
     enum: FraudReportStatus,
     default: FraudReportStatus.PENDING
   })
-  status: FraudReportStatus;
+  status!: FraudReportStatus;
 
   @Column({ type: 'text', nullable: true })
-  adminNotes: string;
+  adminNotes!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

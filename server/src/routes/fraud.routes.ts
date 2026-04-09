@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { FraudReport, FraudReportStatus } from '../entities/FraudReport';
-import { authenticateToken, isAdmin } from '../middleware/auth';
+import { authenticate, isAdmin } from '../middleware/auth';
 
 const router = Router();
 const fraudRepo = AppDataSource.getRepository(FraudReport);
 
 // POST /api/fraud/report
-router.post('/report', authenticateToken, async (req: any, res) => {
+router.post('/report', authenticate, async (req: any, res) => {
   try {
     const { listingId, reason, description } = req.body;
     const reporterId = req.user.id;
@@ -33,7 +33,7 @@ router.post('/report', authenticateToken, async (req: any, res) => {
 });
 
 // GET /api/fraud/reports (Admin only)
-router.get('/reports', authenticateToken, isAdmin, async (req, res) => {
+router.get('/reports', authenticate, isAdmin, async (req, res) => {
   try {
     const reports = await fraudRepo.find({
       relations: ['reporter', 'listing'],
@@ -46,12 +46,12 @@ router.get('/reports', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // PATCH /api/fraud/reports/:id (Admin only)
-router.patch('/reports/:id', authenticateToken, isAdmin, async (req, res) => {
+router.patch('/reports/:id', authenticate, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
 
-    const report = await fraudRepo.findOneBy({ id });
+    const report = await fraudRepo.findOneBy({ id: id as any });
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }

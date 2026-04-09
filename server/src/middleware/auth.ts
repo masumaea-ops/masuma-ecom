@@ -54,6 +54,15 @@ export const authenticate = async (req: ExpressRequest, res: ExpressResponse, ne
   }
 };
 
+export const isAdmin = (req: ExpressRequest, res: ExpressResponse, next: any) => {
+  const request = req as any;
+  const response = res as any;
+  if (!request.user || request.user.role !== 'ADMIN') {
+    return response.status(403).json({ error: 'Forbidden. Admin access required.' });
+  }
+  next();
+};
+
 export const authorize = (roles: string[]) => {
   return (req: ExpressRequest, res: ExpressResponse, next: any) => {
     const request = req as any;

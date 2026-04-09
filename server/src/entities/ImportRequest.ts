@@ -15,52 +15,52 @@ export enum ImportRequestStatus {
 @Entity('import_requests')
 export class ImportRequest {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userId!: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user!: User;
 
   @Column({ type: 'varchar' })
-  make: string;
+  make!: string;
 
   @Column({ type: 'varchar' })
-  model: string;
+  model!: string;
 
   @Column({ type: 'int' })
-  minYear: number;
+  minYear!: number;
 
   @Column({ type: 'varchar', nullable: true })
-  colorPreference: string;
+  colorPreference!: string;
 
   @Column({ type: 'int', nullable: true })
-  maxMileage: number;
+  maxMileage!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  budgetKes: number;
+  budgetKes!: number;
 
   @Column({ type: 'varchar', default: 'Japan' })
-  sourceCountry: string;
+  sourceCountry!: string;
 
   @Column({ type: 'text', nullable: true })
-  additionalNotes: string;
+  additionalNotes!: string;
 
   @Column({
     type: 'enum',
     enum: ImportRequestStatus,
     default: ImportRequestStatus.PENDING
   })
-  status: ImportRequestStatus;
+  status!: ImportRequestStatus;
 
   @Column({ type: 'jsonb', nullable: true })
-  adminResponse: any; // For storing quotes, ship details, etc.
+  adminResponse!: any; // For storing quotes, ship details, etc.
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
