@@ -1,11 +1,20 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { Branch } from './Branch';
+import { ColumnNumericTransformer } from '../utils/transformer';
 
 export enum UserRole {
   ADMIN = 'ADMIN',
   MANAGER = 'MANAGER',
   CASHIER = 'CASHIER',
-  B2B_USER = 'B2B_USER'
+  B2B_USER = 'B2B_USER',
+  DEALER = 'DEALER',
+  INDIVIDUAL_SELLER = 'INDIVIDUAL_SELLER'
+}
+
+export enum UserStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
 }
 
 @Entity('users')
@@ -28,6 +37,28 @@ export class User {
     default: UserRole.CASHIER
   })
   role!: UserRole;
+
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.APPROVED // Default to APPROVED for staff created by admin
+  })
+  status!: UserStatus;
+
+  @Column('decimal', { precision: 5, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  discountPercentage!: number;
+
+  @Column({ nullable: true })
+  businessName?: string;
+
+  @Column({ nullable: true })
+  taxId?: string;
+
+  @Column({ nullable: true })
+  phone?: string;
+
+  @Column({ type: 'text', nullable: true })
+  address?: string;
 
   @ManyToOne(() => Branch, (branch) => branch.users, { nullable: true })
   branch?: Branch;

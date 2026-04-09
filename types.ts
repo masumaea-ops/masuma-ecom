@@ -58,7 +58,7 @@ export interface BlogPost {
   relatedProductCategory: string; 
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS' | 'COOKIES' | 'CHECKOUT';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS' | 'COOKIES' | 'CHECKOUT' | 'MARKETPLACE' | 'IMPORT_CALCULATOR';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -70,7 +70,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'B2B_USER';
+  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'B2B_USER' | 'DEALER' | 'INDIVIDUAL_SELLER';
   branchId?: string;
 }
 
@@ -214,4 +214,114 @@ export interface Assessment {
   title: string;
   score: number;
   date: string;
+}
+
+export enum ListingStatus {
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  SOLD = 'SOLD',
+  EXPIRED = 'EXPIRED',
+  REJECTED = 'REJECTED'
+}
+
+export enum VehicleType {
+  CAR = 'CAR',
+  MOTORCYCLE = 'MOTORCYCLE'
+}
+
+export interface VehicleListing {
+  id: string;
+  title: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  mileage?: number;
+  fuelType?: string;
+  transmission?: string;
+  engineSize?: number;
+  bodyType?: string;
+  color?: string;
+  images?: string[];
+  description?: string;
+  vehicleType: 'CAR' | 'MOTORCYCLE';
+  seller: User;
+  status: 'PENDING' | 'ACTIVE' | 'SOLD' | 'EXPIRED' | 'REJECTED';
+  isPaid: boolean;
+  location?: string;
+  vin?: string;
+  scanReportUrl?: string;
+  auctionSheetUrl?: string;
+  isImported: boolean;
+  createdAt: string;
+}
+
+export interface CrspData {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  crspValue: number;
+  engineSize?: number;
+  fuelType?: string;
+  category?: string;
+  transmission?: string;
+}
+
+export interface ImportCalculationResult {
+  cif: number;
+  importDuty: number;
+  exciseDuty: number;
+  vat: number;
+  idf: number;
+  rdl: number;
+  totalTaxes: number;
+  totalCost: number;
+  breakdown: {
+    age: number;
+    depreciationRate: number;
+    importDutyRate: number;
+    exciseDutyRate: number;
+    vatRate: number;
+  };
+}
+
+export enum FraudReportReason {
+  SCAM = 'SCAM',
+  FAKE_MILEAGE = 'FAKE_MILEAGE',
+  STOLEN_VEHICLE = 'STOLEN_VEHICLE',
+  MISLEADING_DESCRIPTION = 'MISLEADING_DESCRIPTION',
+  DEPOSIT_SCAM = 'DEPOSIT_SCAM',
+  OTHER = 'OTHER'
+}
+
+export interface FraudReport {
+  id: string;
+  listingId?: string;
+  listing?: VehicleListing;
+  reporterId: string;
+  reporter?: User;
+  reason: 'SCAM' | 'FAKE_MILEAGE' | 'STOLEN_VEHICLE' | 'MISLEADING_DESCRIPTION' | 'DEPOSIT_SCAM' | 'OTHER';
+  description: string;
+  status: 'PENDING' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED';
+  adminNotes?: string;
+  createdAt: string;
+}
+
+export interface ImportRequest {
+  id: string;
+  userId: string;
+  user?: User;
+  make: string;
+  model: string;
+  minYear: number;
+  colorPreference?: string;
+  maxMileage?: number;
+  budgetKes: number;
+  sourceCountry: string;
+  additionalNotes?: string;
+  status: 'PENDING' | 'SOURCING' | 'QUOTED' | 'DEPOSIT_PAID' | 'SHIPPED' | 'CLEARING' | 'COMPLETED' | 'CANCELLED';
+  adminResponse?: any;
+  createdAt: string;
+  updatedAt: string;
 }

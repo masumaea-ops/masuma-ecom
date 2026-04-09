@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { AppDataSource } from '../config/database';
-import { User } from '../entities/User';
+import { User, UserRole, UserStatus } from '../entities/User';
 import { Security } from '../utils/security';
 import { authenticate } from '../middleware/auth';
 import { EmailService } from '../services/emailService';
@@ -19,8 +19,56 @@ router.post('/login', validate(z.object({ email: z.string().email(), password: z
     const isValid = await Security.comparePassword(password, user.passwordHash);
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
     if (!user.isActive) return res.status(403).json({ error: 'Account is disabled' });
+    
+    if (user.role === UserRole.B2B_USER && user.status !== UserStatus.APPROVED) {
+        return res.status(403).json({ 
+            error: user.status === UserStatus.PENDING 
+                ? 'Your registration is currently pending approval.' 
+                : 'Your registration has been rejected.' 
+        });
+    }
+
     const token = Security.generateToken({ id: user.id, email: user.email, role: user.role, branchId: user.branch?.id });
     res.json({ token, user: { id: user.id, name: user.fullName, role: user.role, email: user.email, branch: user.branch ? { id: user.branch.id, name: user.branch.name } : null } });
+});
+
+router.post('/register-b2b', validate(z.object({
+    fullName: z.string().min(2),
+    email: z.string().email(),
+    password: z.string().min(6),
+    businessName: z.string().min(2),
+    taxId: z.string().optional(),
+    phone: z.string().min(8),
+    address: z.string().min(5)
+})), async (req, res) => {
+    try {
+        const { fullName, email, password, businessName, taxId, phone, address } = req.body;
+        
+        const existingUser = await userRepo.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already registered' });
+        }
+
+        const user = new User();
+        user.fullName = fullName;
+        user.email = email;
+        user.passwordHash = await Security.hashPassword(password);
+        user.role = UserRole.B2B_USER;
+        user.status = UserStatus.PENDING;
+        user.businessName = businessName;
+        user.taxId = taxId;
+        user.phone = phone;
+        user.address = address;
+        user.isActive = true;
+        user.discountPercentage = 15; // Default discount for new B2B users
+
+        await userRepo.save(user);
+
+        res.status(201).json({ message: 'Registration successful. Your account is pending approval.' });
+    } catch (error) {
+        console.error('B2B Registration Error:', error);
+        res.status(500).json({ error: 'Failed to register business' });
+    }
 });
 
 router.post('/forgot-password', validate(z.object({ email: z.string().email() })), async (req, res) => {

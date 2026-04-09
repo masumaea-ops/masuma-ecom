@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
-  Smartphone, Users, FileText, Truck, GraduationCap, 
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign, Mail, Ticket
+  Smartphone, Users, FileText, Truck, GraduationCap, Car,
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign, Mail, Ticket, RefreshCcw, ShieldAlert, Ship
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
 
@@ -43,6 +43,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
     { id: 'customers', label: 'Customers (CRM)', icon: Users, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'subscribers', label: 'Newsletter', icon: Mail, roles: ['ADMIN', 'MANAGER'] },
     { id: 'reports', label: 'Reports', icon: FileBarChart, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'returns_admin', label: 'Returns & Claims', icon: RefreshCcw, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'marketplace_admin', label: 'Marketplace Mgr', icon: Car, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'fraud_admin', label: 'Fraud & Safety', icon: ShieldAlert, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'import_admin', label: 'Import Requests', icon: Ship, roles: ['ADMIN', 'MANAGER'] },
     { id: 'users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
     { id: 'audit', label: 'Audit Logs', icon: Shield, roles: ['ADMIN'] },
     { id: 'blog', label: 'Blog Studio', icon: Edit, roles: ['ADMIN', 'MANAGER'] },

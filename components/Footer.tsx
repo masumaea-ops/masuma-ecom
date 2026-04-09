@@ -104,6 +104,7 @@ const Footer: React.FC<FooterProps> = ({ setView }) => {
               <li><a href="/?view=PART_FINDER" onClick={(e) => handleNav(e, 'PART_FINDER')} className="hover:text-masuma-orange transition">Search Parts</a></li>
               <li><a href="/?view=WARRANTY" onClick={(e) => handleNav(e, 'WARRANTY')} className="hover:text-masuma-orange transition">Warranty Policy</a></li>
               <li><a href="/?view=CATALOG" onClick={(e) => handleNav(e, 'CATALOG')} className="hover:text-masuma-orange transition">Product Catalog</a></li>
+              <li><a href="/?view=LOGIN" onClick={(e) => handleNav(e, 'LOGIN')} className="hover:text-masuma-orange transition">Distributor Portal</a></li>
               <li><a href="/?view=CONTACT" onClick={(e) => handleNav(e, 'CONTACT')} className="hover:text-masuma-orange transition">Contact Support</a></li>
             </ul>
           </div>

@@ -44,11 +44,12 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems: ViewState[] = ['HOME', 'CATALOG', 'PART_FINDER', 'BLOG', 'ABOUT', 'CONTACT'];
+  const navItems: ViewState[] = ['HOME', 'CATALOG', 'PART_FINDER', 'MARKETPLACE', 'IMPORT_CALCULATOR', 'BLOG', 'ABOUT', 'CONTACT'];
   const currencies: CurrencyCode[] = ['KES', 'USD', 'UGX', 'TZS', 'RWF'];
 
   const formatNavLabel = (item: string) => {
       if (item === 'PART_FINDER') return 'PART FINDER';
+      if (item === 'IMPORT_CALCULATOR') return 'IMPORT CALCULATOR';
       return item;
   };
 

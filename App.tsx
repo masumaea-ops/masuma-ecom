@@ -26,11 +26,17 @@ import BlogManager from './components/admin/BlogManager';
 import CmsManager from './components/admin/CmsManager';
 import Profile from './components/admin/Profile';
 import B2BPortal from './components/admin/B2BPortal';
+import ReturnManager from './components/admin/ReturnManager';
 import ShippingManager from './components/admin/ShippingManager';
 import FinanceManager from './components/admin/FinanceManager';
 import CategoryManager from './components/admin/CategoryManager';
 import SubscriberManager from './components/admin/SubscriberManager';
 import PromoManager from './components/admin/PromoManager';
+import FraudAdmin from './components/admin/FraudAdmin';
+import ImportAdmin from './components/admin/ImportAdmin';
+import MarketplaceManager from './components/admin/MarketplaceManager';
+import Marketplace from './components/Marketplace';
+import ImportCalculator from './components/ImportCalculator';
 import PartFinder from './components/PartFinder';
 import Blog from './components/Blog';
 import Contact from './components/Contact';
@@ -187,9 +193,13 @@ const App: React.FC = () => {
                         case 'cms': return <CmsManager />;
                         case 'profile': return <Profile />;
                         case 'b2b': return <B2BPortal />;
+                        case 'returns_admin': return <ReturnManager />;
                         case 'shipping': return <ShippingManager />;
                         case 'finance': return <FinanceManager />;
                         case 'categories': return <CategoryManager />;
+                        case 'fraud_admin': return <FraudAdmin />;
+                        case 'import_admin': return <ImportAdmin />;
+                        case 'marketplace_admin': return <MarketplaceManager />;
                         default: return <DashboardHome onNavigate={setAdminModule} />;
                     }
                 })()}
@@ -317,6 +327,26 @@ const App: React.FC = () => {
                 <>
                 <SEO title="Secure Checkout | Masuma Kenya" description="Complete your purchase of genuine Masuma automotive parts securely with M-Pesa or Card." />
                 <Checkout cartItems={cart} onSuccess={clearCart} setView={setView} />
+                </>
+            )}
+            {view === 'MARKETPLACE' && (
+                <>
+                <SEO 
+                    title="Vehicle Marketplace | Buy & Sell Cars in Kenya" 
+                    description="Browse genuine vehicle listings from individuals and dealers in Kenya. Find your next car or motorcycle on Masuma Marketplace." 
+                    keywords="car marketplace Kenya, buy cars Nairobi, sell motorcycles Kenya, used cars Kenya"
+                />
+                <Marketplace />
+                </>
+            )}
+            {view === 'IMPORT_CALCULATOR' && (
+                <>
+                <SEO 
+                    title="KRA Import Cost Calculator | Vehicle Duties Kenya" 
+                    description="Calculate accurate vehicle import duties and taxes for Kenya using real CRSP data. Intelligent KRA tax engine." 
+                    keywords="import duty calculator Kenya, KRA car taxes, vehicle import cost Nairobi"
+                />
+                <ImportCalculator />
                 </>
             )}
             </main>

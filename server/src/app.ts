@@ -38,6 +38,7 @@ import reportRoutes from './routes/report.routes';
 import contactRoutes from './routes/contact.routes'; 
 import branchRoutes from './routes/branch.routes'; 
 import categoryRoutes from './routes/category.routes';
+import returnRoutes from './routes/return.routes';
 import healthRoutes from './routes/health.routes';
 import exchangeRoutes from './routes/exchange.routes';
 import vehicleRoutes from './routes/vehicle.routes';
@@ -45,6 +46,10 @@ import uploadRoutes from './routes/upload.routes';
 import financeRoutes from './routes/finance.routes';
 import notificationRoutes from './routes/notification.routes';
 import newsletterRoutes from './routes/newsletter.routes';
+import marketplaceRoutes from './routes/marketplace.routes';
+import importCalculatorRoutes from './routes/import-calculator.routes';
+import fraudRoutes from './routes/fraud.routes';
+import importRequestRoutes from './routes/import-request.routes';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -105,6 +110,7 @@ app.use('/api/reports', reportRoutes as any);
 app.use('/api/contact', contactRoutes as any); 
 app.use('/api/branches', branchRoutes as any); 
 app.use('/api/categories', categoryRoutes as any);
+app.use('/api/returns', returnRoutes as any);
 app.use('/api/health', healthRoutes as any);
 app.use('/api/exchange-rates', exchangeRoutes as any);
 app.use('/api/vehicles', vehicleRoutes as any);
@@ -112,6 +118,10 @@ app.use('/api/upload', uploadRoutes as any);
 app.use('/api/finance', financeRoutes as any);
 app.use('/api/notifications', notificationRoutes as any);
 app.use('/api/newsletter', newsletterRoutes as any);
+app.use('/api/marketplace', marketplaceRoutes as any);
+app.use('/api/import-calculator', importCalculatorRoutes as any);
+app.use('/api/fraud', fraudRoutes as any);
+app.use('/api/import-requests', importRequestRoutes as any);
 
 // 4. FRONTEND SERVING
 const possibleDistPaths = [

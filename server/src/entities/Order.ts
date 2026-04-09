@@ -12,7 +12,9 @@ export enum OrderStatus {
   FAILED = 'FAILED',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
+  RETURNED = 'RETURNED',
+  REFUNDED = 'REFUNDED'
 }
 
 @Entity('orders')
