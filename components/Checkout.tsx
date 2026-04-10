@@ -4,7 +4,7 @@ import { CartItem, Product, ViewState, PromoCode } from '../types';
 import { apiClient } from '../utils/apiClient';
 import Price from './Price';
 import SEO from './SEO';
-import { trackCheckoutInitiated, trackEvent } from '../utils/analytics';
+import { trackCheckoutInitiated, trackEvent, trackCheckoutComplete } from '../utils/analytics';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -63,6 +63,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
           const res = await apiClient.get(`/orders/${currentOrderId}/status`);
           if (res.data.status === 'PAID') {
             setStep('success');
+            trackCheckoutComplete(currentOrderId, total);
             clearInterval(interval);
             setTimeout(() => {
               onSuccess();
@@ -148,6 +149,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
           trackEvent('Ecommerce', 'M-Pesa Payment Initiated', res.data.orderId);
       } else {
           setStep('success');
+          trackCheckoutComplete(res.data.id || 'CASH_ORDER', total);
           trackEvent('Ecommerce', 'Order Success', 'CASH_ON_DELIVERY');
           setTimeout(() => {
             onSuccess();

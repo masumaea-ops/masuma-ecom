@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, Loader2, ArrowLeft, Mail, Send, CheckCircle, Building, User, Phone, MapPin } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
 import { Logo } from './Logo';
+import SEO from './SEO';
 
 interface AdminLoginProps {
   onLoginSuccess: (user: any, token: string) => void;
@@ -63,6 +64,11 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <SEO 
+        title="Admin Login" 
+        description="Secure login for Masuma ERP administrators." 
+        noindex={true}
+      />
       <div className={`bg-white p-8 rounded-lg shadow-xl w-full ${view === 'register' ? 'max-w-2xl' : 'max-w-md'} border-t-4 border-masuma-orange transition-all duration-500 animate-scale-up`}>
         <div className="text-center mb-8 flex flex-col items-center">
           <Logo />

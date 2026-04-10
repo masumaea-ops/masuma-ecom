@@ -5,6 +5,7 @@ import {
   BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign, Mail, Ticket, RefreshCcw, ShieldAlert, Ship
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
+import SEO from '../SEO';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -43,6 +44,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
     { id: 'customers', label: 'Customers (CRM)', icon: Users, roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'subscribers', label: 'Newsletter', icon: Mail, roles: ['ADMIN', 'MANAGER'] },
     { id: 'reports', label: 'Reports', icon: FileBarChart, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['ADMIN'] },
     { id: 'returns_admin', label: 'Returns & Claims', icon: RefreshCcw, roles: ['ADMIN', 'MANAGER'] },
     { id: 'marketplace_admin', label: 'Marketplace Mgr', icon: Car, roles: ['ADMIN', 'MANAGER'] },
     { id: 'fraud_admin', label: 'Fraud & Safety', icon: ShieldAlert, roles: ['ADMIN', 'MANAGER'] },
@@ -58,6 +60,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
+      <SEO 
+        title="Admin Dashboard" 
+        description="Masuma ERP Management Console." 
+        noindex={true}
+      />
       <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-masuma-dark text-white transition-all duration-300 flex flex-col flex-shrink-0`}>
         <div className="h-16 flex items-center justify-center border-b border-gray-800">
           {isSidebarOpen ? (

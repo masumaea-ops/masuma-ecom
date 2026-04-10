@@ -17,7 +17,7 @@ export class ImportRequest {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
+  @Column()
   userId!: string;
 
   @ManyToOne(() => User)
@@ -55,7 +55,7 @@ export class ImportRequest {
   })
   status!: ImportRequestStatus;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   adminResponse!: any; // For storing quotes, ship details, etc.
 
   @CreateDateColumn()

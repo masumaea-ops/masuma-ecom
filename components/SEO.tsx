@@ -9,6 +9,7 @@ interface SEOProps {
   type?: 'website' | 'article' | 'product';
   schema?: Record<string, any>;
   keywords?: string;
+  noindex?: boolean;
 }
 
 const SEO: React.FC<SEOProps> = ({ 
@@ -18,7 +19,8 @@ const SEO: React.FC<SEOProps> = ({
   url, 
   type = 'website',
   schema,
-  keywords
+  keywords,
+  noindex = false
 }) => {
   const siteTitle = 'Masuma Autoparts East Africa';
   const fullTitle = `${title} | ${siteTitle}`;
@@ -33,7 +35,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="description" content={description} />
       <meta name="keywords" content={combinedKeywords} />
       <link rel="canonical" href={currentUrl} />
-      <meta name="robots" content="index, follow" />
+      <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
       <meta name="language" content="English" />
       <meta name="revisit-after" content="7 days" />
 

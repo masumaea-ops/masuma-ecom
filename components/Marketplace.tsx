@@ -11,7 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FraudReportModal from './FraudReportModal';
 import VehicleListingForm from './VehicleListingForm';
 
-const Marketplace: React.FC = () => {
+interface MarketplaceProps {
+  user: any;
+  setView: (view: any) => void;
+}
+
+const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
   const [listings, setListings] = useState<VehicleListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,7 +101,13 @@ const Marketplace: React.FC = () => {
               </button>
               
               <button 
-                onClick={() => setIsListingFormOpen(true)}
+                onClick={() => {
+                  if (!user) {
+                    setView('LOGIN');
+                    return;
+                  }
+                  setIsListingFormOpen(true);
+                }}
                 className="ml-auto bg-masuma-dark text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all flex items-center shadow-xl shadow-gray-200"
               >
                 <Plus className="w-4 h-4 mr-2" />

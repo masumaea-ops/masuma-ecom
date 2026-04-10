@@ -50,6 +50,7 @@ import marketplaceRoutes from './routes/marketplace.routes';
 import importCalculatorRoutes from './routes/import-calculator.routes';
 import fraudRoutes from './routes/fraud.routes';
 import importRequestRoutes from './routes/import-request.routes';
+import analyticsRoutes from './routes/analytics.routes';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -122,6 +123,51 @@ app.use('/api/marketplace', marketplaceRoutes as any);
 app.use('/api/import-calculator', importCalculatorRoutes as any);
 app.use('/api/fraud', fraudRoutes as any);
 app.use('/api/import-requests', importRequestRoutes as any);
+app.use('/api/analytics', analyticsRoutes as any);
+
+// 3.5 Technical SEO Routes
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /login
+Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`);
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+    try {
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const productRepo = AppDataSource.getRepository(Product);
+        const postRepo = AppDataSource.getRepository(BlogPost);
+        
+        const products = await productRepo.find({ select: ['id', 'updatedAt'] });
+        const posts = await postRepo.find({ select: ['id', 'updatedAt'] });
+
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${baseUrl}/</loc><priority>1.0</priority></url>
+  <url><loc>${baseUrl}/?view=CATALOG</loc><priority>0.9</priority></url>
+  <url><loc>${baseUrl}/?view=ABOUT</loc><priority>0.7</priority></url>
+  <url><loc>${baseUrl}/?view=CONTACT</loc><priority>0.7</priority></url>
+  <url><loc>${baseUrl}/?view=BLOG</loc><priority>0.8</priority></url>`;
+
+        products.forEach(p => {
+            xml += `\n  <url><loc>${baseUrl}/?product=${p.id}</loc><lastmod>${p.updatedAt.toISOString().split('T')[0]}</lastmod><priority>0.8</priority></url>`;
+        });
+
+        posts.forEach(p => {
+            xml += `\n  <url><loc>${baseUrl}/?post=${p.id}</loc><lastmod>${p.updatedAt.toISOString().split('T')[0]}</lastmod><priority>0.7</priority></url>`;
+        });
+
+        xml += '\n</urlset>';
+        res.type('application/xml');
+        res.send(xml);
+    } catch (e) {
+        res.status(500).send('Error generating sitemap');
+    }
+});
 
 // 4. FRONTEND SERVING
 const possibleDistPaths = [
@@ -186,7 +232,10 @@ app.get('*', async (req: any, res: any) => {
                                 title: product.name,
                                 description: product.description ? product.description.substring(0, 160).replace(/<[^>]*>/g, '') + '...' : 'Premium Autoparts',
                                 image: product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${baseUrl}${product.imageUrl}`) : `${baseUrl}/logo.png`,
-                                url: `${baseUrl}${req.originalUrl}`
+                                url: `${baseUrl}${req.originalUrl}`,
+                                sku: product.sku,
+                                price: product.price,
+                                availability: product.stock > 0 ? 'InStock' : 'OutOfStock'
                             };
                         }
                     } catch (e) {
@@ -199,7 +248,7 @@ app.get('*', async (req: any, res: any) => {
                     html = html.replace(/<title>.*?<\/title>/, `<title>${metaData.title} | Masuma Africa</title>`);
                     html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${metaData.description}" />`);
                     
-                    const ogTags = `
+                    let ogTags = `
     <meta property="og:title" content="${metaData.title}" />
     <meta property="og:description" content="${metaData.description}" />
     <meta property="og:image" content="${metaData.image}" />
@@ -211,6 +260,31 @@ app.get('*', async (req: any, res: any) => {
     <meta name="twitter:description" content="${metaData.description}" />
     <meta name="twitter:image" content="${metaData.image}" />
 `;
+
+                    if (productId && (metaData as any).sku) {
+                        const productSchema = {
+                            "@context": "https://schema.org/",
+                            "@type": "Product",
+                            "name": metaData.title,
+                            "image": metaData.image,
+                            "description": metaData.description,
+                            "sku": (metaData as any).sku,
+                            "brand": {
+                                "@type": "Brand",
+                                "name": "Masuma"
+                            },
+                            "offers": {
+                                "@type": "Offer",
+                                "url": metaData.url,
+                                "priceCurrency": "KES",
+                                "price": (metaData as any).price,
+                                "availability": `https://schema.org/${(metaData as any).availability}`,
+                                "itemCondition": "https://schema.org/NewCondition"
+                            }
+                        };
+                        ogTags += `\n    <script type="application/ld+json">${JSON.stringify(productSchema)}</script>`;
+                    }
+
                     html = html.replace('</head>', `${ogTags}</head>`);
                 }
 

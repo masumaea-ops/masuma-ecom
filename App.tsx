@@ -35,6 +35,7 @@ import PromoManager from './components/admin/PromoManager';
 import FraudAdmin from './components/admin/FraudAdmin';
 import ImportAdmin from './components/admin/ImportAdmin';
 import MarketplaceManager from './components/admin/MarketplaceManager';
+import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
 import Marketplace from './components/Marketplace';
 import ImportCalculator from './components/ImportCalculator';
 import PartFinder from './components/PartFinder';
@@ -200,6 +201,7 @@ const App: React.FC = () => {
                         case 'fraud_admin': return <FraudAdmin />;
                         case 'import_admin': return <ImportAdmin />;
                         case 'marketplace_admin': return <MarketplaceManager />;
+                        case 'analytics': return <AnalyticsDashboard />;
                         default: return <DashboardHome onNavigate={setAdminModule} />;
                     }
                 })()}
@@ -336,7 +338,7 @@ const App: React.FC = () => {
                     description="Browse genuine vehicle listings from individuals and dealers in Kenya. Find your next car or motorcycle on Masuma Marketplace." 
                     keywords="car marketplace Kenya, buy cars Nairobi, sell motorcycles Kenya, used cars Kenya"
                 />
-                <Marketplace />
+                <Marketplace user={user} setView={setView} />
                 </>
             )}
             {view === 'IMPORT_CALCULATOR' && (

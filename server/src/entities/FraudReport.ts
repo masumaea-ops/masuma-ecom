@@ -23,14 +23,14 @@ export class FraudReport {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ nullable: true })
   listingId!: string;
 
   @ManyToOne(() => VehicleListing, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'listingId' })
   listing!: VehicleListing;
 
-  @Column({ type: 'uuid' })
+  @Column()
   reporterId!: string;
 
   @ManyToOne(() => User)
