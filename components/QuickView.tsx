@@ -46,8 +46,12 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
         setIsFullScreen(false);
         const items: MediaItem[] = [];
         if (product.image) items.push({ url: product.image, type: 'image' });
-        if (product.images && Array.isArray(product.images)) {
-            product.images.forEach(img => {
+        if (product.images) {
+            const imagesArray = Array.isArray(product.images) 
+                ? product.images 
+                : (typeof product.images === 'string' ? JSON.parse(product.images) : []);
+            
+            imagesArray.forEach((img: string) => {
                 if (img !== product.image) items.push({ url: img, type: 'image' });
             });
         }

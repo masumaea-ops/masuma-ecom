@@ -43,7 +43,7 @@ export class VehicleListing {
   @Column({ nullable: true })
   transmission?: string;
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
   engineSize?: number;
 
   @Column({ nullable: true })

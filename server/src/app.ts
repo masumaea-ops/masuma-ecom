@@ -78,7 +78,8 @@ app.use(cors({
   credentials: true 
 }) as any);
 
-app.use(express.json() as any);
+app.use(express.json({ limit: '50mb' }) as any);
+app.use(express.urlencoded({ limit: '50mb', extended: true }) as any);
 app.use(httpLogger as any);
 
 // 1. Static Media serving
