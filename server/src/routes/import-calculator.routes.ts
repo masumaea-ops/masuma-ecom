@@ -174,7 +174,7 @@ router.get('/crsp', async (req, res) => {
 // Update single CRSP record (Admin only)
 router.put('/crsp/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const crspRepo = AppDataSource.getRepository(CrspData);
     const crsp = await crspRepo.findOneBy({ id });
     

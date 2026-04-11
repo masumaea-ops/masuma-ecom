@@ -6,28 +6,28 @@ export class BlogPost {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   title!: string;
 
-  @Column('text')
+  @Column({ type: 'text' })
   excerpt!: string;
 
-  @Column('longtext')
+  @Column({ type: 'longtext' })
   content!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   image!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   category!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   readTime!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   relatedProductCategory!: string;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   isPublished!: boolean;
 
   @CreateDateColumn()

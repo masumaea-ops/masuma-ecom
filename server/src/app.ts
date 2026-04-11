@@ -191,7 +191,7 @@ if (!frontendPath) {
 }
 
 // 5. CATCH-ALL
-app.get('*', async (req: any, res: any) => {
+app.get('*all', async (req: any, res: any) => {
     // If it's an API request that wasn't handled, return 404 JSON
     if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Endpoint not found' });
     

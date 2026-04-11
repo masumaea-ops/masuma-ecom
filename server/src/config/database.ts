@@ -9,12 +9,12 @@ declare const __dirname: string;
 // We use a glob pattern for entities to ensure all entities are correctly 
 // discovered and registered in both development (TS) and production (JS)
 export const AppDataSource = new DataSource({
-  type: (config.DB_HOST && config.DB_USER) ? 'mysql' : 'sqlite',
-  database: (config.DB_HOST && config.DB_USER) ? config.DB_NAME : 'database.sqlite',
+  type: 'mysql',
   host: config.DB_HOST,
-  port: Number(config.DB_PORT),
+  port: Number(config.DB_PORT) || 3306,
   username: config.DB_USER,
   password: config.DB_PASSWORD,
+  database: config.DB_NAME,
   synchronize: true, 
   logging: false, 
   entities: [
@@ -22,11 +22,11 @@ export const AppDataSource = new DataSource({
   ],
   subscribers: [],
   migrations: [],
-  extra: (config.DB_HOST && config.DB_USER) ? {
+  extra: {
     connectionLimit: 10,
     waitForConnections: true,
     queueLimit: 0,
     enableKeepAlive: true, 
     keepAliveInitialDelay: 10000 
-  } : {}
+  }
 });
