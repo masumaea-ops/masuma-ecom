@@ -58,7 +58,7 @@ export interface BlogPost {
   relatedProductCategory: string; 
 }
 
-export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS' | 'COOKIES' | 'CHECKOUT' | 'MARKETPLACE' | 'IMPORT_CALCULATOR';
+export type ViewState = 'HOME' | 'CATALOG' | 'PART_FINDER' | 'ABOUT' | 'CONTACT' | 'BLOG' | 'LOGIN' | 'DASHBOARD' | 'WARRANTY' | 'RESET_PASSWORD' | 'PRIVACY' | 'TERMS' | 'COOKIES' | 'CHECKOUT' | 'MARKETPLACE' | 'IMPORT_CALCULATOR' | 'SELLER_DASHBOARD';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -253,6 +253,7 @@ export interface VehicleListing {
   scanReportUrl?: string;
   auctionSheetUrl?: string;
   isImported: boolean;
+  views?: number;
   createdAt: string;
 }
 
@@ -282,6 +283,7 @@ export interface ImportCalculationResult {
     depreciationRate: number;
     importDutyRate: number;
     exciseDutyRate: number;
+    fixedExcise?: number;
     vatRate: number;
   };
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, History, 
   Smartphone, Users, FileText, Truck, GraduationCap, Car,
-  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign, Mail, Ticket, RefreshCcw, ShieldAlert, Ship
+  BarChart3, Briefcase, Settings, LogOut, Menu, X, Bell, Edit, FileBarChart, Shield, Globe, Building, Tag, DollarSign, Mail, Ticket, RefreshCcw, ShieldAlert, Ship, FileSpreadsheet
 } from 'lucide-react';
 import NotificationsPopover from './NotificationsPopover';
 import SEO from '../SEO';
@@ -49,6 +49,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, activeModul
     { id: 'marketplace_admin', label: 'Marketplace Mgr', icon: Car, roles: ['ADMIN', 'MANAGER'] },
     { id: 'fraud_admin', label: 'Fraud & Safety', icon: ShieldAlert, roles: ['ADMIN', 'MANAGER'] },
     { id: 'import_admin', label: 'Import Requests', icon: Ship, roles: ['ADMIN', 'MANAGER'] },
+    { id: 'crsp_admin', label: 'CRSP Data (Excel)', icon: FileSpreadsheet, roles: ['ADMIN'] },
+    { id: 'import_settings', label: 'Import Rules', icon: Settings, roles: ['ADMIN'] },
     { id: 'users', label: 'User Management', icon: Users, roles: ['ADMIN'] },
     { id: 'audit', label: 'Audit Logs', icon: Shield, roles: ['ADMIN'] },
     { id: 'blog', label: 'Blog Studio', icon: Edit, roles: ['ADMIN', 'MANAGER'] },

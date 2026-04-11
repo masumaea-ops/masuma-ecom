@@ -8,16 +8,17 @@ import { apiClient } from '../utils/apiClient';
 import { ListingStatus, VehicleType } from '../types';
 
 interface VehicleListingFormProps {
+  initialData?: any;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ onSuccess, onCancel }) => {
+const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ initialData, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(initialData || {
     title: '',
     make: '',
     model: '',
@@ -114,13 +115,17 @@ const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ onSuccess, onCa
     setError(null);
 
     try {
-      await apiClient.post('/marketplace', formData);
+      if (initialData?.id) {
+        await apiClient.patch(`/marketplace/${initialData.id}`, formData);
+      } else {
+        await apiClient.post('/marketplace', formData);
+      }
       setSuccess(true);
       setTimeout(() => {
         onSuccess();
       }, 2000);
     } catch (e: any) {
-      setError(e.response?.data?.error || 'Failed to create listing');
+      setError(e.response?.data?.error || 'Failed to save listing');
     } finally {
       setLoading(false);
     }

@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calculator, Info, AlertTriangle, CheckCircle2, 
   ChevronRight, Download, Share2, Car, Search,
-  ArrowRight, ShieldCheck, TrendingUp
+  ArrowRight, ShieldCheck, TrendingUp, Settings
 } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
 import { CrspData, ImportCalculationResult, Product } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImportServiceForm from './ImportServiceForm';
 
-const ImportCalculator: React.FC = () => {
+interface ImportCalculatorProps {
+  user?: any;
+  setView?: (view: any) => void;
+}
+
+const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) => {
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
   const [years, setYears] = useState<number[]>([]);
@@ -17,6 +22,7 @@ const ImportCalculator: React.FC = () => {
   const [selectedMake, setSelectedMake] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [vehicleType, setVehicleType] = useState('CAR');
   
   const [crspList, setCrspList] = useState<CrspData[]>([]);
   const [selectedCrsp, setSelectedCrsp] = useState<CrspData | null>(null);
@@ -85,6 +91,7 @@ const ImportCalculator: React.FC = () => {
         yearOfManufacture: selectedYear,
         engineSize,
         fuelType,
+        vehicleType,
         cifValue: cifValue > 0 ? cifValue : undefined
       });
       setResult(res.data);
@@ -118,10 +125,19 @@ const ImportCalculator: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">KRA Import Cost Calculator</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
           Calculate accurate vehicle import duties and taxes for Kenya using real CRSP data. 
           Our engine stays updated with the latest KRA regulations.
         </p>
+        {user?.role === 'ADMIN' && (
+          <button 
+            onClick={() => setView?.('DASHBOARD')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+            Manage CRSP Data (Admin)
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -134,6 +150,21 @@ const ImportCalculator: React.FC = () => {
             </h2>
             
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Category</label>
+                <select 
+                  value={vehicleType}
+                  onChange={(e) => setVehicleType(e.target.value)}
+                  className="w-full rounded-lg border-gray-300 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="CAR">Standard Passenger Car</option>
+                  <option value="MOTORCYCLE">Motorcycle</option>
+                  <option value="ELECTRIC">100% Electric Vehicle</option>
+                  <option value="AMBULANCE">Ambulance</option>
+                  <option value="TRUCK">Prime Mover / Trailer</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
                 <select 
@@ -241,7 +272,13 @@ const ImportCalculator: React.FC = () => {
             <h3 className="text-xl font-bold mb-2">Need help importing?</h3>
             <p className="text-blue-100 text-sm mb-4">Our concierge service handles sourcing, shipping, and KRA clearance for you.</p>
             <button 
-              onClick={() => setIsImportServiceOpen(true)}
+              onClick={() => {
+                if (!user && setView) {
+                  setView('LOGIN');
+                  return;
+                }
+                setIsImportServiceOpen(true);
+              }}
               className="w-full bg-white text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors flex items-center justify-center"
             >
               Request Import Service
@@ -300,7 +337,12 @@ const ImportCalculator: React.FC = () => {
                       <span className="font-medium">{formatCurrency(result.importDuty)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-50">
-                      <span className="text-gray-600">Excise Duty ({Math.round(result.breakdown.exciseDutyRate * 100)}%)</span>
+                      <span className="text-gray-600">
+                        Excise Duty 
+                        ({result.breakdown.fixedExcise > 0 
+                          ? 'Fixed' 
+                          : `${Math.round(result.breakdown.exciseDutyRate * 100)}%`})
+                      </span>
                       <span className="font-medium">{formatCurrency(result.exciseDuty)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-50">

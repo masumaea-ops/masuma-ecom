@@ -36,7 +36,10 @@ import FraudAdmin from './components/admin/FraudAdmin';
 import ImportAdmin from './components/admin/ImportAdmin';
 import MarketplaceManager from './components/admin/MarketplaceManager';
 import AnalyticsDashboard from './components/admin/AnalyticsDashboard';
+import CrspManager from './components/admin/CrspManager';
+import ImportSettings from './components/admin/ImportSettings';
 import Marketplace from './components/Marketplace';
+import SellerDashboard from './components/SellerDashboard';
 import ImportCalculator from './components/ImportCalculator';
 import PartFinder from './components/PartFinder';
 import Blog from './components/Blog';
@@ -163,6 +166,10 @@ const App: React.FC = () => {
         return <ResetPassword onBack={() => setView('LOGIN')} />;
     }
 
+    if (view === 'SELLER_DASHBOARD' && user) {
+        return <SellerDashboard user={user} onBack={() => setView('HOME')} />;
+    }
+
     if (view === 'DASHBOARD' && user) {
         return (
             <DashboardLayout activeModule={adminModule} onNavigate={setAdminModule} onLogout={() => { 
@@ -200,6 +207,8 @@ const App: React.FC = () => {
                         case 'categories': return <CategoryManager />;
                         case 'fraud_admin': return <FraudAdmin />;
                         case 'import_admin': return <ImportAdmin />;
+                        case 'crsp_admin': return <CrspManager />;
+                        case 'import_settings': return <ImportSettings />;
                         case 'marketplace_admin': return <MarketplaceManager />;
                         case 'analytics': return <AnalyticsDashboard />;
                         default: return <DashboardHome onNavigate={setAdminModule} />;
@@ -215,7 +224,15 @@ const App: React.FC = () => {
             setToken(t); 
             localStorage.setItem('masuma_auth_token', t);
             localStorage.setItem('masuma_user', JSON.stringify(u));
-            setView('DASHBOARD'); 
+            if (u.role === 'INDIVIDUAL_SELLER' || u.role === 'DEALER') {
+                setView('SELLER_DASHBOARD');
+            } else if (u.role === 'BUYER') {
+                setView('MARKETPLACE');
+            } else if (u.role === 'IMPORT_USER') {
+                setView('IMPORT_CALCULATOR');
+            } else {
+                setView('DASHBOARD'); 
+            }
         }} onBack={() => setView('HOME')} />;
     }
 
@@ -348,7 +365,7 @@ const App: React.FC = () => {
                     description="Calculate accurate vehicle import duties and taxes for Kenya using real CRSP data. Intelligent KRA tax engine." 
                     keywords="import duty calculator Kenya, KRA car taxes, vehicle import cost Nairobi"
                 />
-                <ImportCalculator />
+                <ImportCalculator user={user} setView={setView} />
                 </>
             )}
             </main>

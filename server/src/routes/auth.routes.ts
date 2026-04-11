@@ -20,11 +20,11 @@ router.post('/login', validate(z.object({ email: z.string().email(), password: z
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
     if (!user.isActive) return res.status(403).json({ error: 'Account is disabled' });
     
-    if (user.role === UserRole.B2B_USER && user.status !== UserStatus.APPROVED) {
+    if (user.status !== UserStatus.APPROVED) {
         return res.status(403).json({ 
             error: user.status === UserStatus.PENDING 
-                ? 'Your registration is currently pending approval.' 
-                : 'Your registration has been rejected.' 
+                ? 'Your account is currently pending approval.' 
+                : 'Your account has been rejected.' 
         });
     }
 
@@ -68,6 +68,61 @@ router.post('/register-b2b', validate(z.object({
     } catch (error) {
         console.error('B2B Registration Error:', error);
         res.status(500).json({ error: 'Failed to register business' });
+    }
+});
+
+router.post('/register', validate(z.object({
+    fullName: z.string().min(2),
+    email: z.string().email(),
+    password: z.string().min(6),
+    phone: z.string().optional(),
+    role: z.nativeEnum(UserRole).optional()
+})), async (req, res) => {
+    try {
+        const { fullName, email, password, phone, role } = req.body;
+        
+        const existingUser = await userRepo.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already registered' });
+        }
+
+        const user = new User();
+        user.fullName = fullName;
+        user.email = email;
+        user.passwordHash = await Security.hashPassword(password);
+        user.phone = phone;
+        user.role = role || UserRole.INDIVIDUAL_SELLER;
+        
+        // Sellers and B2B users require approval, others (BUYER, IMPORT_USER) are approved by default
+        if (user.role === UserRole.INDIVIDUAL_SELLER || user.role === UserRole.DEALER || user.role === UserRole.B2B_USER) {
+            user.status = UserStatus.PENDING;
+        } else {
+            user.status = UserStatus.APPROVED;
+        }
+        
+        user.isActive = true;
+
+        await userRepo.save(user);
+
+        if (user.status === UserStatus.PENDING) {
+            return res.status(201).json({ 
+                message: 'Registration successful. Your account is pending approval. You will be notified via email once approved.' 
+            });
+        }
+
+        const token = Security.generateToken({ id: user.id, email: user.email, role: user.role });
+        res.status(201).json({ 
+            token, 
+            user: { 
+                id: user.id, 
+                name: user.fullName, 
+                role: user.role, 
+                email: user.email 
+            } 
+        });
+    } catch (error) {
+        console.error('Registration Error:', error);
+        res.status(500).json({ error: 'Failed to register' });
     }
 });
 

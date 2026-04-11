@@ -225,6 +225,8 @@ const UserManager: React.FC = () => {
                                             user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
                                             user.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' :
                                             user.role === 'B2B_USER' ? 'bg-orange-100 text-orange-700' :
+                                            user.role === 'DEALER' ? 'bg-indigo-100 text-indigo-700' :
+                                            user.role === 'INDIVIDUAL_SELLER' ? 'bg-pink-100 text-pink-700' :
                                             'bg-gray-100 text-gray-700'
                                         }`}>
                                             <Shield size={10} /> {user.role}
@@ -250,7 +252,7 @@ const UserManager: React.FC = () => {
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {user.role === 'B2B_USER' ? (
+                                        {(user.role === 'B2B_USER' || user.role === 'DEALER' || user.role === 'INDIVIDUAL_SELLER') ? (
                                             <div className="flex flex-col gap-2">
                                                 <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded w-fit ${
                                                     user.status === 'APPROVED' ? 'bg-green-100 text-green-700' :

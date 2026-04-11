@@ -10,7 +10,7 @@ interface AdminLoginProps {
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
-  const [view, setView] = useState<'login' | 'forgot' | 'register'>('login');
+  const [view, setView] = useState<'login' | 'forgot' | 'register' | 'user-register'>('login');
   const [formData, setFormData] = useState({ 
     email: '', 
     password: '',
@@ -18,7 +18,8 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
     businessName: '',
     taxId: '',
     phone: '',
-    address: ''
+    address: '',
+    role: 'BUYER'
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +42,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
       } else if (view === 'forgot') {
           await apiClient.post('/auth/forgot-password', { email: formData.email });
           setSuccess('Reset link sent! Please check your email inbox.');
-      } else {
+      } else if (view === 'register') {
           // Register B2B
           await apiClient.post('/auth/register-b2b', {
             fullName: formData.fullName,
@@ -54,6 +55,23 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
           });
           setSuccess('Registration submitted! Our team will review your application and notify you via email.');
           setView('login');
+      } else {
+          // General User Register
+          const response = await apiClient.post('/auth/register', {
+            fullName: formData.fullName,
+            email: formData.email,
+            password: formData.password,
+            phone: formData.phone,
+            role: formData.role
+          });
+          
+          if (response.data.token) {
+            const { token, user } = response.data;
+            onLoginSuccess(user, token);
+          } else {
+            setSuccess(response.data.message || 'Registration successful! Your account is pending approval.');
+            setView('login');
+          }
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Operation failed. Please try again.');
@@ -65,15 +83,15 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <SEO 
-        title="Admin Login" 
-        description="Secure login for Masuma ERP administrators." 
+        title={view === 'login' ? 'Login' : 'Register'} 
+        description="Secure access to Masuma Autoparts East Africa." 
         noindex={true}
       />
-      <div className={`bg-white p-8 rounded-lg shadow-xl w-full ${view === 'register' ? 'max-w-2xl' : 'max-w-md'} border-t-4 border-masuma-orange transition-all duration-500 animate-scale-up`}>
+      <div className={`bg-white p-8 rounded-lg shadow-xl w-full ${view === 'register' || view === 'user-register' ? 'max-w-2xl' : 'max-w-md'} border-t-4 border-masuma-orange transition-all duration-500 animate-scale-up`}>
         <div className="text-center mb-8 flex flex-col items-center">
           <Logo />
           <p className="text-sm text-gray-500 uppercase tracking-widest mt-4">
-              {view === 'login' ? 'Staff & Distributor Access' : view === 'forgot' ? 'Password Recovery' : 'Distributor Registration'}
+              {view === 'login' ? 'Secure Access' : view === 'forgot' ? 'Password Recovery' : view === 'register' ? 'Distributor Registration' : 'Create Seller Account'}
           </p>
         </div>
         
@@ -194,6 +212,80 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
                 </div>
               </div>
             </div>
+          ) : view === 'user-register' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <h3 className="text-xs font-black uppercase text-masuma-orange mb-4 border-b pb-2">Personal Information</h3>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Full Name *</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded focus:border-masuma-orange outline-none transition text-sm" 
+                    placeholder="John Doe"
+                  />
+                  <User size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Email Address *</label>
+                <div className="relative">
+                  <input 
+                    type="email" 
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded focus:border-masuma-orange outline-none transition text-sm" 
+                    placeholder="john@example.com"
+                  />
+                  <Mail size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Phone Number *</label>
+                <div className="relative">
+                  <input 
+                    type="tel" 
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded focus:border-masuma-orange outline-none transition text-sm" 
+                    placeholder="+254..."
+                  />
+                  <Phone size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Account Intent *</label>
+                <select 
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none transition text-sm bg-white"
+                >
+                  <option value="BUYER">I want to buy a car</option>
+                  <option value="INDIVIDUAL_SELLER">I want to sell a car</option>
+                  <option value="IMPORT_USER">I want to import a car</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold uppercase text-gray-500 mb-1">Account Password *</label>
+                <div className="relative">
+                  <input 
+                    type="password" 
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded focus:border-masuma-orange outline-none transition text-sm" 
+                    placeholder="••••••••"
+                  />
+                  <Lock size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               <div>
@@ -230,20 +322,24 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
             className="w-full bg-masuma-dark text-white py-3 font-bold uppercase hover:bg-masuma-orange transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {isLoading ? <Loader2 className="animate-spin" size={18} /> : view === 'login' ? <Lock size={18} /> : view === 'forgot' ? <Send size={18} /> : <CheckCircle size={18} />} 
-            {isLoading ? 'Processing...' : view === 'login' ? 'Secure Login' : view === 'forgot' ? 'Send Reset Link' : 'Submit Application'}
+            {isLoading ? 'Processing...' : view === 'login' ? 'Secure Login' : view === 'forgot' ? 'Send Reset Link' : view === 'register' ? 'Submit Application' : 'Create Account'}
           </button>
         </form>
 
         <div className="mt-6 flex flex-col items-center gap-4">
-           <div className="flex gap-4">
+           <div className="flex flex-wrap justify-center gap-4">
               {view === 'login' ? (
                   <>
                     <button onClick={() => setView('forgot')} className="text-[10px] font-bold text-gray-400 hover:text-masuma-orange uppercase tracking-wider">
                         Forgot Password?
                     </button>
                     <span className="text-gray-200">|</span>
-                    <button onClick={() => setView('register')} className="text-[10px] font-bold text-masuma-orange hover:underline uppercase tracking-wider">
-                        Register Business
+                    <button onClick={() => setView('user-register')} className="text-[10px] font-bold text-masuma-orange hover:underline uppercase tracking-wider">
+                        Register as Seller
+                    </button>
+                    <span className="text-gray-200">|</span>
+                    <button onClick={() => setView('register')} className="text-[10px] font-bold text-gray-400 hover:text-masuma-orange uppercase tracking-wider">
+                        Distributor Portal
                     </button>
                   </>
               ) : (
