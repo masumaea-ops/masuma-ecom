@@ -10,6 +10,7 @@ import { formatPrice } from '../utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
 import FraudReportModal from './FraudReportModal';
 import VehicleListingForm from './VehicleListingForm';
+import ShareButtons from './ShareButtons';
 
 interface MarketplaceProps {
   user: any;
@@ -29,6 +30,23 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
 
   useEffect(() => {
     fetchListings();
+    
+    // Handle deep linking for listings
+    const params = new URLSearchParams(window.location.search);
+    const listingId = params.get('listing');
+    if (listingId) {
+      const fetchListing = async () => {
+        try {
+          const res = await apiClient.get(`/marketplace/${listingId}`);
+          if (res.data) {
+            handleListingClick(res.data);
+          }
+        } catch (e) {
+          console.error('Error fetching deep linked listing', e);
+        }
+      };
+      fetchListing();
+    }
   }, [filterType]);
 
   const fetchListings = async () => {
@@ -50,6 +68,13 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
 
   const handleListingClick = async (listing: VehicleListing) => {
     setSelectedListing(listing);
+    
+    // Update URL for deep linking
+    const params = new URLSearchParams(window.location.search);
+    params.set('listing', listing.id);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+
     // Fetch recommended parts for this vehicle
     try {
       const res = await apiClient.get(`/products?search=${listing.make} ${listing.model}`);
@@ -238,7 +263,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                       <h3 className="text-2xl font-black text-masuma-dark font-display">VEHICLE SPECS</h3>
                       <div className="w-12 h-1 bg-masuma-orange mt-1 rounded-full"></div>
                     </div>
-                    <button onClick={() => setSelectedListing(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={() => {
+                      setSelectedListing(null);
+                      const params = new URLSearchParams(window.location.search);
+                      params.delete('listing');
+                      const newSearch = params.toString();
+                      const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
+                      window.history.pushState({ path: newUrl }, '', newUrl);
+                    }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                       <XCircle className="w-6 h-6 text-gray-300" />
                     </button>
                   </div>
@@ -361,19 +393,21 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                       <MessageCircle className="w-5 h-5 mr-2" />
                       Contact Seller
                     </button>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button className="bg-gray-100 text-masuma-dark py-3 rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all flex items-center justify-center">
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share
-                      </button>
-                      <button 
-                        onClick={() => setIsReportModalOpen(true)}
-                        className="bg-red-50 text-red-600 py-3 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all flex items-center justify-center"
-                      >
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Report
-                      </button>
+                    <div className="pt-4 border-t border-gray-100">
+                      <ShareButtons 
+                        url={`${window.location.origin}/?listing=${selectedListing.id}`}
+                        title={`Check out this ${selectedListing.year} ${selectedListing.make} ${selectedListing.model} on Masuma Marketplace`}
+                        contentId={selectedListing.id}
+                        contentType="POST" 
+                      />
                     </div>
+                    <button 
+                      onClick={() => setIsReportModalOpen(true)}
+                      className="w-full bg-red-50 text-red-600 py-3 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all flex items-center justify-center"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Report Listing
+                    </button>
                   </div>
                 </motion.div>
               ) : (

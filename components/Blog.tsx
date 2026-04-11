@@ -4,6 +4,7 @@ import { BlogPost, Product } from '../types';
 import { apiClient } from '../utils/apiClient';
 import SEO from './SEO';
 import { trackEvent } from '../utils/analytics';
+import ShareButtons from './ShareButtons';
 
 interface BlogProps {
   addToCart: (product: Product) => void;
@@ -204,16 +205,12 @@ const Blog: React.FC<BlogProps> = ({ addToCart, initialPostId, onProductClick, o
              </div>
 
              <div className="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="font-bold text-masuma-dark uppercase text-sm">Share this article:</p>
-                <div className="flex items-center gap-4">
-                   <button 
-                    onClick={handleShare}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-masuma-orange hover:text-white transition font-bold text-xs uppercase tracking-wider"
-                   >
-                       {copied ? <Check size={16} /> : <Share2 size={16} />}
-                       {copied ? 'Link Copied' : 'Share Link'}
-                   </button>
-                </div>
+                <ShareButtons 
+                    url={`${window.location.origin}/?post=${selectedPost.id}`}
+                    title={selectedPost.title}
+                    contentId={selectedPost.id}
+                    contentType="POST"
+                />
              </div>
           </div>
 

@@ -5,6 +5,7 @@ import QuoteModal from './QuoteModal';
 import Price from './Price';
 import { apiClient } from '../utils/apiClient';
 import SEO from './SEO';
+import ShareButtons from './ShareButtons';
 
 interface QuickViewProps {
   product: Product | null;
@@ -247,14 +248,6 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                         </button>
                         <button 
-                            onClick={() => window.open(`https://wa.me/?text=Check this Masuma part: ${window.location.origin}/?product=${product.id}`, '_blank')}
-                            className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
-                            title="Share Part"
-                            aria-label="Share this product on WhatsApp"
-                        >
-                            <Share2 size={20} />
-                        </button>
-                        <button 
                             onClick={onClose}
                             className="h-12 px-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl flex items-center justify-center gap-2 hover:bg-masuma-orange hover:border-masuma-orange transition-all shadow-2xl focus-ring touch-target"
                             aria-label="Close quick view"
@@ -382,6 +375,15 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             <div className="space-y-6">
                                 <h4 className="text-[10px] font-medium text-masuma-dark uppercase tracking-widest opacity-60">Part Description</h4>
                                 <p className="text-sm text-gray-600 leading-relaxed font-normal">{product.description}</p>
+                            </div>
+
+                            <div className="pt-6 border-t border-gray-100">
+                                <ShareButtons 
+                                    url={`${window.location.origin}/?product=${product.id}`}
+                                    title={`Check out this ${product.name} at Masuma Autoparts EA`}
+                                    contentId={product.id}
+                                    contentType="PRODUCT"
+                                />
                             </div>
 
                             <div className="bg-masuma-dark text-white p-8 rounded-3xl shadow-2xl border-l-8 border-masuma-orange relative overflow-hidden group/fitment">

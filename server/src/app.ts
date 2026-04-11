@@ -15,6 +15,7 @@ import rateLimit from 'express-rate-limit';
 import { AppDataSource } from './config/database';
 import { BlogPost } from './entities/BlogPost';
 import { Product } from './entities/Product';
+import { VehicleListing } from './entities/VehicleListing';
 import { errorHandler } from './middleware/errorHandler'; 
 import { httpLogger } from './middleware/httpLogger'; 
 import { logger } from './utils/logger';
@@ -204,6 +205,7 @@ app.get('*', async (req: any, res: any) => {
                 
                 const postId = req.query.post;
                 const productId = req.query.product;
+                const listingId = req.query.listing;
                 
                 let metaData = null;
                 const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -226,8 +228,12 @@ app.get('*', async (req: any, res: any) => {
                 } else if (productId) {
                     try {
                         const productRepo = AppDataSource.getRepository(Product);
-                        const product = await productRepo.findOneBy({ id: productId });
+                        const product = await productRepo.findOne({ 
+                            where: { id: productId },
+                            relations: ['stock']
+                        });
                         if (product) {
+                            const totalStock = (product.stock || []).reduce((acc, s) => acc + s.quantity, 0);
                             metaData = {
                                 title: product.name,
                                 description: product.description ? product.description.substring(0, 160).replace(/<[^>]*>/g, '') + '...' : 'Premium Autoparts',
@@ -235,11 +241,29 @@ app.get('*', async (req: any, res: any) => {
                                 url: `${baseUrl}${req.originalUrl}`,
                                 sku: product.sku,
                                 price: product.price,
-                                availability: product.stock > 0 ? 'InStock' : 'OutOfStock'
+                                availability: totalStock > 0 ? 'InStock' : 'OutOfStock'
                             };
                         }
                     } catch (e) {
                         console.error('Error fetching product for meta:', e);
+                    }
+                } else if (listingId) {
+                    try {
+                        const listingRepo = AppDataSource.getRepository(VehicleListing);
+                        const listing = await listingRepo.findOne({ 
+                            where: { id: listingId },
+                            relations: ['seller']
+                        });
+                        if (listing) {
+                            metaData = {
+                                title: `${listing.year} ${listing.make} ${listing.model}`,
+                                description: listing.description ? listing.description.substring(0, 160) : `Verified ${listing.make} ${listing.model} for sale in Kenya.`,
+                                image: listing.images && listing.images.length > 0 ? (listing.images[0].startsWith('http') ? listing.images[0] : `${baseUrl}${listing.images[0]}`) : `${baseUrl}/logo.png`,
+                                url: `${baseUrl}${req.originalUrl}`
+                            };
+                        }
+                    } catch (e) {
+                        console.error('Error fetching listing for meta:', e);
                     }
                 }
 

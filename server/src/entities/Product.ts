@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, JoinTable, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, ManyToMany, JoinTable, Index, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Category } from './Category';
 import { OemNumber } from './OemNumber';
 import { Vehicle } from './Vehicle';
@@ -57,4 +57,10 @@ export class Product {
 
   @OneToMany(() => ProductStock, (stock) => stock.product)
   stock!: ProductStock[];
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

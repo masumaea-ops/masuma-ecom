@@ -99,3 +99,8 @@ export const trackSearch = (searchTerm: string) => {
   trackEvent('Search', 'Product Search', searchTerm);
   logInternalEvent('SEARCH', { term: searchTerm });
 };
+
+export const trackShare = (platform: string, contentId: string, contentType: 'PRODUCT' | 'POST') => {
+  trackEvent('Social', 'Share', `${platform} - ${contentType}: ${contentId}`);
+  logInternalEvent('SHARE', { platform, contentId, contentType });
+};
