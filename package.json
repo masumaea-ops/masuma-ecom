@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "vite",
-    "dev:backend": "PORT=3001 JWT_SECRET=masuma_secret_key_123 DB_HOST=localhost DB_USER=root DB_NAME=masuma_db tsx server/src/app.ts",
+    "dev:backend": "cross-env PORT=3001 JWT_SECRET=masuma_secret_key_123 DB_HOST=localhost DB_USER=root DB_NAME=masuma_db tsx server/src/app.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
@@ -64,6 +64,7 @@
     "@types/multer": "^2.1.0",
     "@types/nodemailer": "^7.0.11",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "tsx": "^4.21.0"
   }
 }
