@@ -22,7 +22,6 @@ const candidates = [
     path.join(currentDir, '.env'),
     path.join(__dirname, '../../.env'), // Standard dist/config/ -> server/
     path.join(__dirname, '../../../.env'), 
-    '/home/kemasuma/htdocs/masuma.africa/server/.env' // Absolute fallback
 ];
 
 let envPath = null;
@@ -64,18 +63,6 @@ if (envPath) {
     console.error(`❌ [ENV] FATAL: .env file NOT FOUND in any expected location.`);
     console.log(`   Checked:`);
     candidates.forEach(c => console.log(`   - ${c}`));
-
-    // DEBUG: List files in the server directory
-    const debugDir = '/home/kemasuma/htdocs/masuma.africa/server';
-    if (fs.existsSync(debugDir)) {
-        console.log(`\n📂 Listing files in ${debugDir}:`);
-        try {
-            const files = fs.readdirSync(debugDir);
-            console.log(files.join(', '));
-        } catch (e: any) {
-            console.error(`   Error reading directory: ${e.message}`);
-        }
-    }
 }
 
 // 2. Validation Schema

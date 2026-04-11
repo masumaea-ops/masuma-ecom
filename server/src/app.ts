@@ -174,7 +174,6 @@ app.get('/sitemap.xml', async (req, res) => {
 const possibleDistPaths = [
     path.join((process as any).cwd(), 'dist'),                         
     path.join((process as any).cwd(), '..', 'dist'),                   
-    '/home/kemasuma/htdocs/masuma.africa/dist',              
 ];
 
 let frontendPath = '';
