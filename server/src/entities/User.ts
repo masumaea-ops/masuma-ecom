@@ -46,7 +46,7 @@ export class User {
   status!: UserStatus;
 
   @Column('decimal', { precision: 5, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
-  discountPercentage!: number;
+  discountPercentage: number = 0;
 
   @Column({ nullable: true })
   businessName?: string;
@@ -64,7 +64,7 @@ export class User {
   branch?: Branch;
 
   @Column({ default: true })
-  isActive!: boolean;
+  isActive: boolean = true;
 
   @Column({ nullable: true, select: false })
   resetPasswordToken?: string;

@@ -154,7 +154,8 @@ const seed = async () => {
             fullName: 'System Admin',
             passwordHash: passwordHash, 
             role: UserRole.ADMIN,
-            branch: hq
+            branch: hq,
+            discountPercentage: 0
         });
         await userRepo.save(admin);
         console.log(`Admin user created (${adminEmail} / ${defaultPassword}).`);
@@ -177,7 +178,8 @@ const seed = async () => {
             fullName: 'Mbaru Tech',
             passwordHash: mbaruHash,
             role: UserRole.ADMIN,
-            branch: hq
+            branch: hq,
+            discountPercentage: 0
         });
         await userRepo.save(mbaruUser);
         console.log(`Second Admin user created: ${mbaruEmail}`);
