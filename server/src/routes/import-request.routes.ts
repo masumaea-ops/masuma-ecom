@@ -65,7 +65,16 @@ router.get('/', authenticate, isAdmin, async (req, res) => {
 router.patch('/:id', authenticate, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, adminResponse } = req.body;
+    const { 
+      status, 
+      adminResponse, 
+      cifAmount, 
+      balanceAmount, 
+      quoteUrl, 
+      contractUrl, 
+      vesselName, 
+      eta 
+    } = req.body;
 
     const requestObj = await importRepo.findOneBy({ id: id as any });
     if (!requestObj) {
@@ -73,11 +82,18 @@ router.patch('/:id', authenticate, isAdmin, async (req, res) => {
     }
 
     if (status) requestObj.status = status;
-    if (adminResponse) requestObj.adminResponse = adminResponse;
+    if (adminResponse !== undefined) requestObj.adminResponse = adminResponse;
+    if (cifAmount !== undefined) requestObj.cifAmount = cifAmount;
+    if (balanceAmount !== undefined) requestObj.balanceAmount = balanceAmount;
+    if (quoteUrl !== undefined) requestObj.quoteUrl = quoteUrl;
+    if (contractUrl !== undefined) requestObj.contractUrl = contractUrl;
+    if (vesselName !== undefined) requestObj.vesselName = vesselName;
+    if (eta !== undefined) requestObj.eta = eta ? new Date(eta) : null as any;
 
     await importRepo.save(requestObj);
     res.json(requestObj);
   } catch (error) {
+    console.error('Error updating import request:', error);
     res.status(500).json({ error: 'Failed to update import request' });
   }
 });

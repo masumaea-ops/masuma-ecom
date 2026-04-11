@@ -12,7 +12,16 @@ const ImportAdmin: React.FC = () => {
   const [requests, setRequests] = useState<ImportRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ status: '', adminResponse: '' });
+  const [editData, setEditData] = useState({ 
+    status: '', 
+    adminResponse: '',
+    cifAmount: 0,
+    balanceAmount: 0,
+    vesselName: '',
+    eta: '',
+    quoteUrl: '',
+    contractUrl: ''
+  });
 
   useEffect(() => {
     fetchRequests();
@@ -34,7 +43,13 @@ const ImportAdmin: React.FC = () => {
     setEditingId(req.id);
     setEditData({ 
       status: req.status, 
-      adminResponse: typeof req.adminResponse === 'string' ? req.adminResponse : JSON.stringify(req.adminResponse || '') 
+      adminResponse: typeof req.adminResponse === 'string' ? req.adminResponse : JSON.stringify(req.adminResponse || ''),
+      cifAmount: req.cifAmount || 0,
+      balanceAmount: req.balanceAmount || 0,
+      vesselName: req.vesselName || '',
+      eta: req.eta ? new Date(req.eta).toISOString().split('T')[0] : '',
+      quoteUrl: req.quoteUrl || '',
+      contractUrl: req.contractUrl || ''
     });
   };
 
@@ -53,9 +68,13 @@ const ImportAdmin: React.FC = () => {
       case 'PENDING': return 'bg-amber-100 text-amber-700';
       case 'SOURCING': return 'bg-blue-100 text-blue-700';
       case 'QUOTED': return 'bg-purple-100 text-purple-700';
-      case 'DEPOSIT_PAID': return 'bg-indigo-100 text-indigo-700';
-      case 'SHIPPED': return 'bg-orange-100 text-orange-700';
+      case 'CIF_PAID': return 'bg-indigo-100 text-indigo-700';
+      case 'SHIPPING_LOADED': return 'bg-orange-100 text-orange-700';
+      case 'IN_TRANSIT': return 'bg-blue-100 text-blue-700';
+      case 'ARRIVED': return 'bg-teal-100 text-teal-700';
       case 'CLEARING': return 'bg-cyan-100 text-cyan-700';
+      case 'BALANCE_DUE': return 'bg-pink-100 text-pink-700';
+      case 'READY_FOR_COLLECTION': return 'bg-emerald-100 text-emerald-700';
       case 'COMPLETED': return 'bg-green-100 text-green-700';
       case 'CANCELLED': return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-700';
@@ -132,49 +151,118 @@ const ImportAdmin: React.FC = () => {
                 )}
 
                 {editingId === req.id ? (
-                  <div className="space-y-4 pt-4 border-t border-gray-100">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-6 pt-6 border-t border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Update Status</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Update Status</label>
                         <select 
                           value={editData.status}
                           onChange={(e) => setEditData({ ...editData, status: e.target.value })}
-                          className="w-full rounded-lg border-gray-300 text-sm"
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
                         >
                           <option value="PENDING">Pending</option>
                           <option value="SOURCING">Sourcing</option>
-                          <option value="QUOTED">Quoted</option>
-                          <option value="DEPOSIT_PAID">Deposit Paid</option>
-                          <option value="SHIPPED">Shipped</option>
+                          <option value="QUOTED">Quoted (Official Quote Sent)</option>
+                          <option value="CIF_PAID">CIF Paid</option>
+                          <option value="SHIPPING_LOADED">Shipping Loaded</option>
+                          <option value="IN_TRANSIT">In Transit</option>
+                          <option value="ARRIVED">Arrived at Port</option>
                           <option value="CLEARING">Clearing</option>
+                          <option value="BALANCE_DUE">Balance Due (Clearance Done)</option>
+                          <option value="READY_FOR_COLLECTION">Ready for Collection</option>
                           <option value="COMPLETED">Completed</option>
                           <option value="CANCELLED">Cancelled</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Admin Response / Quote Details</label>
-                        <textarea 
-                          value={editData.adminResponse}
-                          onChange={(e) => setEditData({ ...editData, adminResponse: e.target.value })}
-                          className="w-full rounded-lg border-gray-300 text-sm"
-                          rows={3}
-                          placeholder="Enter quote details, ship name, or updates..."
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">CIF Amount (KES)</label>
+                        <input 
+                          type="number"
+                          value={editData.cifAmount}
+                          onChange={(e) => setEditData({ ...editData, cifAmount: Number(e.target.value) })}
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Balance Amount (KES)</label>
+                        <input 
+                          type="number"
+                          value={editData.balanceAmount}
+                          onChange={(e) => setEditData({ ...editData, balanceAmount: Number(e.target.value) })}
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
                         />
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Vessel Name</label>
+                        <input 
+                          type="text"
+                          value={editData.vesselName}
+                          onChange={(e) => setEditData({ ...editData, vesselName: e.target.value })}
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
+                          placeholder="e.g. MV Grand Orion"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">ETA Date</label>
+                        <input 
+                          type="date"
+                          value={editData.eta}
+                          onChange={(e) => setEditData({ ...editData, eta: e.target.value })}
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Quote Document URL</label>
+                        <input 
+                          type="text"
+                          value={editData.quoteUrl}
+                          onChange={(e) => setEditData({ ...editData, quoteUrl: e.target.value })}
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
+                          placeholder="Link to PDF Quote"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sales Contract URL</label>
+                        <input 
+                          type="text"
+                          value={editData.contractUrl}
+                          onChange={(e) => setEditData({ ...editData, contractUrl: e.target.value })}
+                          className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
+                          placeholder="Link to Signed Contract"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Admin Response / Internal Notes</label>
+                      <textarea 
+                        value={editData.adminResponse}
+                        onChange={(e) => setEditData({ ...editData, adminResponse: e.target.value })}
+                        className="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-masuma-orange focus:border-masuma-orange"
+                        rows={3}
+                        placeholder="Enter updates for the customer..."
+                      />
+                    </div>
+
                     <div className="flex justify-end gap-3">
                       <button 
                         onClick={() => setEditingId(null)}
-                        className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700"
+                        className="px-6 py-2.5 text-sm font-black text-gray-400 hover:text-gray-600 uppercase tracking-widest"
                       >
                         Cancel
                       </button>
                       <button 
                         onClick={() => handleSave(req.id)}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 flex items-center"
+                        className="px-8 py-2.5 bg-masuma-orange text-white rounded-xl text-sm font-black uppercase tracking-widest hover:bg-masuma-orange-dark flex items-center shadow-lg shadow-masuma-orange/20"
                       >
                         <Save className="w-4 h-4 mr-2" />
-                        Save Changes
+                        Update Pipeline
                       </button>
                     </div>
                   </div>

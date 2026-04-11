@@ -5,9 +5,13 @@ export enum ImportRequestStatus {
   PENDING = 'PENDING',
   SOURCING = 'SOURCING',
   QUOTED = 'QUOTED',
-  DEPOSIT_PAID = 'DEPOSIT_PAID',
-  SHIPPED = 'SHIPPED',
+  CIF_PAID = 'CIF_PAID',
+  SHIPPING_LOADED = 'SHIPPING_LOADED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  ARRIVED = 'ARRIVED',
   CLEARING = 'CLEARING',
+  BALANCE_DUE = 'BALANCE_DUE',
+  READY_FOR_COLLECTION = 'READY_FOR_COLLECTION',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
 }
@@ -55,8 +59,26 @@ export class ImportRequest {
   })
   status!: ImportRequestStatus;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  cifAmount!: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  balanceAmount!: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  quoteUrl!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  contractUrl!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  vesselName!: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  eta!: Date;
+
   @Column({ type: 'json', nullable: true })
-  adminResponse!: any; // For storing quotes, ship details, etc.
+  adminResponse!: any; 
 
   @CreateDateColumn()
   createdAt!: Date;

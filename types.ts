@@ -323,7 +323,13 @@ export interface ImportRequest {
   budgetKes: number;
   sourceCountry: string;
   additionalNotes?: string;
-  status: 'PENDING' | 'SOURCING' | 'QUOTED' | 'DEPOSIT_PAID' | 'SHIPPED' | 'CLEARING' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'SOURCING' | 'QUOTED' | 'CIF_PAID' | 'SHIPPING_LOADED' | 'IN_TRANSIT' | 'ARRIVED' | 'CLEARING' | 'BALANCE_DUE' | 'READY_FOR_COLLECTION' | 'COMPLETED' | 'CANCELLED';
+  cifAmount?: number;
+  balanceAmount?: number;
+  quoteUrl?: string;
+  contractUrl?: string;
+  vesselName?: string;
+  eta?: string;
   adminResponse?: any;
   createdAt: string;
   updatedAt: string;
