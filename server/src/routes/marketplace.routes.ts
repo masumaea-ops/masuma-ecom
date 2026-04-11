@@ -31,7 +31,7 @@ const createListingSchema = z.object({
 // Get all active listings with filters
 router.get('/', async (req, res) => {
   try {
-    const { make, model, year, minPrice, maxPrice, vehicleType, location } = req.query;
+    const { make, model, year, minPrice, maxPrice, vehicleType, location, search } = req.query;
     const listingRepo = AppDataSource.getRepository(VehicleListing);
     
     const query = listingRepo.createQueryBuilder('listing')
@@ -45,6 +45,10 @@ router.get('/', async (req, res) => {
     if (maxPrice) query.andWhere('listing.price <= :maxPrice', { maxPrice: Number(maxPrice) });
     if (vehicleType) query.andWhere('listing.vehicleType = :vehicleType', { vehicleType });
     if (location) query.andWhere('listing.location LIKE :location', { location: `%${location}%` });
+    
+    if (search) {
+      query.andWhere('(listing.title LIKE :search OR listing.make LIKE :search OR listing.model LIKE :search)', { search: `%${search}%` });
+    }
 
     query.orderBy('listing.createdAt', 'DESC');
 
@@ -148,6 +152,20 @@ router.get('/my/all', authenticate, async (req: any, res) => {
     const listingRepo = AppDataSource.getRepository(VehicleListing);
     const listings = await listingRepo.find({
       where: { seller: { id: req.user.id } },
+      order: { createdAt: 'DESC' }
+    });
+    res.json(listings);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Get all listings across the platform
+router.get('/admin/all', authenticate, authorize(['ADMIN']), async (req: any, res) => {
+  try {
+    const listingRepo = AppDataSource.getRepository(VehicleListing);
+    const listings = await listingRepo.find({
+      relations: ['seller'],
       order: { createdAt: 'DESC' }
     });
     res.json(listings);

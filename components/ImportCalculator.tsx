@@ -47,8 +47,9 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
 
   const fetchCrspData = async () => {
     try {
-      const res = await apiClient.get('/import-calculator/crsp');
-      const data: CrspData[] = res.data;
+      // Fetch a large enough batch for the dropdowns, or ideally we'd have a specific endpoint for unique makes/models
+      const res = await apiClient.get('/import-calculator/crsp?limit=1000');
+      const data: CrspData[] = res.data.results || [];
       setCrspList(data);
       
       const uniqueMakes = Array.from(new Set(data.map(d => d.make))).sort();

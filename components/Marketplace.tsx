@@ -55,6 +55,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
       let url = '/marketplace';
       const params = new URLSearchParams();
       if (filterType !== 'ALL') params.append('vehicleType', filterType);
+      if (searchQuery) params.append('search', searchQuery);
       if (params.toString()) url += `?${params.toString()}`;
       
       const res = await apiClient.get(url);
@@ -65,6 +66,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
       setLoading(false);
     }
   };
+
+  // Add useEffect to refetch when search query changes (debounced would be better but let's start with this)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchListings();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery, filterType]);
 
   const handleListingClick = async (listing: VehicleListing) => {
     setSelectedListing(listing);

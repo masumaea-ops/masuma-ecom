@@ -21,8 +21,7 @@ const MarketplaceManager: React.FC = () => {
     setLoading(true);
     try {
       // Fetch all listings for admin (including pending ones)
-      const res = await apiClient.get('/marketplace/my/all'); // Reusing this or creating a new admin route
-      // Actually, let's assume there's an admin route or we use the 'my/all' if the user is admin
+      const res = await apiClient.get('/marketplace/admin/all');
       setListings(res.data);
     } catch (e) {
       console.error('Error fetching listings', e);
