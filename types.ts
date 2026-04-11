@@ -70,6 +70,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  phone?: string;
   role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'B2B_USER' | 'DEALER' | 'INDIVIDUAL_SELLER';
   branchId?: string;
 }

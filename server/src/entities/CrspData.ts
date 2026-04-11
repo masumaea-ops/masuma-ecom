@@ -29,6 +29,18 @@ export class CrspData {
   @Column({ nullable: true })
   transmission!: string;
 
+  @Column({ nullable: true })
+  modelNumber!: string;
+
+  @Column({ nullable: true })
+  driveConfiguration!: string;
+
+  @Column({ nullable: true })
+  gvw!: string;
+
+  @Column({ nullable: true })
+  seating!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

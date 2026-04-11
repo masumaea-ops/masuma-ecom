@@ -41,8 +41,93 @@ const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ initialData, on
   });
 
   const [imageUrl, setImageUrl] = useState('');
+  const [isResizing, setIsResizing] = useState(false);
   const [uploadingReport, setUploadingReport] = useState(false);
   const [uploadingAuctionSheet, setUploadingAuctionSheet] = useState(false);
+
+  const resizeImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Canvas to Blob failed'));
+          }, 'image/jpeg', 0.8);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const remainingSlots = 10 - formData.images.length;
+    if (remainingSlots <= 0) {
+      setError('Maximum 10 images allowed.');
+      return;
+    }
+
+    const filesToProcess = files.slice(0, remainingSlots);
+    setIsResizing(true);
+    setError(null);
+
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of filesToProcess) {
+        const resizedBlob = await resizeImage(file);
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', resizedBlob, 'vehicle_image.jpg');
+
+        const res = await apiClient.post('/upload', uploadFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        uploadedUrls.push(res.data.url);
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls]
+      }));
+      
+      if (files.length > remainingSlots) {
+        setError(`Only ${remainingSlots} images were added. Maximum 10 images allowed.`);
+      }
+    } catch (err: any) {
+      setError('Failed to upload images. Please try again.');
+      console.error(err);
+    } finally {
+      setIsResizing(false);
+    }
+  };
 
   const handleAddImage = () => {
     if (imageUrl && !formData.images.includes(imageUrl)) {
@@ -415,34 +500,84 @@ const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ initialData, on
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Images (URLs)</label>
-                <div className="flex gap-3 mb-4">
-                  <input 
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="Paste image URL"
-                    className="flex-grow rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
-                  />
-                  <button 
-                    type="button"
-                    onClick={handleAddImage}
-                    className="bg-masuma-dark text-white p-4 rounded-2xl hover:bg-black transition-all shadow-lg"
-                  >
-                    <Plus className="w-6 h-6" />
-                  </button>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                  Vehicle Images (Max 10)
+                </label>
+                <div className="grid grid-cols-1 gap-4 mb-6">
+                  <div className="relative">
+                    <input 
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={isResizing || formData.images.length >= 10}
+                    />
+                    <label 
+                      htmlFor="image-upload"
+                      className={`w-full flex flex-col items-center justify-center py-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${formData.images.length >= 10 ? 'bg-gray-50 border-gray-200 cursor-not-allowed' : 'border-gray-100 hover:border-masuma-orange/30 bg-gray-50/50'}`}
+                    >
+                      {isResizing ? (
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 border-4 border-masuma-orange border-t-transparent rounded-full animate-spin mb-2" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-masuma-orange">Processing & Resizing...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <ImageIcon className={`w-10 h-10 mb-2 ${formData.images.length >= 10 ? 'text-gray-300' : 'text-masuma-orange'}`} />
+                          <span className="text-xs font-black uppercase tracking-widest text-gray-900">
+                            {formData.images.length >= 10 ? 'Limit Reached' : 'Click to Upload Images'}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-bold mt-1">
+                            {formData.images.length}/10 Images • Auto-resized for speed
+                          </span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="relative flex items-center gap-2">
+                    <div className="flex-grow h-px bg-gray-100"></div>
+                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-[0.3em]">OR PASTE URL</span>
+                    <div className="flex-grow h-px bg-gray-100"></div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <input 
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="Paste image URL"
+                      className="flex-grow rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleAddImage}
+                      disabled={formData.images.length >= 10}
+                      className="bg-masuma-dark text-white p-4 rounded-2xl hover:bg-black transition-all shadow-lg disabled:bg-gray-300"
+                    >
+                      <Plus className="w-6 h-6" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {formData.images.map(img => (
-                    <div key={img} className="relative w-20 h-20 rounded-2xl overflow-hidden border border-gray-100 group">
-                      <img src={img} alt="Vehicle" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                      <button 
-                        type="button"
-                        onClick={() => removeImage(img)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+
+                <div className="grid grid-cols-5 gap-3">
+                  {formData.images.map((img, index) => (
+                    <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border border-gray-100 group shadow-sm">
+                      <img src={img} alt={`Vehicle ${index + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button 
+                          type="button"
+                          onClick={() => removeImage(img)}
+                          className="bg-red-500 text-white rounded-full p-2 shadow-xl transform scale-75 group-hover:scale-100 transition-transform"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">
+                        {index === 0 ? 'Main' : `#${index + 1}`}
+                      </div>
                     </div>
                   ))}
                 </div>

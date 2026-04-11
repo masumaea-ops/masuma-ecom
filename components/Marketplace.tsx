@@ -381,7 +381,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                           </div>
                         ))}
                       </div>
-                      <button className="w-full mt-4 text-[10px] font-black text-white/50 hover:text-masuma-orange transition-colors uppercase tracking-widest">
+                      <button 
+                        onClick={() => setView('CATALOG')}
+                        className="w-full mt-4 text-[10px] font-black text-white/50 hover:text-masuma-orange transition-colors uppercase tracking-widest"
+                      >
                         Browse all compatible parts
                       </button>
                     </div>
@@ -389,7 +392,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                   </div>
 
                   <div className="space-y-3">
-                    <button className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-masuma-orange-dark transition-all flex items-center justify-center shadow-xl shadow-masuma-orange/20">
+                    <button 
+                      onClick={() => {
+                        const phone = selectedListing.seller.phone || '254792506590';
+                        const text = encodeURIComponent(`Hi, I'm interested in your ${selectedListing.year} ${selectedListing.make} ${selectedListing.model} listed on Masuma Marketplace for ${formatPrice(selectedListing.price)}. Is it still available?`);
+                        window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+                      }}
+                      className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-masuma-orange-dark transition-all flex items-center justify-center shadow-xl shadow-masuma-orange/20"
+                    >
                       <MessageCircle className="w-5 h-5 mr-2" />
                       Contact Seller
                     </button>
@@ -451,7 +461,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                 <div className="relative z-10">
                   <h3 className="text-xl font-bold mb-2">Importing a car?</h3>
                   <p className="text-gray-300 text-sm mb-4">Use our intelligent calculator to see exact KRA duties and taxes.</p>
-                  <button className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition-colors flex items-center">
+                  <button 
+                    onClick={() => setView('IMPORT_CALCULATOR')}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition-colors flex items-center"
+                  >
                     Try Calculator
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </button>

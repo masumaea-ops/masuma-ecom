@@ -73,24 +73,42 @@ const CrspManager: React.FC = () => {
         if (jsonData.length > 0) {
           // Map headers and clean data
           const mappedData = jsonData.map((row: any) => {
+            // Helper to find key regardless of newlines or spaces
+            const getValue = (possibleKeys: string[]) => {
+              const rowKeys = Object.keys(row);
+              for (const pk of possibleKeys) {
+                // Exact match
+                if (row[pk] !== undefined) return row[pk];
+                // Match ignoring newlines and extra spaces
+                const normalizedPk = pk.replace(/\s+/g, ' ').trim().toLowerCase();
+                const foundKey = rowKeys.find(rk => rk.replace(/\s+/g, ' ').trim().toLowerCase() === normalizedPk);
+                if (foundKey) return row[foundKey];
+              }
+              return undefined;
+            };
+
             const cleanRow: any = {
-              make: row.Make || row.make,
-              model: row.Model || row.model,
-              year: row.Year || row.year || defaultYear,
-              transmission: row.Transmission || row.transmission,
-              fuelType: row.Fuel || row.fuel || row.fuelType,
-              category: row['Body Type'] || row.category,
+              make: getValue(['Make', 'make']),
+              model: getValue(['Model', 'model']),
+              modelNumber: getValue(['Model number', 'Model \n number', 'Model\nnumber']),
+              year: getValue(['Year', 'year']) || defaultYear,
+              transmission: getValue(['Transmission', 'transmission']),
+              driveConfiguration: getValue(['Drive Configuration', 'Drive\n Configuration', 'Drive\nConfiguration']),
+              fuelType: getValue(['Fuel', 'fuel', 'fuelType']),
+              category: getValue(['Body Type', 'Body \n Type', 'Body\nType', 'category']),
+              gvw: getValue(['GVW', 'gvw']),
+              seating: getValue(['Seating', 'seating']),
             };
 
             // Parse CRSP Value (remove commas, currency symbols)
-            let rawCrsp = row['CRSP (KES.)'] || row.crspValue || row.crsp;
+            let rawCrsp = getValue(['CRSP (KES.)', 'CRSP', 'crspValue', 'crsp']);
             if (typeof rawCrsp === 'string') {
               rawCrsp = parseFloat(rawCrsp.replace(/[^0-9.]/g, ''));
             }
             cleanRow.crspValue = rawCrsp;
 
             // Parse Engine Size (handle "63 kWh", "3000", etc.)
-            let rawEngine = row['Engine Capacity'] || row.engineSize;
+            let rawEngine = getValue(['Engine Capacity', 'Engine \n Capacity', 'Engine\nCapacity', 'engineSize']);
             if (typeof rawEngine === 'string') {
               // Extract first numeric part
               const match = rawEngine.match(/[0-9.]+/);
@@ -245,9 +263,14 @@ const CrspManager: React.FC = () => {
                       <tr>
                         <th className="px-6 py-3">Make</th>
                         <th className="px-6 py-3">Model</th>
+                        <th className="px-6 py-3">Model #</th>
                         <th className="px-6 py-3">Year</th>
                         <th className="px-6 py-3">Engine</th>
+                        <th className="px-6 py-3">Drive</th>
                         <th className="px-6 py-3">Fuel</th>
+                        <th className="px-6 py-3">Body</th>
+                        <th className="px-6 py-3">GVW</th>
+                        <th className="px-6 py-3">Seats</th>
                         <th className="px-6 py-3 text-right">CRSP (KES)</th>
                       </tr>
                     </thead>
@@ -256,9 +279,14 @@ const CrspManager: React.FC = () => {
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-6 py-3 font-bold text-gray-900">{row.make}</td>
                           <td className="px-6 py-3 text-gray-600">{row.model}</td>
+                          <td className="px-6 py-3 text-gray-500 text-[10px]">{row.modelNumber || '-'}</td>
                           <td className="px-6 py-3 text-gray-600">{row.year}</td>
                           <td className="px-6 py-3 text-gray-500">{row.engineSize || '-'}</td>
+                          <td className="px-6 py-3 text-gray-500">{row.driveConfiguration || '-'}</td>
                           <td className="px-6 py-3 text-gray-500">{row.fuelType || '-'}</td>
+                          <td className="px-6 py-3 text-gray-500">{row.category || '-'}</td>
+                          <td className="px-6 py-3 text-gray-500">{row.gvw || '-'}</td>
+                          <td className="px-6 py-3 text-gray-500">{row.seating || '-'}</td>
                           <td className="px-6 py-3 text-right font-bold text-masuma-orange">{row.crspValue?.toLocaleString()}</td>
                         </tr>
                       ))}
@@ -303,21 +331,27 @@ const CrspManager: React.FC = () => {
                 <tr>
                   <th className="px-6 py-3">Make</th>
                   <th className="px-6 py-3">Model</th>
+                  <th className="px-6 py-3">Model #</th>
                   <th className="px-6 py-3">Year</th>
+                  <th className="px-6 py-3">Engine</th>
+                  <th className="px-6 py-3">Drive</th>
                   <th className="px-6 py-3 text-right">CRSP (KES)</th>
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-sm">
                 {fetching ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400"><Loader2 className="animate-spin mx-auto mb-2" />Loading records...</td></tr>
+                  <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-400"><Loader2 className="animate-spin mx-auto mb-2" />Loading records...</td></tr>
                 ) : existingData.map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50">
                     {editingId === record.id ? (
                       <>
                         <td className="px-6 py-2"><input type="text" value={editForm.make} onChange={e => setEditForm({...editForm, make: e.target.value})} className="w-full p-1 border rounded" /></td>
                         <td className="px-6 py-2"><input type="text" value={editForm.model} onChange={e => setEditForm({...editForm, model: e.target.value})} className="w-full p-1 border rounded" /></td>
+                        <td className="px-6 py-2"><input type="text" value={editForm.modelNumber} onChange={e => setEditForm({...editForm, modelNumber: e.target.value})} className="w-full p-1 border rounded" /></td>
                         <td className="px-6 py-2"><input type="number" value={editForm.year} onChange={e => setEditForm({...editForm, year: parseInt(e.target.value)})} className="w-full p-1 border rounded" /></td>
+                        <td className="px-6 py-2"><input type="number" value={editForm.engineSize} onChange={e => setEditForm({...editForm, engineSize: parseFloat(e.target.value)})} className="w-full p-1 border rounded" /></td>
+                        <td className="px-6 py-2"><input type="text" value={editForm.driveConfiguration} onChange={e => setEditForm({...editForm, driveConfiguration: e.target.value})} className="w-full p-1 border rounded" /></td>
                         <td className="px-6 py-2"><input type="number" value={editForm.crspValue} onChange={e => setEditForm({...editForm, crspValue: parseFloat(e.target.value)})} className="w-full p-1 border rounded text-right" /></td>
                         <td className="px-6 py-2 text-right flex justify-end gap-2">
                           <button onClick={saveEdit} className="p-2 text-green-600 hover:bg-green-50 rounded-lg"><Save size={18} /></button>
@@ -328,7 +362,10 @@ const CrspManager: React.FC = () => {
                       <>
                         <td className="px-6 py-4 font-bold text-gray-900">{record.make}</td>
                         <td className="px-6 py-4 text-gray-600">{record.model}</td>
+                        <td className="px-6 py-4 text-gray-500 text-xs">{record.modelNumber || '-'}</td>
                         <td className="px-6 py-4 text-gray-600">{record.year}</td>
+                        <td className="px-6 py-4 text-gray-500">{record.engineSize || '-'}</td>
+                        <td className="px-6 py-4 text-gray-500">{record.driveConfiguration || '-'}</td>
                         <td className="px-6 py-4 text-right font-bold text-masuma-orange">{record.crspValue?.toLocaleString()}</td>
                         <td className="px-6 py-4 text-right flex justify-end gap-2">
                           <button onClick={() => startEdit(record)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={16} /></button>
