@@ -31,7 +31,7 @@ const createListingSchema = z.object({
 // Get all active listings with filters
 router.get('/', async (req, res) => {
   try {
-    const { make, model, year, minPrice, maxPrice, vehicleType, location, search } = req.query;
+    const { make, model, year, minPrice, maxPrice, vehicleType, location, search, page = 1, limit = 20 } = req.query;
     const listingRepo = AppDataSource.getRepository(VehicleListing);
     
     const query = listingRepo.createQueryBuilder('listing')
@@ -52,8 +52,12 @@ router.get('/', async (req, res) => {
 
     query.orderBy('listing.createdAt', 'DESC');
 
-    const listings = await query.getMany();
-    res.json(listings);
+    const [results, total] = await query
+      .skip((Number(page) - 1) * Number(limit))
+      .take(Number(limit))
+      .getManyAndCount();
+
+    res.json({ results, total, page: Number(page), limit: Number(limit) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

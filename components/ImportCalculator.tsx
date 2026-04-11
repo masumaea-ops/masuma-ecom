@@ -47,44 +47,61 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
 
   const fetchCrspData = async () => {
     try {
-      // Fetch a large enough batch for the dropdowns, or ideally we'd have a specific endpoint for unique makes/models
-      const res = await apiClient.get('/import-calculator/crsp?limit=1000');
-      const data: CrspData[] = res.data.results || [];
-      setCrspList(data);
-      
-      const uniqueMakes = Array.from(new Set(data.map(d => d.make))).sort();
-      setMakes(uniqueMakes);
+      const res = await apiClient.get('/import-calculator/crsp/makes');
+      setMakes(res.data);
     } catch (e) {
-      console.error('Error fetching CRSP data', e);
+      console.error('Error fetching CRSP makes', e);
     }
   };
 
   useEffect(() => {
     if (selectedMake) {
-      const filteredModels = Array.from(new Set(crspList.filter(d => d.make === selectedMake).map(d => d.model))).sort();
-      setModels(filteredModels);
-      setSelectedModel('');
+      const fetchModels = async () => {
+        try {
+          const res = await apiClient.get(`/import-calculator/crsp/models?make=${selectedMake}`);
+          setModels(res.data);
+          setSelectedModel('');
+        } catch (e) {
+          console.error('Error fetching CRSP models', e);
+        }
+      };
+      fetchModels();
     }
-  }, [selectedMake, crspList]);
+  }, [selectedMake]);
 
   useEffect(() => {
     if (selectedMake && selectedModel) {
-      const filteredYears = Array.from(new Set(crspList.filter(d => d.make === selectedMake && d.model === selectedModel).map(d => d.year))).sort((a, b) => b - a);
-      setYears(filteredYears);
-      if (filteredYears.length > 0) setSelectedYear(filteredYears[0]);
+      const fetchYears = async () => {
+        try {
+          const res = await apiClient.get(`/import-calculator/crsp/years?make=${selectedMake}&model=${selectedModel}`);
+          setYears(res.data);
+          if (res.data.length > 0) setSelectedYear(res.data[0]);
+        } catch (e) {
+          console.error('Error fetching CRSP years', e);
+        }
+      };
+      fetchYears();
     }
-  }, [selectedMake, selectedModel, crspList]);
+  }, [selectedMake, selectedModel]);
 
   useEffect(() => {
     if (selectedMake && selectedModel && selectedYear) {
-      const crsp = crspList.find(d => d.make === selectedMake && d.model === selectedModel && d.year === selectedYear);
-      if (crsp) {
-        setSelectedCrsp(crsp);
-        if (crsp.engineSize) setEngineSize(Number(crsp.engineSize));
-        if (crsp.fuelType) setFuelType(crsp.fuelType);
-      }
+      const fetchSelectedCrsp = async () => {
+        try {
+          const res = await apiClient.get(`/import-calculator/crsp?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&limit=1`);
+          const crsp = res.data.results?.[0];
+          if (crsp) {
+            setSelectedCrsp(crsp);
+            if (crsp.engineSize) setEngineSize(Number(crsp.engineSize));
+            if (crsp.fuelType) setFuelType(crsp.fuelType);
+          }
+        } catch (e) {
+          console.error('Error fetching selected CRSP record', e);
+        }
+      };
+      fetchSelectedCrsp();
     }
-  }, [selectedMake, selectedModel, selectedYear, crspList]);
+  }, [selectedMake, selectedModel, selectedYear]);
 
   const handleCalculate = async () => {
     setLoading(true);

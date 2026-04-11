@@ -45,6 +45,50 @@ const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ initialData, on
   const [uploadingReport, setUploadingReport] = useState(false);
   const [uploadingAuctionSheet, setUploadingAuctionSheet] = useState(false);
 
+  const [makes, setMakes] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
+  const [years, setYears] = useState<number[]>([]);
+
+  React.useEffect(() => {
+    const fetchMakes = async () => {
+      try {
+        const res = await apiClient.get('/import-calculator/crsp/makes');
+        setMakes(res.data);
+      } catch (e) {
+        console.error('Error fetching makes', e);
+      }
+    };
+    fetchMakes();
+  }, []);
+
+  React.useEffect(() => {
+    if (formData.make) {
+      const fetchModels = async () => {
+        try {
+          const res = await apiClient.get(`/import-calculator/crsp/models?make=${formData.make}`);
+          setModels(res.data);
+        } catch (e) {
+          console.error('Error fetching models', e);
+        }
+      };
+      fetchModels();
+    }
+  }, [formData.make]);
+
+  React.useEffect(() => {
+    if (formData.make && formData.model) {
+      const fetchYears = async () => {
+        try {
+          const res = await apiClient.get(`/import-calculator/crsp/years?make=${formData.make}&model=${formData.model}`);
+          setYears(res.data);
+        } catch (e) {
+          console.error('Error fetching years', e);
+        }
+      };
+      fetchYears();
+    }
+  }, [formData.make, formData.model]);
+
   const resizeImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -295,22 +339,31 @@ const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ initialData, on
                   <input 
                     type="text"
                     required
+                    list="makes-list"
                     value={formData.make}
-                    onChange={(e) => setFormData({ ...formData, make: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, make: e.target.value, model: '' })}
                     placeholder="Toyota"
                     className="w-full rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
                   />
+                  <datalist id="makes-list">
+                    {makes.map(m => <option key={m} value={m} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Model</label>
                   <input 
                     type="text"
                     required
+                    list="models-list"
                     value={formData.model}
                     onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                     placeholder="Prado"
-                    className="w-full rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
+                    disabled={!formData.make}
+                    className="w-full rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all disabled:opacity-50"
                   />
+                  <datalist id="models-list">
+                    {models.map(m => <option key={m} value={m} />)}
+                  </datalist>
                 </div>
               </div>
 
@@ -320,10 +373,15 @@ const VehicleListingForm: React.FC<VehicleListingFormProps> = ({ initialData, on
                   <input 
                     type="number"
                     required
+                    list="years-list"
                     value={formData.year}
                     onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
-                    className="w-full rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
+                    disabled={!formData.model}
+                    className="w-full rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all disabled:opacity-50"
                   />
+                  <datalist id="years-list">
+                    {years.map(y => <option key={y} value={y} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Price (KES)</label>

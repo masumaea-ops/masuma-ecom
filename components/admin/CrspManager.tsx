@@ -13,6 +13,8 @@ const CrspManager: React.FC = () => {
   // Upload State
   const [file, setFile] = useState<File | null>(null);
   const [uploadData, setUploadData] = useState<any[]>([]);
+  const [uploadPage, setUploadPage] = useState(1);
+  const uploadLimit = 50;
   const [defaultYear, setDefaultYear] = useState<number>(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -254,7 +256,28 @@ const CrspManager: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col">
               <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-900">Data Preview</h2>
-                <span className="text-xs font-bold text-gray-400 uppercase">{uploadData.length} Records</span>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-bold text-gray-400 uppercase">{uploadData.length} Records</span>
+                  {uploadData.length > uploadLimit && (
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setUploadPage(p => Math.max(1, p - 1))} 
+                        disabled={uploadPage === 1}
+                        className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="text-xs font-bold">Page {uploadPage} of {Math.ceil(uploadData.length / uploadLimit)}</span>
+                      <button 
+                        onClick={() => setUploadPage(p => Math.min(Math.ceil(uploadData.length / uploadLimit), p + 1))} 
+                        disabled={uploadPage * uploadLimit >= uploadData.length}
+                        className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex-grow overflow-auto">
                 {uploadData.length > 0 ? (
@@ -275,7 +298,7 @@ const CrspManager: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-sm">
-                      {uploadData.slice(0, 50).map((row, i) => (
+                      {uploadData.slice((uploadPage - 1) * uploadLimit, uploadPage * uploadLimit).map((row, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-6 py-3 font-bold text-gray-900">{row.make}</td>
                           <td className="px-6 py-3 text-gray-600">{row.model}</td>

@@ -171,6 +171,57 @@ router.get('/crsp', async (req, res) => {
   }
 });
 
+// Get unique makes
+router.get('/crsp/makes', async (req, res) => {
+  try {
+    const crspRepo = AppDataSource.getRepository(CrspData);
+    const makes = await crspRepo.createQueryBuilder('crsp')
+      .select('DISTINCT crsp.make', 'make')
+      .orderBy('make', 'ASC')
+      .getRawMany();
+    res.json(makes.map(m => m.make));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get unique models for a make
+router.get('/crsp/models', async (req, res) => {
+  try {
+    const { make } = req.query;
+    if (!make) return res.status(400).json({ error: 'Make is required' });
+    
+    const crspRepo = AppDataSource.getRepository(CrspData);
+    const models = await crspRepo.createQueryBuilder('crsp')
+      .select('DISTINCT crsp.model', 'model')
+      .where('crsp.make = :make', { make })
+      .orderBy('model', 'ASC')
+      .getRawMany();
+    res.json(models.map(m => m.model));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get unique years for a make and model
+router.get('/crsp/years', async (req, res) => {
+  try {
+    const { make, model } = req.query;
+    if (!make || !model) return res.status(400).json({ error: 'Make and model are required' });
+    
+    const crspRepo = AppDataSource.getRepository(CrspData);
+    const years = await crspRepo.createQueryBuilder('crsp')
+      .select('DISTINCT crsp.year', 'year')
+      .where('crsp.make = :make', { make })
+      .andWhere('crsp.model = :model', { model })
+      .orderBy('year', 'DESC')
+      .getRawMany();
+    res.json(years.map(y => y.year));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Update single CRSP record (Admin only)
 router.put('/crsp/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
   try {

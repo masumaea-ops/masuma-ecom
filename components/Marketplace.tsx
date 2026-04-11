@@ -24,9 +24,13 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'CAR' | 'MOTORCYCLE'>('ALL');
   
   const [selectedListing, setSelectedListing] = useState<VehicleListing | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [recommendedParts, setRecommendedParts] = useState<Product[]>([]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isListingFormOpen, setIsListingFormOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     fetchListings();
@@ -49,17 +53,29 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
     }
   }, [filterType]);
 
-  const fetchListings = async () => {
+  const fetchListings = async (isLoadMore = false) => {
     setLoading(true);
     try {
-      let url = '/marketplace';
+      const currentPage = isLoadMore ? page + 1 : 1;
+      let url = `/marketplace?page=${currentPage}&limit=12`;
       const params = new URLSearchParams();
       if (filterType !== 'ALL') params.append('vehicleType', filterType);
       if (searchQuery) params.append('search', searchQuery);
-      if (params.toString()) url += `?${params.toString()}`;
+      if (params.toString()) url += `&${params.toString()}`;
       
       const res = await apiClient.get(url);
-      setListings(res.data);
+      const newResults = res.data.results || [];
+      
+      if (isLoadMore) {
+        setListings(prev => [...prev, ...newResults]);
+        setPage(currentPage);
+      } else {
+        setListings(newResults);
+        setPage(1);
+      }
+      
+      setTotal(res.data.total || 0);
+      setHasMore(newResults.length === 12);
     } catch (e) {
       console.error('Error fetching listings', e);
     } finally {
@@ -67,7 +83,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
     }
   };
 
-  // Add useEffect to refetch when search query changes (debounced would be better but let's start with this)
+  // Add useEffect to refetch when search query changes
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchListings();
@@ -77,6 +93,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
 
   const handleListingClick = async (listing: VehicleListing) => {
     setSelectedListing(listing);
+    setCurrentImageIndex(0);
     
     // Update URL for deep linking
     const params = new URLSearchParams(window.location.search);
@@ -163,7 +180,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                 ))}
               </div>
             ) : listings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {listings.map(listing => (
                   <motion.div 
                     key={listing.id}
@@ -249,6 +267,19 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                   </motion.div>
                 ))}
               </div>
+
+              {hasMore && (
+                <div className="mt-12 flex justify-center">
+                  <button 
+                    onClick={() => fetchListings(true)}
+                    disabled={loading}
+                    className="px-8 py-4 bg-white border border-gray-200 rounded-2xl text-sm font-black text-masuma-dark uppercase tracking-widest hover:border-masuma-orange hover:text-masuma-orange transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {loading ? 'Loading...' : 'Load More Vehicles'}
+                  </button>
+                </div>
+              )}
+              </>
             ) : (
               <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
                 <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -267,6 +298,47 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                   animate={{ opacity: 1, x: 0 }}
                   className="bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-8"
                 >
+                  {/* Image Gallery */}
+                  <div className="relative aspect-video rounded-2xl overflow-hidden mb-8 group/gallery bg-gray-100">
+                    <img 
+                      src={selectedListing.images?.[currentImageIndex] || 'https://picsum.photos/seed/car/800/600'} 
+                      alt="Vehicle"
+                      className="w-full h-full object-cover"
+                    />
+                    
+                    {selectedListing.images && selectedListing.images.length > 1 && (
+                      <>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(prev => (prev - 1 + selectedListing.images!.length) % selectedListing.images!.length);
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40"
+                        >
+                          <ChevronRight className="w-5 h-5 rotate-180" />
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(prev => (prev + 1) % selectedListing.images!.length);
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {selectedListing.images.map((_, idx) => (
+                            <div 
+                              key={idx}
+                              className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-masuma-orange w-4' : 'bg-white/50'}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   <div className="flex justify-between items-start mb-8">
                     <div>
                       <h3 className="text-2xl font-black text-masuma-dark font-display">VEHICLE SPECS</h3>
@@ -295,7 +367,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                     </div>
                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Engine</p>
-                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.engineSize} CC</p>
+                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.engineSize || '1500'} CC</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Color</p>
