@@ -27,9 +27,14 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [vehicleType, setVehicleType] = useState('CAR');
+
+  // Kenya 8-year rule: Current year down to 8 years ago (total 9 years)
+  const currentYear = new Date().getFullYear();
+  const allowedYears = Array.from({ length: 9 }, (_, i) => currentYear - i);
   
   const [crspList, setCrspList] = useState<CrspData[]>([]);
   const [selectedCrsp, setSelectedCrsp] = useState<CrspData | null>(null);
+  const [customCrsp, setCustomCrsp] = useState<number>(0);
   
   const [engineSize, setEngineSize] = useState<number>(1500);
   const [fuelType, setFuelType] = useState('Petrol');
@@ -78,8 +83,18 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
       const fetchYears = async () => {
         try {
           const res = await apiClient.get(`/import-calculator/crsp/years?make=${selectedMake}&model=${selectedModel}`);
-          setYears(res.data);
-          if (res.data.length > 0) setSelectedYear(res.data[0]);
+          // Filter years to stick to 8-year rule
+          const validYears = res.data.filter((y: number) => y >= currentYear - 8);
+          setYears(validYears);
+          
+          // If the currently selected year is not in the new list, 
+          // but is within the 8-year rule, we keep it. 
+          // Otherwise, we pick the newest available.
+          if (validYears.length > 0 && !validYears.includes(selectedYear)) {
+            if (selectedYear < currentYear - 8 || selectedYear > currentYear) {
+              setSelectedYear(validYears[0]);
+            }
+          }
         } catch (e) {
           console.error('Error fetching CRSP years', e);
         }
@@ -98,12 +113,18 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
             setSelectedCrsp(crsp);
             if (crsp.engineSize) setEngineSize(Number(crsp.engineSize));
             if (crsp.fuelType) setFuelType(crsp.fuelType);
+            setCustomCrsp(0); // Reset custom CRSP if found in DB
+          } else {
+            setSelectedCrsp(null);
           }
         } catch (e) {
           console.error('Error fetching selected CRSP record', e);
+          setSelectedCrsp(null);
         }
       };
       fetchSelectedCrsp();
+    } else {
+      setSelectedCrsp(null);
     }
   }, [selectedMake, selectedModel, selectedYear]);
 
@@ -113,6 +134,7 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
     try {
       const res = await apiClient.post('/import-calculator/calculate', {
         crspId: selectedCrsp?.id,
+        customCrsp: customCrsp > 0 ? customCrsp : undefined,
         yearOfManufacture: selectedYear,
         engineSize,
         fuelType,
@@ -313,17 +335,54 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Year of Manufacture</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                    Year of Manufacture
+                    <span className="ml-2 text-masuma-orange font-black">(Kenya 8-Year Rule)</span>
+                  </label>
                   <select 
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
                     disabled={!selectedModel}
                     className="w-full rounded-2xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold focus:ring-2 focus:ring-masuma-orange focus:border-masuma-orange transition-all disabled:opacity-50"
                   >
-                    {years.map(y => <option key={y} value={y}>{y}</option>)}
-                    {!years.length && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
+                    {allowedYears.map(y => (
+                      <option key={y} value={y}>
+                        {y} {years.includes(y) ? '' : '(Manual Entry)'}
+                      </option>
+                    ))}
                   </select>
+                  <p className="mt-2 text-[10px] text-gray-400 font-bold italic">
+                    * Vehicles older than {currentYear - 8} cannot be imported.
+                  </p>
                 </div>
+
+                {!selectedCrsp && selectedModel && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="bg-masuma-orange/5 border border-masuma-orange/20 rounded-2xl p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-4 h-4 text-masuma-orange shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-black text-masuma-orange uppercase tracking-widest mb-1">CRSP Not Found</p>
+                        <p className="text-[10px] text-gray-500 font-bold leading-relaxed mb-3">
+                          We don't have the KRA CRSP value for {selectedYear} in our database. Please enter it manually or provide a CIF value.
+                        </p>
+                        <div className="space-y-2">
+                          <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest">Manual CRSP (KES)</label>
+                          <input 
+                            type="number"
+                            value={customCrsp}
+                            onChange={(e) => setCustomCrsp(Number(e.target.value))}
+                            placeholder="e.g. 2500000"
+                            className="w-full rounded-xl border-masuma-orange/20 bg-white p-3 text-xs font-bold focus:ring-1 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
