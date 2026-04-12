@@ -17,7 +17,7 @@ export class CrspData {
   @Column('decimal', { precision: 16, scale: 2 })
   crspValue!: number; // Current Retail Selling Price from KRA
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
   engineSize!: number;
 
   @Column({ nullable: true })

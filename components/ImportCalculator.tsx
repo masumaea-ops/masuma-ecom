@@ -8,6 +8,8 @@ import {
 import { apiClient } from '../utils/apiClient';
 import { CrspData, ImportCalculationResult, Product } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import ImportServiceForm from './ImportServiceForm';
 import ImportTracking from './ImportTracking';
 
@@ -44,6 +46,8 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
   useEffect(() => {
     fetchCrspData();
   }, []);
+
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const fetchCrspData = async () => {
     try {
@@ -125,13 +129,86 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
   };
 
   const fetchRecommendations = async () => {
+    setLoadingRecommendations(true);
     try {
       // Fetch parts compatible with the selected make/model
       const res = await apiClient.get(`/products?search=${selectedMake} ${selectedModel}`);
       setRecommendedParts(res.data.slice(0, 4));
     } catch (e) {
       console.error('Error fetching recommendations', e);
+    } finally {
+      setLoadingRecommendations(false);
     }
+  };
+
+  const generatePDF = () => {
+    if (!result) return;
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(255, 102, 0); // Masuma Orange
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MASUMA IMPORT REPORT', 20, 25);
+    
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 150, 25);
+
+    // Vehicle Details
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text('Vehicle Information', 20, 55);
+    
+    autoTable(doc, {
+      startY: 60,
+      head: [['Field', 'Value']],
+      body: [
+        ['Make', selectedMake],
+        ['Model', selectedModel],
+        ['Year', selectedYear.toString()],
+        ['Engine Size', `${engineSize} CC`],
+        ['Fuel Type', fuelType],
+        ['Vehicle Type', vehicleType]
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [40, 40, 40] }
+    });
+
+    // Cost Breakdown
+    doc.setFontSize(14);
+    doc.text('Import Cost Breakdown', 20, (doc as any).lastAutoTable.finalY + 15);
+    
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 20,
+      head: [['Description', 'Amount (KES)']],
+      body: [
+        ['Customs Value (CIF)', formatCurrency(result.cif)],
+        ['Import Duty', formatCurrency(result.importDuty)],
+        ['Excise Duty', formatCurrency(result.exciseDuty)],
+        ['VAT (16%)', formatCurrency(result.vat)],
+        ['IDF', formatCurrency(result.idf)],
+        ['RDL', formatCurrency(result.rdl)],
+        ['Total Taxes', formatCurrency(result.totalTaxes)],
+        ['TOTAL ESTIMATED COST', formatCurrency(result.totalCost)]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [255, 102, 0] },
+      foot: [['TOTAL', formatCurrency(result.totalCost)]],
+      footStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] }
+    });
+
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('This is an automated estimate based on current KRA CRSP values and tax rates.', 20, finalY + 20);
+    doc.text('Final costs may vary based on actual customs assessment.', 20, finalY + 26);
+    
+    doc.save(`Masuma_Import_Report_${selectedMake}_${selectedModel}.pdf`);
   };
 
   const formatCurrency = (amount: number) => {
@@ -422,7 +499,12 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {recommendedParts.length > 0 ? (
+                    {loadingRecommendations ? (
+                      <div className="col-span-2 text-center py-12 text-gray-400 font-bold italic">
+                        <div className="w-8 h-8 border-4 border-masuma-orange border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        Finding compatible Masuma parts...
+                      </div>
+                    ) : recommendedParts.length > 0 ? (
                       recommendedParts.map(product => (
                         <div key={product.id} className="flex items-center p-4 border border-gray-100 rounded-2xl hover:border-masuma-orange transition-all group bg-gray-50/30">
                           <img 
@@ -442,7 +524,7 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                       ))
                     ) : (
                       <div className="col-span-2 text-center py-12 text-gray-400 font-bold italic">
-                        Loading recommended maintenance parts...
+                        No specific recommendations found for this model.
                       </div>
                     )}
                   </div>
@@ -454,7 +536,10 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-4">
-                  <button className="flex-1 bg-masuma-dark text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center shadow-xl shadow-black/10">
+                  <button 
+                    onClick={generatePDF}
+                    className="flex-1 bg-masuma-dark text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center shadow-xl shadow-black/10"
+                  >
                     <Download className="w-5 h-5 mr-3" />
                     Download PDF Report
                   </button>
