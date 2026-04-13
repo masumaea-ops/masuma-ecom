@@ -92,10 +92,14 @@ router.post('/calculate', async (req, res) => {
       exciseDutyRate = 0; // Prime movers/trailers have 0 excise in template
     } else {
       // Standard Car logic
-      if (data.fuelType.toLowerCase() === 'diesel') {
+      const fuel = data.fuelType.toLowerCase();
+      if (fuel === 'diesel') {
         if (data.engineSize > 2500) exciseDutyRate = 0.35;
         else if (data.engineSize > 1500) exciseDutyRate = 0.25;
         else exciseDutyRate = 0.20;
+      } else if (fuel === 'electric') {
+        importDutyRate = 0.35;
+        exciseDutyRate = 0.10;
       } else { // Petrol/Hybrid
         if (data.engineSize > 3000) exciseDutyRate = 0.35;
         else if (data.engineSize > 1500) exciseDutyRate = 0.25;

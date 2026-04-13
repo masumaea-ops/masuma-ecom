@@ -34,6 +34,7 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
   
   const [crspList, setCrspList] = useState<CrspData[]>([]);
   const [selectedCrsp, setSelectedCrsp] = useState<CrspData | null>(null);
+  const [crspVariants, setCrspVariants] = useState<CrspData[]>([]);
   const [customCrsp, setCustomCrsp] = useState<number>(0);
   
   const [engineSize, setEngineSize] = useState<number>(1500);
@@ -105,28 +106,44 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
 
   useEffect(() => {
     if (selectedMake && selectedModel && selectedYear) {
-      const fetchSelectedCrsp = async () => {
+      const fetchCrspVariants = async () => {
         try {
-          const res = await apiClient.get(`/import-calculator/crsp?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&limit=1`);
-          const crsp = res.data.results?.[0];
-          if (crsp) {
-            setSelectedCrsp(crsp);
-            if (crsp.engineSize) setEngineSize(Number(crsp.engineSize));
-            if (crsp.fuelType) setFuelType(crsp.fuelType);
-            setCustomCrsp(0); // Reset custom CRSP if found in DB
+          const res = await apiClient.get(`/import-calculator/crsp?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&limit=50`);
+          const variants = res.data.results || [];
+          setCrspVariants(variants);
+          
+          if (variants.length > 0) {
+            // Default to the first one if only one, or if none selected yet
+            const first = variants[0];
+            setSelectedCrsp(first);
+            if (first.engineSize) setEngineSize(Number(first.engineSize));
+            if (first.fuelType) setFuelType(first.fuelType);
+            setCustomCrsp(0);
           } else {
             setSelectedCrsp(null);
           }
         } catch (e) {
-          console.error('Error fetching selected CRSP record', e);
+          console.error('Error fetching CRSP variants', e);
+          setCrspVariants([]);
           setSelectedCrsp(null);
         }
       };
-      fetchSelectedCrsp();
+      fetchCrspVariants();
     } else {
+      setCrspVariants([]);
       setSelectedCrsp(null);
     }
   }, [selectedMake, selectedModel, selectedYear]);
+
+  const handleVariantChange = (crspId: string) => {
+    const variant = crspVariants.find(v => v.id === crspId);
+    if (variant) {
+      setSelectedCrsp(variant);
+      if (variant.engineSize) setEngineSize(Number(variant.engineSize));
+      if (variant.fuelType) setFuelType(variant.fuelType);
+      setCustomCrsp(0);
+    }
+  };
 
   const handleCalculate = async () => {
     setLoading(true);
@@ -422,6 +439,27 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                   </motion.div>
                 )}
 
+                {/* CRSP Variant Selection */}
+                {crspVariants.length > 1 && (
+                  <div className="bg-masuma-orange/5 border border-masuma-orange/20 rounded-2xl p-4 mb-4">
+                    <label className="block text-[10px] font-black text-masuma-orange uppercase tracking-widest mb-2 flex items-center">
+                      <Settings2 className="w-3 h-3 mr-1.5" />
+                      Select Specific Variant (Engine/Fuel)
+                    </label>
+                    <select 
+                      value={selectedCrsp?.id || ''}
+                      onChange={(e) => handleVariantChange(e.target.value)}
+                      className="w-full rounded-xl border-masuma-orange/20 bg-white p-3 text-xs font-bold focus:ring-1 focus:ring-masuma-orange focus:border-masuma-orange transition-all"
+                    >
+                      {crspVariants.map(v => (
+                        <option key={v.id} value={v.id}>
+                          {v.engineSize}cc {v.fuelType} {v.transmission ? `- ${v.transmission}` : ''} (KES {formatPrice(v.crspValue)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Engine CC</label>
@@ -553,8 +591,8 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                     <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-6">Tax Breakdown</h3>
                     <div className="space-y-4">
                       <div className="flex justify-between py-3 border-b border-gray-50">
-                        <span className="text-gray-500 font-bold">Import Duty (25%)</span>
-                        <span className="font-black text-gray-900">{formatCurrency(result.importDuty)}</span>
+                        <span className="text-gray-500 font-bold">KRA CRSP Value</span>
+                        <span className="font-black text-gray-900">{formatCurrency(result.cif / (1 - result.breakdown.depreciationRate))}</span>
                       </div>
                       <div className="flex justify-between py-3 border-b border-gray-50 bg-masuma-orange/5 -mx-4 px-4 rounded-lg">
                         <span className="text-masuma-orange font-black flex items-center">
@@ -563,7 +601,15 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                             <Info className="w-3 h-3 ml-1.5 cursor-help" />
                           </span>
                         </span>
-                        <span className="font-black text-masuma-orange">-{Math.round(result.breakdown.depreciationRate * 100)}% off CRSP</span>
+                        <span className="font-black text-masuma-orange">-{formatCurrency((result.cif / (1 - result.breakdown.depreciationRate)) * result.breakdown.depreciationRate)}</span>
+                      </div>
+                      <div className="flex justify-between py-3 border-b border-gray-50">
+                        <span className="text-gray-500 font-bold">Customs Value (CIF)</span>
+                        <span className="font-black text-gray-900">{formatCurrency(result.cif)}</span>
+                      </div>
+                      <div className="flex justify-between py-3 border-b border-gray-50">
+                        <span className="text-gray-500 font-bold">Import Duty ({result.breakdown.importDutyRate * 100}%)</span>
+                        <span className="font-black text-gray-900">{formatCurrency(result.importDuty)}</span>
                       </div>
                       <div className="flex justify-between py-3 border-b border-gray-50">
                         <span className="text-gray-500 font-bold">
@@ -575,11 +621,11 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                         <span className="font-black text-gray-900">{formatCurrency(result.exciseDuty)}</span>
                       </div>
                       <div className="flex justify-between py-3 border-b border-gray-50">
-                        <span className="text-gray-500 font-bold">VAT (16%)</span>
+                        <span className="text-gray-500 font-bold">VAT ({result.breakdown.vatRate * 100}%)</span>
                         <span className="font-black text-gray-900">{formatCurrency(result.vat)}</span>
                       </div>
                       <div className="flex justify-between py-3 border-b border-gray-50">
-                        <span className="text-gray-500 font-bold">IDF (3.5%)</span>
+                        <span className="text-gray-500 font-bold">IDF (2.5%)</span>
                         <span className="font-black text-gray-900">{formatCurrency(result.idf)}</span>
                       </div>
                       <div className="flex justify-between py-3 border-b border-gray-50">

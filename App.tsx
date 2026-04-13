@@ -349,14 +349,7 @@ const App: React.FC = () => {
                 </>
             )}
             {view === 'MARKETPLACE' && (
-                <>
-                <SEO 
-                    title="Vehicle Marketplace | Buy & Sell Cars in Kenya" 
-                    description="Browse genuine vehicle listings from individuals and dealers in Kenya. Find your next car or motorcycle on Masuma Marketplace." 
-                    keywords="car marketplace Kenya, buy cars Nairobi, sell motorcycles Kenya, used cars Kenya"
-                />
                 <Marketplace user={user} setView={setView} />
-                </>
             )}
             {view === 'IMPORT_CALCULATOR' && (
                 <>

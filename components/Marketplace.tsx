@@ -102,6 +102,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.pushState({ path: newUrl }, '', newUrl);
 
+    // Scroll to top of details on mobile
+    if (window.innerWidth < 1024) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     // Fetch recommended parts for this vehicle
     try {
       const res = await apiClient.get(`/products?search=${listing.make} ${listing.model}`);
@@ -111,8 +116,40 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
     }
   };
 
+  const marketplaceSEO = selectedListing ? (
+    <SEO 
+      title={`${selectedListing.year} ${selectedListing.make} ${selectedListing.model} for Sale in ${selectedListing.location}`}
+      description={`Buy this ${selectedListing.year} ${selectedListing.make} ${selectedListing.model} in ${selectedListing.location}. ${selectedListing.mileage}km, ${selectedListing.transmission} transmission. Price: ${formatPrice(selectedListing.price)}. Find more vehicles on Masuma Marketplace.`}
+      image={selectedListing.images?.[0]}
+      url={`${window.location.origin}${window.location.pathname}?listing=${selectedListing.id}`}
+      type="product"
+      keywords={`${selectedListing.make} ${selectedListing.model}, used ${selectedListing.make} Kenya, ${selectedListing.location} car sales`}
+      schema={{
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": `${selectedListing.year} ${selectedListing.make} ${selectedListing.model}`,
+        "description": selectedListing.description,
+        "image": selectedListing.images,
+        "offers": {
+          "@type": "Offer",
+          "price": selectedListing.price,
+          "priceCurrency": "KES",
+          "availability": "https://schema.org/InStock",
+          "areaServed": selectedListing.location
+        }
+      }}
+    />
+  ) : (
+    <SEO 
+      title="Vehicle Marketplace | Buy & Sell Cars in Kenya" 
+      description="Browse genuine vehicle listings from individuals and dealers in Kenya. Find your next car or motorcycle on Masuma Marketplace." 
+      keywords="car marketplace Kenya, buy cars Nairobi, sell motorcycles Kenya, used cars Kenya"
+    />
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen">
+      {marketplaceSEO}
       {/* Header & Search */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4">
