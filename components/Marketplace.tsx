@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, MapPin, Calendar, Gauge, 
   Fuel, Settings2, Heart, Share2, MessageCircle,
-  ChevronRight, ArrowRight, Star, Info, Car, Bike, Calculator, ShieldCheck, AlertTriangle, FileText, ExternalLink, Plus, XCircle
+  ChevronRight, ArrowRight, Star, Info, Car, Bike, Calculator, ShieldCheck, AlertTriangle, FileText, ExternalLink, Plus, XCircle, Maximize2
 } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
 import { VehicleListing, Product } from '../types';
@@ -25,6 +25,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
   
   const [selectedListing, setSelectedListing] = useState<VehicleListing | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [recommendedParts, setRecommendedParts] = useState<Product[]>([]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isListingFormOpen, setIsListingFormOpen] = useState(false);
@@ -299,12 +300,32 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                   className="bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-8"
                 >
                   {/* Image Gallery */}
-                  <div className="relative aspect-video rounded-2xl overflow-hidden mb-8 group/gallery bg-gray-100">
-                    <img 
-                      src={selectedListing.images?.[currentImageIndex] || 'https://picsum.photos/seed/car/800/600'} 
-                      alt="Vehicle"
-                      className="w-full h-full object-cover"
-                    />
+                  <div 
+                    className="relative aspect-video rounded-2xl overflow-hidden mb-4 group/gallery bg-gray-100 cursor-zoom-in"
+                    onClick={() => setIsLightboxOpen(true)}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.img 
+                        key={currentImageIndex}
+                        initial={{ opacity: 0, scale: 1.1 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.3 }}
+                        src={selectedListing.images?.[currentImageIndex] || 'https://picsum.photos/seed/car/800/600'} 
+                        alt="Vehicle"
+                        className="w-full h-full object-cover"
+                      />
+                    </AnimatePresence>
+                    
+                    {/* Expand Icon */}
+                    <div className="absolute top-4 left-4 p-2 bg-black/20 backdrop-blur-md text-white rounded-lg opacity-0 group-hover/gallery:opacity-100 transition-opacity">
+                      <Maximize2 className="w-4 h-4" />
+                    </div>
+
+                    {/* Counter */}
+                    <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-white font-black uppercase tracking-widest pointer-events-none">
+                      {currentImageIndex + 1} / {selectedListing.images?.length || 1}
+                    </div>
                     
                     {selectedListing.images && selectedListing.images.length > 1 && (
                       <>
@@ -313,7 +334,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                             e.stopPropagation();
                             setCurrentImageIndex(prev => (prev - 1 + selectedListing.images!.length) % selectedListing.images!.length);
                           }}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40"
+                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40 hidden md:block"
                         >
                           <ChevronRight className="w-5 h-5 rotate-180" />
                         </button>
@@ -322,22 +343,28 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                             e.stopPropagation();
                             setCurrentImageIndex(prev => (prev + 1) % selectedListing.images!.length);
                           }}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40 hidden md:block"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </button>
-                        
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                          {selectedListing.images.map((_, idx) => (
-                            <div 
-                              key={idx}
-                              className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-masuma-orange w-4' : 'bg-white/50'}`}
-                            />
-                          ))}
-                        </div>
                       </>
                     )}
                   </div>
+
+                  {/* Thumbnail Strip */}
+                  {selectedListing.images && selectedListing.images.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+                      {selectedListing.images.map((img, idx) => (
+                        <button 
+                          key={idx}
+                          onClick={() => setCurrentImageIndex(idx)}
+                          className={`relative flex-shrink-0 w-20 aspect-video rounded-xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-masuma-orange ring-4 ring-masuma-orange/10' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                        >
+                          <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex justify-between items-start mb-8">
                     <div>
@@ -580,6 +607,86 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
               />
             </div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {isLightboxOpen && selectedListing && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsLightboxOpen(false)}
+            className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center p-4 md:p-8 lg:p-12 cursor-zoom-out"
+          >
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLightboxOpen(false);
+              }}
+              className="absolute top-6 right-6 md:top-10 md:right-10 p-3 bg-white/10 text-white rounded-full hover:bg-masuma-orange hover:scale-110 transition-all z-[310] group"
+            >
+              <XCircle className="w-8 h-8 md:w-10 md:h-10" />
+            </button>
+
+            <div 
+              className="relative w-full max-w-[95vw] lg:max-w-[85vw] xl:max-w-[1400px] aspect-video flex items-center justify-center cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={currentImageIndex}
+                  initial={{ opacity: 0, scale: 0.98, x: 20 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 1.02, x: -20 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                  src={selectedListing.images?.[currentImageIndex]} 
+                  className="w-full h-full object-contain rounded-3xl shadow-2xl shadow-black/50"
+                />
+              </AnimatePresence>
+
+              {/* Lightbox Nav - Prominent on Desktop */}
+              {selectedListing.images && selectedListing.images.length > 1 && (
+                <>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(prev => (prev - 1 + selectedListing.images!.length) % selectedListing.images!.length);
+                    }}
+                    className="absolute -left-4 md:-left-24 top-1/2 -translate-y-1/2 p-6 text-white/50 hover:text-masuma-orange hover:scale-125 transition-all hidden md:block"
+                  >
+                    <ChevronRight className="w-16 h-16 rotate-180" />
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(prev => (prev + 1) % selectedListing.images!.length);
+                    }}
+                    className="absolute -right-4 md:-right-24 top-1/2 -translate-y-1/2 p-6 text-white/50 hover:text-masuma-orange hover:scale-125 transition-all hidden md:block"
+                  >
+                    <ChevronRight className="w-16 h-16" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Lightbox Thumbnails - Refined for Desktop */}
+            <div 
+              className="mt-12 flex gap-4 overflow-x-auto max-w-full px-8 pb-4 scrollbar-hide cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {selectedListing.images?.map((img, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`relative flex-shrink-0 w-28 lg:w-36 aspect-video rounded-2xl overflow-hidden border-2 transition-all duration-300 ${idx === currentImageIndex ? 'border-masuma-orange scale-110 shadow-lg shadow-masuma-orange/20' : 'border-transparent opacity-30 hover:opacity-100 hover:scale-105'}`}
+                >
+                  <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
+                </button>
+              ))}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

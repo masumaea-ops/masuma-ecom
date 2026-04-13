@@ -356,6 +356,44 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                   </p>
                 </div>
 
+                {/* Depreciation Schedule Info */}
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-1.5 text-masuma-orange" />
+                    Depreciation Schedule
+                  </h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]">
+                    <div className="flex justify-between text-gray-500 font-bold">
+                      <span>&gt;1 ≤2 years</span>
+                      <span className="text-masuma-orange">20%</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-bold">
+                      <span>&gt;2 ≤3 years</span>
+                      <span className="text-masuma-orange">30%</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-bold">
+                      <span>&gt;3 ≤4 years</span>
+                      <span className="text-masuma-orange">40%</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-bold">
+                      <span>&gt;4 ≤5 years</span>
+                      <span className="text-masuma-orange">50%</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-bold">
+                      <span>&gt;5 ≤6 years</span>
+                      <span className="text-masuma-orange">55%</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-bold">
+                      <span>&gt;6 ≤7 years</span>
+                      <span className="text-masuma-orange">60%</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-bold col-span-2 border-t border-gray-200 pt-1.5 mt-1">
+                      <span>&gt;7 ≤8 years</span>
+                      <span className="text-masuma-orange">65%</span>
+                    </div>
+                  </div>
+                </div>
+
                 {!selectedCrsp && selectedModel && (
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }}
@@ -517,6 +555,15 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
                       <div className="flex justify-between py-3 border-b border-gray-50">
                         <span className="text-gray-500 font-bold">Import Duty (25%)</span>
                         <span className="font-black text-gray-900">{formatCurrency(result.importDuty)}</span>
+                      </div>
+                      <div className="flex justify-between py-3 border-b border-gray-50 bg-masuma-orange/5 -mx-4 px-4 rounded-lg">
+                        <span className="text-masuma-orange font-black flex items-center">
+                          Depreciation Applied ({Math.round(result.breakdown.depreciationRate * 100)}%)
+                          <span title="Based on Kenya's 8-year import rule depreciation schedule.">
+                            <Info className="w-3 h-3 ml-1.5 cursor-help" />
+                          </span>
+                        </span>
+                        <span className="font-black text-masuma-orange">-{Math.round(result.breakdown.depreciationRate * 100)}% off CRSP</span>
                       </div>
                       <div className="flex justify-between py-3 border-b border-gray-50">
                         <span className="text-gray-500 font-bold">
