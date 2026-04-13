@@ -23,6 +23,18 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'CAR' | 'MOTORCYCLE'>('ALL');
+  const [filters, setFilters] = useState({
+    minPrice: '',
+    maxPrice: '',
+    minYear: '',
+    maxYear: '',
+    make: '',
+    model: '',
+    transmission: '',
+    fuelType: '',
+    condition: ''
+  });
+  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   
   const [selectedListing, setSelectedListing] = useState<VehicleListing | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -63,6 +75,18 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
       const params = new URLSearchParams();
       if (filterType !== 'ALL') params.append('vehicleType', filterType);
       if (searchQuery) params.append('search', searchQuery);
+      
+      // Add advanced filters
+      if (filters.minPrice) params.append('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+      if (filters.minYear) params.append('minYear', filters.minYear);
+      if (filters.maxYear) params.append('maxYear', filters.maxYear);
+      if (filters.make) params.append('make', filters.make);
+      if (filters.model) params.append('model', filters.model);
+      if (filters.transmission) params.append('transmission', filters.transmission);
+      if (filters.fuelType) params.append('fuelType', filters.fuelType);
+      if (filters.condition) params.append('condition', filters.condition);
+
       if (params.toString()) url += `&${params.toString()}`;
       
       const res = await apiClient.get(url);
@@ -91,7 +115,27 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
       fetchListings();
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery, filterType]);
+  }, [searchQuery, filterType, filters]);
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      minPrice: '',
+      maxPrice: '',
+      minYear: '',
+      maxYear: '',
+      make: '',
+      model: '',
+      transmission: '',
+      fuelType: '',
+      condition: ''
+    });
+    setSearchQuery('');
+    setFilterType('ALL');
+  };
 
   const handleListingClick = async (listing: VehicleListing) => {
     setSelectedListing(listing);
@@ -186,7 +230,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                 <Bike className="w-4 h-4 mr-2" />
                 Motorcycles
               </button>
-              <button className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => setIsFilterSidebarOpen(true)}
+                className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors lg:hidden"
+              >
                 <Filter className="w-5 h-5 text-gray-600" />
               </button>
               
@@ -210,24 +257,328 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3">
+          {/* Sidebar - Filters or Details */}
+          <div className={`lg:col-span-1 order-2 lg:order-1 ${isFilterSidebarOpen ? 'fixed inset-0 z-[100] bg-white p-6 overflow-y-auto lg:relative lg:inset-auto lg:z-auto lg:bg-transparent lg:p-0 lg:overflow-visible' : 'hidden lg:block'}`}>
+            <div className="sticky top-24 space-y-6">
+              {!selectedListing ? (
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-sm font-black text-masuma-dark uppercase tracking-widest flex items-center">
+                      <Filter className="w-4 h-4 mr-2 text-masuma-orange" />
+                      Advanced Filters
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={clearFilters}
+                        className="text-[10px] font-black text-masuma-orange uppercase tracking-widest hover:underline"
+                      >
+                        Clear
+                      </button>
+                      <button 
+                        onClick={() => setIsFilterSidebarOpen(false)}
+                        className="lg:hidden p-2 hover:bg-gray-100 rounded-full"
+                      >
+                        <XCircle className="w-5 h-5 text-gray-400" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Price Range */}
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Price Range (KES)</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input 
+                          type="number" 
+                          placeholder="Min"
+                          value={filters.minPrice}
+                          onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-masuma-orange transition-all"
+                        />
+                        <input 
+                          type="number" 
+                          placeholder="Max"
+                          value={filters.maxPrice}
+                          onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-masuma-orange transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Year Range */}
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Year Range</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input 
+                          type="number" 
+                          placeholder="From"
+                          value={filters.minYear}
+                          onChange={(e) => handleFilterChange('minYear', e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-masuma-orange transition-all"
+                        />
+                        <input 
+                          type="number" 
+                          placeholder="To"
+                          value={filters.maxYear}
+                          onChange={(e) => handleFilterChange('maxYear', e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-masuma-orange transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Make & Model */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Make</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Toyota"
+                          value={filters.make}
+                          onChange={(e) => handleFilterChange('make', e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-masuma-orange transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Model</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Vitz"
+                          value={filters.model}
+                          onChange={(e) => handleFilterChange('model', e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-masuma-orange transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Transmission */}
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Transmission</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['AUTOMATIC', 'MANUAL'].map(t => (
+                          <button
+                            key={t}
+                            onClick={() => handleFilterChange('transmission', filters.transmission === t ? '' : t)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${filters.transmission === t ? 'bg-masuma-orange text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Fuel Type */}
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Fuel Type</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['PETROL', 'DIESEL', 'HYBRID', 'ELECTRIC'].map(f => (
+                          <button
+                            key={f}
+                            onClick={() => handleFilterChange('fuelType', filters.fuelType === f ? '' : f)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${filters.fuelType === f ? 'bg-masuma-orange text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setIsFilterSidebarOpen(false)}
+                      className="w-full bg-masuma-dark text-white py-4 rounded-2xl font-black uppercase tracking-widest lg:hidden mt-8"
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-8"
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <button 
+                      onClick={() => setSelectedListing(null)}
+                      className="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-masuma-orange transition-colors"
+                    >
+                      <ArrowRight className="w-3 h-3 mr-1 rotate-180" />
+                      Back to Filters
+                    </button>
+                  </div>
+                  {/* Image Gallery */}
+                  <div 
+                    className="relative aspect-video rounded-2xl overflow-hidden mb-4 group/gallery bg-gray-100 cursor-zoom-in"
+                    onClick={() => setIsLightboxOpen(true)}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.img 
+                        key={currentImageIndex}
+                        initial={{ opacity: 0, scale: 1.1 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.3 }}
+                        src={selectedListing.images?.[currentImageIndex] || 'https://picsum.photos/seed/car/800/600'} 
+                        alt="Vehicle"
+                        className="w-full h-full object-cover"
+                      />
+                    </AnimatePresence>
+                    
+                    {/* Expand Icon */}
+                    <div className="absolute top-4 left-4 p-2 bg-black/20 backdrop-blur-md text-white rounded-lg opacity-0 group-hover/gallery:opacity-100 transition-opacity">
+                      <Maximize2 className="w-4 h-4" />
+                    </div>
+
+                    {/* Counter */}
+                    <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-white font-black uppercase tracking-widest pointer-events-none">
+                      {currentImageIndex + 1} / {selectedListing.images?.length || 1}
+                    </div>
+                    
+                    {selectedListing.images && selectedListing.images.length > 1 && (
+                      <>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(prev => (prev - 1 + selectedListing.images!.length) % selectedListing.images!.length);
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40 hidden md:block"
+                        >
+                          <ChevronRight className="w-5 h-5 rotate-180" />
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(prev => (prev + 1) % selectedListing.images!.length);
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40 hidden md:block"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Thumbnail Strip */}
+                  {selectedListing.images && selectedListing.images.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+                      {selectedListing.images.map((img, idx) => (
+                        <button 
+                          key={idx}
+                          onClick={() => setCurrentImageIndex(idx)}
+                          className={`relative flex-shrink-0 w-20 aspect-video rounded-xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-masuma-orange ring-4 ring-masuma-orange/10' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                        >
+                          <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-start mb-8">
+                    <div>
+                      <h3 className="text-2xl font-black text-masuma-dark font-display">VEHICLE SPECS</h3>
+                      <div className="w-12 h-1 bg-masuma-orange mt-1 rounded-full"></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Seller</p>
+                      <p className="text-sm font-bold text-masuma-dark truncate">{selectedListing.seller.fullName}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Body</p>
+                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.bodyType || 'Sedan'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Engine</p>
+                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.engineSize || '1500'} CC</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Color</p>
+                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.color || 'Silver'}</p>
+                    </div>
+                  </div>
+
+                  {/* Trust Verification Section */}
+                  <div className="mb-8">
+                    <h4 className="text-xs font-black text-masuma-dark uppercase tracking-widest mb-4 flex items-center">
+                      <ShieldCheck className="w-4 h-4 mr-2 text-masuma-orange" />
+                      Verification Status
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      {selectedListing.scanReportUrl ? (
+                        <div className="flex items-center p-3 bg-green-50 rounded-xl border border-green-100">
+                          <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-3">
+                            <FileText className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Scan Report</p>
+                            <a href={selectedListing.scanReportUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-green-800 hover:underline flex items-center">
+                              View Full Report <ExternalLink className="w-3 h-3 ml-1" />
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center p-3 bg-yellow-50 rounded-xl border border-yellow-100">
+                          <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center mr-3">
+                            <AlertTriangle className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">Verification</p>
+                            <p className="text-xs font-bold text-yellow-800">Pending physical inspection</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <button className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-masuma-orange/20 flex items-center justify-center group">
+                      <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                      Contact Seller
+                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setIsReportModalOpen(true)}
+                        className="flex-1 bg-gray-50 text-gray-400 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all border border-gray-100"
+                      >
+                        Report Fraud
+                      </button>
+                      <ShareButtons 
+                        url={`${window.location.origin}${window.location.pathname}?listing=${selectedListing.id}`}
+                        title={`${selectedListing.year} ${selectedListing.make} ${selectedListing.model} for Sale`}
+                        contentId={selectedListing.id}
+                        contentType="POST"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+
+          {/* Main Content - Listings */}
+          <div className="lg:col-span-3 order-1 lg:order-2">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1,2,3,4].map(i => (
+              <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'xl:grid-cols-2' : 'xl:grid-cols-3'} gap-6`}>
+                {[1,2,3,4,5,6].map(i => (
                   <div key={i} className="bg-white rounded-2xl h-96 animate-pulse" />
                 ))}
               </div>
             ) : listings.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'xl:grid-cols-2' : 'xl:grid-cols-3'} gap-6`}>
                 {listings.map(listing => (
                   <motion.div 
                     key={listing.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => handleListingClick(listing)}
-                    className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+                    className={`bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group ${selectedListing?.id === listing.id ? 'ring-2 ring-masuma-orange border-transparent' : ''}`}
                   >
                     <div className="relative h-64 overflow-hidden">
                       <img 
@@ -320,304 +671,20 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
               )}
               </>
             ) : (
-              <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
-                <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No listings found</h3>
-                <p className="text-gray-500">Try adjusting your filters or search query.</p>
+              <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-12 text-center">
+                <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Car className="w-10 h-10 text-gray-200" />
+                </div>
+                <h3 className="text-xl font-black text-masuma-dark font-display uppercase tracking-wider mb-2">No listings found</h3>
+                <p className="text-sm text-gray-400 leading-relaxed mb-8">Try adjusting your filters or search query to find what you're looking for.</p>
+                <button 
+                  onClick={clearFilters}
+                  className="px-8 py-4 bg-masuma-orange text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg shadow-masuma-orange/20"
+                >
+                  Clear All Filters
+                </button>
               </div>
             )}
-          </div>
-
-          {/* Sidebar / Details Panel */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              {selectedListing ? (
-                <motion.div 
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-8"
-                >
-                  {/* Image Gallery */}
-                  <div 
-                    className="relative aspect-video rounded-2xl overflow-hidden mb-4 group/gallery bg-gray-100 cursor-zoom-in"
-                    onClick={() => setIsLightboxOpen(true)}
-                  >
-                    <AnimatePresence mode="wait">
-                      <motion.img 
-                        key={currentImageIndex}
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.3 }}
-                        src={selectedListing.images?.[currentImageIndex] || 'https://picsum.photos/seed/car/800/600'} 
-                        alt="Vehicle"
-                        className="w-full h-full object-cover"
-                      />
-                    </AnimatePresence>
-                    
-                    {/* Expand Icon */}
-                    <div className="absolute top-4 left-4 p-2 bg-black/20 backdrop-blur-md text-white rounded-lg opacity-0 group-hover/gallery:opacity-100 transition-opacity">
-                      <Maximize2 className="w-4 h-4" />
-                    </div>
-
-                    {/* Counter */}
-                    <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-white font-black uppercase tracking-widest pointer-events-none">
-                      {currentImageIndex + 1} / {selectedListing.images?.length || 1}
-                    </div>
-                    
-                    {selectedListing.images && selectedListing.images.length > 1 && (
-                      <>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentImageIndex(prev => (prev - 1 + selectedListing.images!.length) % selectedListing.images!.length);
-                          }}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40 hidden md:block"
-                        >
-                          <ChevronRight className="w-5 h-5 rotate-180" />
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentImageIndex(prev => (prev + 1) % selectedListing.images!.length);
-                          }}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 backdrop-blur-md text-white rounded-full opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-white/40 hidden md:block"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Thumbnail Strip */}
-                  {selectedListing.images && selectedListing.images.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
-                      {selectedListing.images.map((img, idx) => (
-                        <button 
-                          key={idx}
-                          onClick={() => setCurrentImageIndex(idx)}
-                          className={`relative flex-shrink-0 w-20 aspect-video rounded-xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-masuma-orange ring-4 ring-masuma-orange/10' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                        >
-                          <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx}`} />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-start mb-8">
-                    <div>
-                      <h3 className="text-2xl font-black text-masuma-dark font-display">VEHICLE SPECS</h3>
-                      <div className="w-12 h-1 bg-masuma-orange mt-1 rounded-full"></div>
-                    </div>
-                    <button onClick={() => {
-                      setSelectedListing(null);
-                      const params = new URLSearchParams(window.location.search);
-                      params.delete('listing');
-                      const newSearch = params.toString();
-                      const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
-                      window.history.pushState({ path: newUrl }, '', newUrl);
-                    }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                      <XCircle className="w-6 h-6 text-gray-300" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Seller</p>
-                      <p className="text-sm font-bold text-masuma-dark truncate">{selectedListing.seller.fullName}</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Body</p>
-                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.bodyType || 'Sedan'}</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Engine</p>
-                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.engineSize || '1500'} CC</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Color</p>
-                      <p className="text-sm font-bold text-masuma-dark">{selectedListing.color || 'Silver'}</p>
-                    </div>
-                  </div>
-
-                  {/* Trust Verification Section */}
-                  <div className="mb-8">
-                    <h4 className="text-xs font-black text-masuma-dark uppercase tracking-widest mb-4 flex items-center">
-                      <ShieldCheck className="w-4 h-4 mr-2 text-masuma-orange" />
-                      Verification Status
-                    </h4>
-                    
-                    <div className="space-y-3">
-                      {selectedListing.scanReportUrl ? (
-                        <div className="bg-green-50 border border-green-100 rounded-2xl p-4 relative overflow-hidden group">
-                          <div className="relative z-10">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center">
-                                <FileText className="w-5 h-5 text-green-600 mr-2" />
-                                <h4 className="text-xs font-black text-green-800 uppercase tracking-wider">Diagnostic Scan</h4>
-                              </div>
-                              <span className="bg-green-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Verified</span>
-                            </div>
-                            <p className="text-[10px] text-green-700 mb-3 leading-relaxed">
-                              Full computerized diagnostic report available for this unit.
-                            </p>
-                            <a 
-                              href={selectedListing.scanReportUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full bg-white text-green-700 py-2.5 rounded-xl text-xs font-black hover:bg-green-600 hover:text-white transition-all flex items-center justify-center border border-green-200 shadow-sm"
-                            >
-                              OPEN PDF REPORT
-                              <ExternalLink className="w-3 h-3 ml-2" />
-                            </a>
-                          </div>
-                          <ShieldCheck className="absolute -bottom-4 -right-4 w-20 h-20 text-green-600/5 rotate-12" />
-                        </div>
-                      ) : (
-                        <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-4 flex items-center justify-center text-center">
-                          <p className="text-[10px] font-bold text-gray-400">No diagnostic scan report uploaded.</p>
-                        </div>
-                      )}
-
-                      {selectedListing.auctionSheetUrl && (
-                        <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 relative overflow-hidden group">
-                          <div className="relative z-10">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center">
-                                <FileText className="w-5 h-5 text-purple-600 mr-2" />
-                                <h4 className="text-xs font-black text-purple-800 uppercase tracking-wider">Auction Sheet</h4>
-                              </div>
-                              <span className="bg-purple-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Official</span>
-                            </div>
-                            <p className="text-[10px] text-purple-700 mb-3 leading-relaxed">
-                              Original auction sheet verifying condition and mileage.
-                            </p>
-                            <a 
-                              href={selectedListing.auctionSheetUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full bg-white text-purple-700 py-2.5 rounded-xl text-xs font-black hover:bg-purple-600 hover:text-white transition-all flex items-center justify-center border border-purple-200 shadow-sm"
-                            >
-                              VIEW AUCTION SHEET
-                              <ExternalLink className="w-3 h-3 ml-2" />
-                            </a>
-                          </div>
-                          <FileText className="absolute -bottom-4 -right-4 w-20 h-20 text-purple-600/5 rotate-12" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Monetization Layer */}
-                  <div className="bg-masuma-dark rounded-2xl p-5 mb-8 relative overflow-hidden">
-                    <div className="relative z-10">
-                      <h4 className="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center">
-                        <Star className="w-4 h-4 mr-2 text-masuma-orange fill-masuma-orange" />
-                        MASUMA SPARES
-                      </h4>
-                      <div className="space-y-3">
-                        {recommendedParts.map(part => (
-                          <div key={part.id} className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10 group cursor-pointer hover:bg-white/10 transition-all">
-                            <img src={part.image} alt={part.name} className="w-10 h-10 object-cover rounded-lg" />
-                            <div className="flex-grow min-w-0">
-                              <p className="text-[10px] font-bold text-white truncate">{part.name}</p>
-                              <p className="text-[10px] text-masuma-orange font-black">{formatPrice(part.price)}</p>
-                            </div>
-                            <ArrowRight className="w-3 h-3 text-white/30 group-hover:text-masuma-orange transition-colors" />
-                          </div>
-                        ))}
-                      </div>
-                      <button 
-                        onClick={() => setView('CATALOG')}
-                        className="w-full mt-4 text-[10px] font-black text-white/50 hover:text-masuma-orange transition-colors uppercase tracking-widest"
-                      >
-                        Browse all compatible parts
-                      </button>
-                    </div>
-                    <Settings2 className="absolute -bottom-6 -right-6 w-24 h-24 text-white/5 rotate-12" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <button 
-                      onClick={() => {
-                        const phone = selectedListing.seller.phone || '254792506590';
-                        const text = encodeURIComponent(`Hi, I'm interested in your ${selectedListing.year} ${selectedListing.make} ${selectedListing.model} listed on Masuma Marketplace for ${formatPrice(selectedListing.price)}. Is it still available?`);
-                        window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
-                      }}
-                      className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-masuma-orange-dark transition-all flex items-center justify-center shadow-xl shadow-masuma-orange/20"
-                    >
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      Contact Seller
-                    </button>
-                    <div className="pt-4 border-t border-gray-100">
-                      <ShareButtons 
-                        url={`${window.location.origin}/?listing=${selectedListing.id}`}
-                        title={`Check out this ${selectedListing.year} ${selectedListing.make} ${selectedListing.model} on Masuma Marketplace`}
-                        contentId={selectedListing.id}
-                        contentType="POST" 
-                      />
-                    </div>
-                    <button 
-                      onClick={() => setIsReportModalOpen(true)}
-                      className="w-full bg-red-50 text-red-600 py-3 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all flex items-center justify-center"
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      Report Listing
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
-                <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-12 text-center">
-                  <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Car className="w-10 h-10 text-gray-200" />
-                  </div>
-                  <h3 className="text-xl font-black text-masuma-dark font-display uppercase tracking-wider mb-2">Select Vehicle</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">Click on a listing to view detailed specs and verified reports.</p>
-                </div>
-              )}
-
-              {/* Fraud Prevention Tips */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                  <ShieldCheck className="w-5 h-5 mr-2 text-green-600" />
-                  Safe Buying Tips
-                </h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-1.5 shrink-0" />
-                    Never send a deposit before seeing the vehicle in person.
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-1.5 shrink-0" />
-                    Meet in a safe, public place for inspections.
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-1.5 shrink-0" />
-                    Verify the logbook and chassis number with NTSA/KRA.
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-1.5 shrink-0" />
-                    Use our "Report" feature if a deal seems too good to be true.
-                  </li>
-                </ul>
-              </div>
-
-              {/* Promo Card */}
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white overflow-hidden relative">
-                <div className="relative z-10">
-                  <h3 className="text-xl font-bold mb-2">Importing a car?</h3>
-                  <p className="text-gray-300 text-sm mb-4">Use our intelligent calculator to see exact KRA duties and taxes.</p>
-                  <button 
-                    onClick={() => setView('IMPORT_CALCULATOR')}
-                    className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition-colors flex items-center"
-                  >
-                    Try Calculator
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
-                </div>
-                <Calculator className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 rotate-12" />
-              </div>
-            </div>
           </div>
         </div>
       </div>
