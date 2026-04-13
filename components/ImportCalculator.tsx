@@ -3,11 +3,13 @@ import {
   Calculator, Info, AlertTriangle, CheckCircle2, 
   ChevronRight, Download, Share2, Car, Search,
   ArrowRight, ShieldCheck, TrendingUp, Settings,
-  Ship
+  Ship, Settings2
 } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
 import { CrspData, ImportCalculationResult, Product } from '../types';
+import { formatPrice } from '../utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from './SEO';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImportServiceForm from './ImportServiceForm';
@@ -260,6 +262,11 @@ const ImportCalculator: React.FC<ImportCalculatorProps> = ({ user, setView }) =>
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
+      <SEO 
+        title={result ? `Import Tax for ${selectedMake} ${selectedModel} | Masuma Kenya` : "KRA Import Cost Calculator | Vehicle Duties Kenya"}
+        description={result ? `Calculated import duty for ${selectedMake} ${selectedModel} (${selectedYear}). Total estimated cost: ${formatCurrency(result.totalCost)}.` : "Calculate accurate vehicle import duties and taxes for Kenya using real CRSP data. Intelligent KRA tax engine."}
+        keywords="import duty calculator Kenya, KRA car taxes, vehicle import cost Nairobi"
+      />
       <div className="text-center mb-12">
         <h1 className="text-4xl font-black text-gray-900 mb-4 uppercase tracking-tight">Vehicle Import Concierge</h1>
         <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8 font-bold">

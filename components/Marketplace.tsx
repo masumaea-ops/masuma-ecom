@@ -8,6 +8,7 @@ import { apiClient } from '../utils/apiClient';
 import { VehicleListing, Product } from '../types';
 import { formatPrice } from '../utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEO from './SEO';
 import FraudReportModal from './FraudReportModal';
 import VehicleListingForm from './VehicleListingForm';
 import ShareButtons from './ShareButtons';

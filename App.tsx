@@ -352,14 +352,7 @@ const App: React.FC = () => {
                 <Marketplace user={user} setView={setView} />
             )}
             {view === 'IMPORT_CALCULATOR' && (
-                <>
-                <SEO 
-                    title="KRA Import Cost Calculator | Vehicle Duties Kenya" 
-                    description="Calculate accurate vehicle import duties and taxes for Kenya using real CRSP data. Intelligent KRA tax engine." 
-                    keywords="import duty calculator Kenya, KRA car taxes, vehicle import cost Nairobi"
-                />
                 <ImportCalculator user={user} setView={setView} />
-                </>
             )}
             </main>
             <Footer setView={setView} />
