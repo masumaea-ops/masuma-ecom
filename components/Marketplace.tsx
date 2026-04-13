@@ -258,11 +258,12 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar - Filters or Details */}
-          <div className={`lg:col-span-1 order-2 lg:order-1 ${isFilterSidebarOpen ? 'fixed inset-0 z-[100] bg-white p-6 overflow-y-auto lg:relative lg:inset-auto lg:z-auto lg:bg-transparent lg:p-0 lg:overflow-visible' : 'hidden lg:block'}`}>
+          <div className={`lg:col-span-1 order-2 lg:order-last ${isFilterSidebarOpen ? 'fixed inset-0 z-[100] bg-white p-6 overflow-y-auto lg:relative lg:inset-auto lg:z-auto lg:bg-transparent lg:p-0 lg:overflow-visible' : 'hidden lg:block'}`}>
             <div className="sticky top-24 space-y-6">
               {!selectedListing ? (
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
+                <>
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6"
                 >
@@ -394,7 +395,30 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                     </button>
                   </div>
                 </motion.div>
-              ) : (
+
+                {/* General Spares Promo - Visible when no vehicle is selected */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-gradient-to-br from-masuma-dark to-black rounded-[2rem] p-8 text-white relative overflow-hidden group shadow-xl"
+                >
+                  <div className="relative z-10">
+                    <h4 className="text-xs font-black text-masuma-orange uppercase tracking-widest mb-4">Masuma Genuine Parts</h4>
+                    <h3 className="text-2xl font-black mb-4 leading-tight">NEED SPARES FOR YOUR CURRENT RIDE?</h3>
+                    <p className="text-sm text-gray-400 mb-8 leading-relaxed">Browse over 10,000+ genuine Masuma parts with 12-month warranty.</p>
+                    <button 
+                      onClick={() => setView('CATALOG')}
+                      className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-masuma-orange/20 flex items-center justify-center group/btn"
+                    >
+                      Visit Catalog
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                  <Settings2 className="absolute -bottom-10 -right-10 w-40 h-40 text-white/5 rotate-12 group-hover:rotate-45 transition-transform duration-1000" />
+                </motion.div>
+              </>
+            ) : (
                 <motion.div 
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -536,6 +560,51 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                     </div>
                   </div>
 
+                  {/* Compatible Spares Section */}
+                  {recommendedParts.length > 0 && (
+                    <div className="mb-8 bg-masuma-dark rounded-2xl p-6 relative overflow-hidden">
+                      <div className="relative z-10">
+                        <h4 className="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center justify-between">
+                          <span className="flex items-center">
+                            <Star className="w-4 h-4 mr-2 text-masuma-orange fill-masuma-orange" />
+                            Compatible Spares
+                          </span>
+                          <span className="bg-masuma-orange/20 text-masuma-orange text-[8px] px-2 py-0.5 rounded-full border border-masuma-orange/30">MATCHED</span>
+                        </h4>
+                        <div className="space-y-3">
+                          {recommendedParts.map(part => (
+                            <div 
+                              key={part.id} 
+                              className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10 group cursor-pointer hover:bg-white/10 transition-all"
+                              onClick={() => {
+                                // Potentially open part details or just go to catalog
+                                setView('CATALOG');
+                              }}
+                            >
+                              <img 
+                                src={part.image || 'https://picsum.photos/seed/part/100/100'} 
+                                alt={part.name} 
+                                className="w-10 h-10 object-cover rounded-lg" 
+                              />
+                              <div className="flex-grow min-w-0">
+                                <p className="text-[10px] font-bold text-white truncate">{part.name}</p>
+                                <p className="text-[10px] text-masuma-orange font-black">{formatPrice(part.price)}</p>
+                              </div>
+                              <ArrowRight className="w-3 h-3 text-white/30 group-hover:text-masuma-orange transition-colors" />
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={() => setView('CATALOG')}
+                          className="w-full mt-4 bg-white/10 hover:bg-white/20 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+                        >
+                          View All Compatible Parts
+                        </button>
+                      </div>
+                      <Settings2 className="absolute -bottom-6 -right-6 w-24 h-24 text-white/5 rotate-12" />
+                    </div>
+                  )}
+
                   <div className="space-y-4">
                     <button className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-masuma-orange/20 flex items-center justify-center group">
                       <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
@@ -562,7 +631,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
           </div>
 
           {/* Main Content - Listings */}
-          <div className="lg:col-span-3 order-1 lg:order-2">
+          <div className="lg:col-span-3 order-1 lg:order-first">
             {loading ? (
               <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'xl:grid-cols-2' : 'xl:grid-cols-3'} gap-6`}>
                 {[1,2,3,4,5,6].map(i => (
