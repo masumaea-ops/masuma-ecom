@@ -71,7 +71,7 @@ export interface User {
   email: string;
   fullName: string;
   phone?: string;
-  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'B2B_USER' | 'DEALER' | 'INDIVIDUAL_SELLER';
+  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'B2B_USER' | 'DEALER' | 'INDIVIDUAL_SELLER' | 'BUYER' | 'IMPORT_USER';
   branchId?: string;
 }
 

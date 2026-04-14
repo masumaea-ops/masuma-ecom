@@ -15,7 +15,7 @@ export const AppDataSource = new DataSource({
   username: config.DB_USER,
   password: config.DB_PASSWORD,
   database: config.DB_NAME,
-  synchronize: true, 
+  synchronize: config.NODE_ENV === 'development', // Only sync in dev to prevent production locks
   logging: false, 
   entities: [
     path.join(__dirname, '../entities/**/*.{ts,js}')
@@ -23,7 +23,7 @@ export const AppDataSource = new DataSource({
   subscribers: [],
   migrations: [],
   extra: {
-    connectionLimit: 10,
+    connectionLimit: 50, // Increased from 10 to support multiple subdomains
     waitForConnections: true,
     queueLimit: 0,
     enableKeepAlive: true, 

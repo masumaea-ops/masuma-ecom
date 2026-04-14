@@ -66,6 +66,7 @@ AppDataSource.initialize()
     logger.error('❌ Database connection failed:', err);
   });
 
+// 2. Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: false,
@@ -73,8 +74,30 @@ app.use(helmet({
 }) as any); 
 app.use(compression() as any); 
 
+// Robust CORS for subdomains
+const allowedOrigins = [
+  'https://masuma.africa',
+  'https://shop.masuma.africa',
+  'https://admin.masuma.africa',
+  'https://pos.masuma.africa',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
 app.use(cors({ 
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.includes(origin) || 
+                     origin.endsWith('.masuma.africa');
+                     
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true 
 }) as any);
 
@@ -87,11 +110,17 @@ const mediaPath = path.join(process.cwd(), 'media');
 if (!fs.existsSync(mediaPath)) fs.mkdirSync(mediaPath, { recursive: true });
 app.use('/media', express.static(mediaPath) as any);
 
-// 2. API Rate Limiting
+// 2. API Rate Limiting - Increased for multiple subdomains
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 2000, // Reduced from 20000 for better security
-  message: { error: 'Too many requests' }
+  max: 5000, // Increased from 2000 to accommodate multiple subdomains
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again later.' },
+  keyGenerator: (req: any) => {
+    // Use X-Forwarded-For if behind a proxy, otherwise fallback to socket address
+    return req.headers['x-forwarded-for'] || req.ip;
+  }
 });
 app.use('/api', limiter as any);
 
