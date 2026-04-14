@@ -86,6 +86,7 @@ const App: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
       const productParam = params.get('product');
       const postParam = params.get('post');
+      const listingParam = params.get('listing');
       const viewParam = params.get('view');
 
       if (productParam) {
@@ -103,6 +104,9 @@ const App: React.FC = () => {
           setActivePostId(postParam);
           setView('BLOG');
       } 
+      else if (listingParam) {
+          setView('MARKETPLACE');
+      }
       else if (viewParam) {
           setView(viewParam as ViewState);
       }
