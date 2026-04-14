@@ -646,14 +646,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
           {/* Main Content - Listings */}
           <div className="lg:col-span-3 order-1 lg:order-first">
             {loading ? (
-              <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'xl:grid-cols-2' : 'xl:grid-cols-3'} gap-6`}>
+              <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
                 {[1,2,3,4,5,6].map(i => (
                   <div key={i} className="bg-white rounded-2xl h-96 animate-pulse" />
                 ))}
               </div>
             ) : listings.length > 0 ? (
               <>
-                <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'xl:grid-cols-2' : 'xl:grid-cols-3'} gap-6`}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${selectedListing ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
                 {listings.map(listing => (
                   <motion.div 
                     key={listing.id}

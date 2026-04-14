@@ -4,11 +4,17 @@
 @tailwind utilities;
 
 /* Custom Base Styles */
+html {
+  font-size: 16px; /* Lock root font size to prevent environment scaling issues */
+  scroll-behavior: smooth;
+}
+
 body { 
   font-family: 'Inter', sans-serif; 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply text-gray-900 bg-gray-50 text-base font-normal leading-relaxed;
+  text-rendering: optimizeLegibility;
+  @apply text-gray-900 bg-gray-50 text-base font-normal leading-relaxed overflow-x-hidden;
 }
 
 h1, h2, h3, h4, h5, h6 { 
