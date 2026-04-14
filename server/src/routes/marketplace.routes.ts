@@ -31,19 +31,22 @@ const createListingSchema = z.object({
 // Get all active listings with filters
 router.get('/', async (req, res) => {
   try {
-    const { make, model, year, minPrice, maxPrice, vehicleType, location, search, page = 1, limit = 20 } = req.query;
+    const { make, model, minYear, maxYear, minPrice, maxPrice, vehicleType, transmission, fuelType, location, search, page = 1, limit = 20 } = req.query;
     const listingRepo = AppDataSource.getRepository(VehicleListing);
     
     const query = listingRepo.createQueryBuilder('listing')
       .leftJoinAndSelect('listing.seller', 'seller')
       .where('listing.status = :status', { status: ListingStatus.ACTIVE });
 
-    if (make) query.andWhere('listing.make = :make', { make });
-    if (model) query.andWhere('listing.model = :model', { model });
-    if (year) query.andWhere('listing.year = :year', { year: Number(year) });
+    if (make) query.andWhere('listing.make LIKE :make', { make: `%${make}%` });
+    if (model) query.andWhere('listing.model LIKE :model', { model: `%${model}%` });
+    if (minYear) query.andWhere('listing.year >= :minYear', { minYear: Number(minYear) });
+    if (maxYear) query.andWhere('listing.year <= :maxYear', { maxYear: Number(maxYear) });
     if (minPrice) query.andWhere('listing.price >= :minPrice', { minPrice: Number(minPrice) });
     if (maxPrice) query.andWhere('listing.price <= :maxPrice', { maxPrice: Number(maxPrice) });
     if (vehicleType) query.andWhere('listing.vehicleType = :vehicleType', { vehicleType });
+    if (transmission) query.andWhere('LOWER(listing.transmission) = LOWER(:transmission)', { transmission });
+    if (fuelType) query.andWhere('LOWER(listing.fuelType) = LOWER(:fuelType)', { fuelType });
     if (location) query.andWhere('listing.location LIKE :location', { location: `%${location}%` });
     
     if (search) {

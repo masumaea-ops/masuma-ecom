@@ -161,6 +161,16 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
     }
   };
 
+  const handleContactSeller = () => {
+    if (!selectedListing) return;
+    
+    const phone = selectedListing.seller.phone || '+254700000000'; // Fallback
+    const message = `Hi, I'm interested in your ${selectedListing.year} ${selectedListing.make} ${selectedListing.model} listed on Masuma Marketplace for ${formatPrice(selectedListing.price)}. Is it still available?`;
+    const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
+
   const marketplaceSEO = selectedListing ? (
     <SEO 
       title={`${selectedListing.year} ${selectedListing.make} ${selectedListing.model} for Sale in ${selectedListing.location}`}
@@ -606,7 +616,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                   )}
 
                   <div className="space-y-4">
-                    <button className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-masuma-orange/20 flex items-center justify-center group">
+                    <button 
+                      onClick={handleContactSeller}
+                      className="w-full bg-masuma-orange text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-masuma-orange/20 flex items-center justify-center group"
+                    >
                       <MessageCircle className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                       Contact Seller
                     </button>
