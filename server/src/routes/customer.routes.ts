@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { Customer } from '../entities/Customer';
 import { validate } from '../middleware/validate';
-import { authenticate } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
 import { z } from 'zod';
 
 const router = Router();

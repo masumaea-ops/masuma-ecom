@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { SaleService } from '../services/saleService';
 import { validate } from '../middleware/validate';
-import { authenticate } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
 import { AppDataSource } from '../config/database';
 import { Sale } from '../entities/Sale';
 import { z } from 'zod';
