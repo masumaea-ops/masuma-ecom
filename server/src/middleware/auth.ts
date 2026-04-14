@@ -27,11 +27,6 @@ export const authenticate = async (req: ExpressRequest, res: ExpressResponse, ne
     const payload = Security.verifyToken(token);
     
     if (!payload) {
-         // Fallback for demo purposes (offline mode)
-         if (token === 'mock-admin-token') {
-             request.user = { id: 'admin', role: 'ADMIN', branch: { id: 'hq' } } as any;
-             return next();
-         }
          return response.status(401).json({ error: 'Invalid or Expired Token' });
     }
 

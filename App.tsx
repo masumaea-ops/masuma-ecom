@@ -360,7 +360,9 @@ const App: React.FC = () => {
             <AIAssistant isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
             <QuickView product={selectedProduct} isOpen={!!selectedProduct} onClose={closeProduct} addToCart={(p) => setCart([...cart, {...p, quantity: 1}])} onSwitchProduct={openProduct} />
             <WhatsAppButton />
-            <MobileBottomNav currentView={view} setView={setView} cartCount={cart.reduce((a, b) => a + b.quantity, 0)} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
+            {view !== 'CHECKOUT' && (
+              <MobileBottomNav currentView={view} setView={setView} cartCount={cart.reduce((a, b) => a + b.quantity, 0)} toggleCart={() => setIsCartOpen(true)} toggleAi={() => setIsAiOpen(true)} />
+            )}
         </div>
     );
   };

@@ -81,7 +81,7 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
     }
 });
 
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, authorize(['ADMIN', 'MANAGER', 'CASHIER']), async (req, res) => {
     try {
         const status = req.query.status as string;
         const search = req.query.search as string;

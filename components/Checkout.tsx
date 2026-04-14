@@ -514,7 +514,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
       </div>
 
       {/* Mobile Sticky Action Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom duration-500">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom duration-500 pb-safe">
           <div className="max-w-md mx-auto flex items-center justify-between gap-4">
               <div className="flex-shrink-0">
                   <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none mb-1">Total Amount</p>

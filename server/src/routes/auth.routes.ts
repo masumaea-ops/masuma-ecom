@@ -91,7 +91,14 @@ router.post('/register', validate(z.object({
         user.email = email;
         user.passwordHash = await Security.hashPassword(password);
         user.phone = phone;
-        user.role = role || UserRole.INDIVIDUAL_SELLER;
+        
+        // Prevent privilege escalation: only allow specific non-admin roles during public registration
+        const allowedRoles = [UserRole.INDIVIDUAL_SELLER, UserRole.BUYER, UserRole.IMPORT_USER];
+        if (role && allowedRoles.includes(role)) {
+            user.role = role;
+        } else {
+            user.role = UserRole.INDIVIDUAL_SELLER;
+        }
         
         // Sellers and B2B users require approval, others (BUYER, IMPORT_USER) are approved by default
         if (user.role === UserRole.INDIVIDUAL_SELLER || user.role === UserRole.DEALER || user.role === UserRole.B2B_USER) {

@@ -20,11 +20,18 @@ export const errorHandler = (err: any, req: any, res: any, next: NextFunction) =
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
+  // Sanitize body to remove sensitive data before logging
+  const sanitizedBody = { ...req.body };
+  const sensitiveFields = ['password', 'currentPassword', 'newPassword', 'token', 'resetPasswordToken'];
+  sensitiveFields.forEach(field => {
+    if (sanitizedBody[field]) sanitizedBody[field] = '********';
+  });
+
   // Log the error details
   logger.error(`Request Failed: ${req.method} ${req.originalUrl}`, {
     error: message,
     stack: err.stack,
-    body: req.body // Log body to help debug (ensure passwords are sanitized in production logger)
+    body: sanitizedBody
   });
 
   res.status(statusCode).json({

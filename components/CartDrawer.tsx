@@ -28,7 +28,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white z-[1001] transform transition-transform duration-500 ease-out shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-[100dvh] w-full sm:w-[400px] bg-white z-[1001] transform transition-transform duration-500 ease-out shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col h-full">
           
           {/* Header */}
@@ -117,7 +117,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
 
           {/* Footer Actions */}
           {cartItems.length > 0 && (
-              <div className="p-6 sm:p-8 border-t border-gray-100 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
+              <div className="p-6 sm:p-8 border-t border-gray-100 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 pb-safe">
                 <div className="space-y-3 mb-8">
                   <div className="flex justify-between items-center text-xs text-gray-500 font-bold uppercase tracking-wider">
                       <span>Order Subtotal</span>

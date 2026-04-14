@@ -3,6 +3,7 @@ import { AppDataSource } from '../config/database';
 import { CrspData } from '../entities/CrspData';
 import { SystemSetting } from '../entities/SystemSetting';
 import { authenticate, authorize } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
 const router = Router();
@@ -226,8 +227,23 @@ router.get('/crsp/years', async (req, res) => {
   }
 });
 
+const crspSchema = z.object({
+  make: z.string(),
+  model: z.string(),
+  year: z.number().int(),
+  crspValue: z.number(),
+  engineSize: z.number().optional(),
+  fuelType: z.string().optional(),
+  category: z.string().optional(),
+  transmission: z.string().optional(),
+  modelNumber: z.string().optional(),
+  driveConfiguration: z.string().optional(),
+  gvw: z.string().optional(),
+  seating: z.string().optional()
+});
+
 // Update single CRSP record (Admin only)
-router.put('/crsp/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+router.put('/crsp/:id', authenticate, authorize(['ADMIN']), validate(crspSchema.partial()), async (req, res) => {
   try {
     const id = req.params.id as string;
     const crspRepo = AppDataSource.getRepository(CrspData);
@@ -256,7 +272,7 @@ router.delete('/crsp/:id', authenticate, authorize(['ADMIN']), async (req, res) 
 });
 
 // Bulk upload CRSP data (Admin only)
-router.post('/upload-crsp', authenticate, authorize(['ADMIN']), async (req, res) => {
+router.post('/upload-crsp', authenticate, authorize(['ADMIN']), validate(z.array(crspSchema)), async (req, res) => {
   try {
     const data = req.body; // Expecting an array of CRSP objects
     if (!Array.isArray(data)) {

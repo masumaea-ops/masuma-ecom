@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { VehicleListing, ListingStatus, VehicleType } from '../entities/VehicleListing';
 import { authenticate, authorize } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { z } from 'zod';
 
 const router = Router();
@@ -105,7 +106,7 @@ router.post('/', authenticate, async (req: any, res) => {
 });
 
 // Update listing (Owner or Admin)
-router.patch('/:id', authenticate, async (req: any, res) => {
+router.patch('/:id', authenticate, validate(createListingSchema.partial()), async (req: any, res) => {
   try {
     const listingRepo = AppDataSource.getRepository(VehicleListing);
     const listing = await listingRepo.findOne({

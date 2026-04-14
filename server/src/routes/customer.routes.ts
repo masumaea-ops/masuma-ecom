@@ -19,7 +19,7 @@ const customerSchema = z.object({
 });
 
 // GET /api/customers
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, authorize(['ADMIN', 'MANAGER', 'CASHIER']), async (req, res) => {
     try {
         const search = req.query.search as string;
         

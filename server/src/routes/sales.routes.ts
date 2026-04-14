@@ -51,7 +51,7 @@ router.post('/', authenticate, validate(createSaleSchema), async (req: any, res)
 });
 
 // GET /api/sales
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, authorize(['ADMIN', 'MANAGER', 'CASHIER']), async (req, res) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
@@ -96,7 +96,7 @@ router.get('/', authenticate, async (req, res) => {
 
 // GET /api/sales/order/:orderNumber
 // Used by POS to check if payment was completed and sale created
-router.get('/order/:orderNumber', authenticate, async (req, res) => {
+router.get('/order/:orderNumber', authenticate, authorize(['ADMIN', 'MANAGER', 'CASHIER']), async (req, res) => {
     try {
         const orderNumber = req.params.orderNumber;
         

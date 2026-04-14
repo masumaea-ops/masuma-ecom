@@ -90,10 +90,18 @@ app.use('/media', express.static(mediaPath) as any);
 // 2. API Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 20000,
+  max: 2000, // Reduced from 20000 for better security
   message: { error: 'Too many requests' }
 });
 app.use('/api', limiter as any);
+
+// Stricter limiter for Auth routes
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // 50 attempts per hour
+  message: { error: 'Too many authentication attempts. Please try again in an hour.' }
+});
+app.use('/api/auth', authLimiter as any);
 
 // 3. API ROUTES (Must be registered BEFORE frontend static/catch-all)
 app.use('/api/auth', authRoutes as any);
@@ -110,7 +118,11 @@ app.use('/api/audit-logs', auditRoutes as any);
 app.use('/api/settings', settingsRoutes as any); 
 app.use('/api/quotes', quoteRoutes as any);
 app.use('/api/reports', reportRoutes as any);
-app.use('/api/contact', contactRoutes as any); 
+app.use('/api/contact', rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 messages per hour
+  message: { error: 'Too many messages. Please try again later.' }
+}) as any, contactRoutes as any); 
 app.use('/api/branches', branchRoutes as any); 
 app.use('/api/categories', categoryRoutes as any);
 app.use('/api/returns', returnRoutes as any);
@@ -120,7 +132,11 @@ app.use('/api/vehicles', vehicleRoutes as any);
 app.use('/api/upload', uploadRoutes as any);
 app.use('/api/finance', financeRoutes as any);
 app.use('/api/notifications', notificationRoutes as any);
-app.use('/api/newsletter', newsletterRoutes as any);
+app.use('/api/newsletter', rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 signups per hour
+  message: { error: 'Too many subscription attempts. Please try again later.' }
+}) as any, newsletterRoutes as any);
 app.use('/api/marketplace', marketplaceRoutes as any);
 app.use('/api/import-calculator', importCalculatorRoutes as any);
 app.use('/api/fraud', fraudRoutes as any);
@@ -208,7 +224,8 @@ app.get('*all', async (req: any, res: any) => {
                 const listingId = req.query.listing;
                 
                 let metaData = null;
-                const baseUrl = `${req.protocol}://${req.get('host')}`;
+                const protocol = req.get('x-forwarded-proto') || req.protocol;
+                const baseUrl = `${protocol}://${req.get('host')}`;
 
                 if (postId) {
                     try {
@@ -268,9 +285,15 @@ app.get('*all', async (req: any, res: any) => {
                 }
 
                 if (metaData) {
-                    // Inject dynamic meta tags
+                    // 1. Replace Title
                     html = html.replace(/<title>.*?<\/title>/, `<title>${metaData.title} | Masuma Africa</title>`);
+                    
+                    // 2. Replace Description
                     html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${metaData.description}" />`);
+                    
+                    // 3. Remove existing OG/Twitter tags to avoid duplicates
+                    html = html.replace(/<meta property="og:.*?" content=".*?"\s*\/?>/g, '');
+                    html = html.replace(/<meta name="twitter:.*?" content=".*?"\s*\/?>/g, '');
                     
                     let ogTags = `
     <meta property="og:title" content="${metaData.title}" />

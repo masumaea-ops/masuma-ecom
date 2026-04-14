@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'masuma-parts',
+      name: 'masuma-shop',
       script: './server/dist/app.js',
       cwd: './',
       env: {
