@@ -26,7 +26,8 @@ const createListingSchema = z.object({
   vin: z.string().optional(),
   scanReportUrl: z.string().optional(),
   auctionSheetUrl: z.string().optional(),
-  isImported: z.boolean().optional()
+  isImported: z.boolean().optional(),
+  status: z.nativeEnum(ListingStatus).optional()
 });
 
 // Get all active listings with filters
@@ -120,6 +121,11 @@ router.patch('/:id', authenticate, validate(createListingSchema.partial()), asyn
 
     if (listing.seller.id !== req.user.id && req.user.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // Only Admin can change status
+    if (req.body.status && req.user.role !== 'ADMIN') {
+      delete req.body.status;
     }
 
     listingRepo.merge(listing, req.body);

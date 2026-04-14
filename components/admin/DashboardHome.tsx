@@ -78,7 +78,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNavigate }) => {
           { label: 'Revenue Today', value: formatCurrency(stats?.todayRevenue || 0), icon: DollarSign, color: 'bg-emerald-500', subLabel: 'Cash Realized', link: 'sales_history' },
           { label: 'Activity Today', value: stats?.todaysOrders || 0, icon: ShoppingCart, color: 'bg-blue-600', subLabel: 'Sales + Invoices', link: 'orders' },
           { label: 'Low Stock', value: stats?.lowStockItems || 0, icon: AlertTriangle, color: 'bg-red-500', subLabel: 'Restock Required', link: 'inventory' },
-          { label: 'Draft Quotes', value: stats?.pendingQuotes || 0, icon: Users, color: 'bg-gray-600', subLabel: 'Pending Replies', link: 'quotes' },
+          { label: 'Pending Users', value: stats?.pendingUsers || 0, icon: Users, color: 'bg-orange-600', subLabel: 'New Registrations', link: 'users' },
         ].map((stat, i) => (
           <div 
             key={i} 

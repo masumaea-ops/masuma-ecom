@@ -6,6 +6,7 @@ import { Order } from '../entities/Order';
 import { ProductStock } from '../entities/ProductStock';
 import { Product } from '../entities/Product';
 import { Quote } from '../entities/Quote';
+import { User, UserStatus } from '../entities/User';
 import { authenticate } from '../middleware/auth';
 import { MoreThanOrEqual } from 'typeorm';
 
@@ -19,6 +20,7 @@ router.get('/', authenticate, async (req, res) => {
         const stockRepo = AppDataSource.getRepository(ProductStock);
         const quoteRepo = AppDataSource.getRepository(Quote);
         const productRepo = AppDataSource.getRepository(Product);
+        const userRepo = AppDataSource.getRepository(User);
 
         // 1. Calculate Time Boundaries
         const startOfToday = new Date();
@@ -52,6 +54,10 @@ router.get('/', authenticate, async (req, res) => {
             where: { status: 'DRAFT' as any } 
         });
 
+        const pendingUsers = await userRepo.count({
+            where: { status: UserStatus.PENDING }
+        });
+
         // 5. Monthly Revenue Trend (Last 6 Months)
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -79,6 +85,7 @@ router.get('/', authenticate, async (req, res) => {
             todaysOrders: salesCountToday + ordersCountToday, // Combined volume
             lowStockItems: lowStockCount,
             pendingQuotes,
+            pendingUsers,
             monthlyRevenue: monthlyData.map(d => ({
                 name: d.month, 
                 value: parseFloat(d.revenue)

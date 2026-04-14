@@ -163,6 +163,10 @@ const UserManager: React.FC = () => {
                                 <option value="MANAGER">Manager</option>
                                 <option value="ADMIN">Admin</option>
                                 <option value="B2B_USER">B2B User</option>
+                                <option value="DEALER">Dealer</option>
+                                <option value="INDIVIDUAL_SELLER">Individual Seller</option>
+                                <option value="BUYER">Buyer</option>
+                                <option value="IMPORT_USER">Import User</option>
                             </select>
                             <select 
                                 className="p-2 border rounded bg-white focus:border-masuma-orange outline-none"
@@ -184,120 +188,118 @@ const UserManager: React.FC = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col overflow-auto">
                 {isLoading ? (
                     <div className="flex justify-center items-center h-64">
                         <Loader2 className="animate-spin text-masuma-orange" size={32} />
                     </div>
                 ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white text-gray-500 uppercase font-bold text-xs border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-4">User / Business</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Branch / Discount</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Created At</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {users.map(user => (
-                                <tr key={user.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 shrink-0">
-                                                {user.fullName.charAt(0)}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white text-gray-500 uppercase font-bold text-xs border-b border-gray-200 sticky top-0 z-10">
+                                <tr>
+                                    <th className="px-6 py-4">User / Business</th>
+                                    <th className="px-6 py-4">Role</th>
+                                    <th className="px-6 py-4">Branch / Discount</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4">Created At</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {users.map(user => (
+                                    <tr key={user.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 shrink-0">
+                                                    {user.fullName.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-masuma-dark">{user.fullName}</div>
+                                                    <div className="text-xs text-gray-500">{user.email}</div>
+                                                    {user.businessName && (
+                                                        <div className="text-[10px] text-masuma-orange font-black uppercase mt-0.5 flex items-center gap-1">
+                                                            <Building size={10} /> {user.businessName}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="font-bold text-masuma-dark">{user.fullName}</div>
-                                                <div className="text-xs text-gray-500">{user.email}</div>
-                                                {user.businessName && (
-                                                    <div className="text-[10px] text-masuma-orange font-black uppercase mt-0.5 flex items-center gap-1">
-                                                        <Building size={10} /> {user.businessName}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded flex items-center gap-1 w-fit ${
-                                            user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
-                                            user.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' :
-                                            user.role === 'B2B_USER' ? 'bg-orange-100 text-orange-700' :
-                                            user.role === 'DEALER' ? 'bg-indigo-100 text-indigo-700' :
-                                            user.role === 'INDIVIDUAL_SELLER' ? 'bg-pink-100 text-pink-700' :
-                                            'bg-gray-100 text-gray-700'
-                                        }`}>
-                                            <Shield size={10} /> {user.role}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {user.role === 'B2B_USER' ? (
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-[9px] font-bold text-gray-400 uppercase">Discount %</label>
-                                                <input 
-                                                    type="number" 
-                                                    className="w-16 p-1 border rounded text-xs font-bold outline-none focus:border-masuma-orange"
-                                                    value={user.discountPercentage}
-                                                    onChange={(e) => handleUpdateDiscount(user.id, Number(e.target.value))}
-                                                />
-                                            </div>
-                                        ) : user.branch ? (
-                                            <span className="flex items-center gap-1 text-gray-700 text-xs">
-                                                <Building size={12} className="text-masuma-orange"/> {user.branch.name}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded flex items-center gap-1 w-fit ${
+                                                user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
+                                                user.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' :
+                                                user.role === 'B2B_USER' ? 'bg-orange-100 text-orange-700' :
+                                                user.role === 'DEALER' ? 'bg-indigo-100 text-indigo-700' :
+                                                user.role === 'INDIVIDUAL_SELLER' ? 'bg-pink-100 text-pink-700' :
+                                                user.role === 'BUYER' ? 'bg-green-100 text-green-700' :
+                                                user.role === 'IMPORT_USER' ? 'bg-teal-100 text-teal-700' :
+                                                'bg-gray-100 text-gray-700'
+                                            }`}>
+                                                <Shield size={10} /> {user.role}
                                             </span>
-                                        ) : (
-                                            <span className="text-gray-400 text-xs italic">Global / HQ</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {(user.role === 'B2B_USER' || user.role === 'DEALER' || user.role === 'INDIVIDUAL_SELLER') ? (
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {user.role === 'B2B_USER' ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="text-[9px] font-bold text-gray-400 uppercase">Discount %</label>
+                                                    <input 
+                                                        type="number" 
+                                                        className="w-16 p-1 border rounded text-xs font-bold outline-none focus:border-masuma-orange"
+                                                        value={user.discountPercentage}
+                                                        onChange={(e) => handleUpdateDiscount(user.id, Number(e.target.value))}
+                                                    />
+                                                </div>
+                                            ) : user.branch ? (
+                                                <span className="flex items-center gap-1 text-gray-700 text-xs">
+                                                    <Building size={12} className="text-masuma-orange"/> {user.branch.name}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs italic">Global / HQ</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
                                             <div className="flex flex-col gap-2">
                                                 <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded w-fit ${
                                                     user.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
                                                     user.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 animate-pulse' :
                                                     'bg-red-100 text-red-700'
                                                 }`}>
-                                                    {user.status}
+                                                    {user.status || (user.isActive ? 'APPROVED' : 'INACTIVE')}
                                                 </span>
                                                 {user.status === 'PENDING' && (
                                                     <div className="flex gap-1">
                                                         <button 
                                                             disabled={updatingId === user.id}
                                                             onClick={() => handleUpdateStatus(user.id, 'APPROVED')}
-                                                            className="text-[9px] font-bold bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
+                                                            className="text-[9px] font-bold bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
                                                         >
                                                             Approve
                                                         </button>
                                                         <button 
                                                             disabled={updatingId === user.id}
                                                             onClick={() => handleUpdateStatus(user.id, 'REJECTED')}
-                                                            className="text-[9px] font-bold bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                                                            className="text-[9px] font-bold bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
                                                         >
                                                             Reject
                                                         </button>
                                                     </div>
                                                 )}
                                             </div>
-                                        ) : user.isActive ? (
-                                            <span className="text-green-600 font-bold text-[10px] uppercase bg-green-50 px-2 py-1 rounded">Active</span>
-                                        ) : (
-                                            <span className="text-red-500 font-bold text-[10px] uppercase bg-red-50 px-2 py-1 rounded">Inactive</span>
-                                        )}
-                                    </td>
+                                        </td>
                                     <td className="px-6 py-4 text-gray-500 text-xs">
                                         {new Date(user.createdAt).toLocaleDateString()}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <button onClick={() => handleDelete(user.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={16} /></button>
+                                            <button onClick={() => handleDelete(user.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
             </div>
         </div>
