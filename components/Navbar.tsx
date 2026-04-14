@@ -147,7 +147,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       key={item}
                       href={`/?view=${item}`}
                       onClick={(e) => handleNav(e, item)} 
-                      className="relative text-masuma-dark font-medium uppercase tracking-wider text-[11px] hover:text-masuma-orange transition-all duration-300 group focus-ring p-1"
+                      className="relative text-masuma-dark font-bold uppercase tracking-wider text-[10px] hover:text-masuma-orange transition-all duration-300 group focus-ring p-1"
                       aria-label={`Navigate to ${formatNavLabel(item)}`}
                   >
                       {formatNavLabel(item)}
@@ -203,7 +203,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, setView, toggleCart, toggleA
                       key={item}
                       href={`/?view=${item}`}
                       onClick={(e) => handleNav(e, item)} 
-                      className="block w-full text-left px-4 py-4 text-xs font-medium text-masuma-dark hover:text-masuma-orange hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider"
+                      className="block w-full text-left px-4 py-4 text-xs font-bold text-masuma-dark hover:text-masuma-orange hover:bg-gray-50 border-b border-gray-100 uppercase tracking-wider"
                   >
                       {formatNavLabel(item)}
                   </a>

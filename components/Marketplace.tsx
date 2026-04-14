@@ -703,7 +703,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setView }) => {
                     </div>
 
                     <div className="p-6">
-                      <h3 className="text-lg font-bold text-masuma-dark mb-3 group-hover:text-masuma-orange transition-colors line-clamp-1 font-display uppercase tracking-tight">
+                      <h3 className="text-base font-bold text-masuma-dark mb-3 group-hover:text-masuma-orange transition-colors line-clamp-1 font-display uppercase tracking-tight">
                         {listing.year} {listing.make} {listing.model}
                       </h3>
                       

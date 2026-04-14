@@ -329,7 +329,7 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                             <span className="text-red-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 bg-red-50 px-3 py-1 rounded-full"><AlertTriangle size={14} strokeWidth={3} /> Special Order Only</span>
                         )}
                     </div>
-                        <h2 className="text-base lg:text-xl font-bold text-masuma-dark uppercase tracking-tight leading-tight">{product.name}</h2>
+                        <h2 className="text-sm lg:text-lg font-bold text-masuma-dark uppercase tracking-tight leading-tight">{product.name}</h2>
                         
                         <div className="pt-8 border-t border-gray-50 space-y-6">
                             <div className="flex flex-col">

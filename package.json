@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "deploy": "sh deploy.sh",
-    "seed": "npm run seed --prefix server"
+    "seed": "npm run seed --prefix server",
+    "start:pm2": "pm2 start ecosystem.config.cjs"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
