@@ -178,7 +178,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                           </div>
                           
                           <h1 
-                            className="text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-bold text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[0.9] animate-slam-in text-balance"
+                            className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 md:mb-8 font-display uppercase tracking-tight whitespace-pre-line leading-[1.1] md:leading-[1] animate-slam-in text-balance"
                             style={{ textShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
                           >
                               {slide.title}

@@ -288,7 +288,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                             <div className="w-2 h-2 bg-masuma-orange rounded-full"></div>
                             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Genuine Japanese Part</span>
                         </div>
-                        <h3 className="text-lg font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-14 uppercase tracking-tight">
+                        <h3 className="text-base font-bold text-masuma-dark leading-tight font-display group-hover:text-masuma-orange transition-colors line-clamp-2 h-12 uppercase tracking-tight">
                             {product.name}
                         </h3>
                         <p className="text-[10px] text-gray-400 font-bold tracking-wider mt-3 uppercase">SKU: {product.sku}</p>
