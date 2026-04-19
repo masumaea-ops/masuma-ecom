@@ -250,11 +250,12 @@ app.get('*all', async (req: any, res: any) => {
             try {
                 let html = fs.readFileSync(indexPath, 'utf8');
                 
-                const postId = req.query.post;
-                const productId = req.query.product;
-                const listingId = req.query.listing;
-                
-                let metaData = null;
+                const postId = req.query.post as string;
+                const productId = req.query.product as string;
+                const listingId = req.query.listing as string;
+                const viewParam = req.query.view as string;
+
+                let metaData: any = null;
                 const protocol = req.get('x-forwarded-proto') || req.protocol;
                 const baseUrl = `${protocol}://${req.get('host')}`;
 
@@ -266,8 +267,9 @@ app.get('*all', async (req: any, res: any) => {
                             metaData = {
                                 title: post.title,
                                 description: post.excerpt || post.content.substring(0, 160).replace(/<[^>]*>/g, '') + '...',
-                                image: post.image ? (post.image.startsWith('http') ? post.image : `${baseUrl}${post.image}`) : `${baseUrl}/logo.png`,
-                                url: `${baseUrl}${req.originalUrl}`
+                                image: post.image ? (post.image.startsWith('http') ? post.image : `${baseUrl}${post.image}`) : `${baseUrl}/og-image.jpg`,
+                                url: `${baseUrl}${req.originalUrl}`,
+                                type: 'article'
                             };
                         }
                     } catch (e) {
@@ -285,11 +287,12 @@ app.get('*all', async (req: any, res: any) => {
                             metaData = {
                                 title: product.name,
                                 description: product.description ? product.description.substring(0, 160).replace(/<[^>]*>/g, '') + '...' : 'Premium Autoparts',
-                                image: product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${baseUrl}${product.imageUrl}`) : `${baseUrl}/logo.png`,
+                                image: product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${baseUrl}${product.imageUrl}`) : `${baseUrl}/og-image.jpg`,
                                 url: `${baseUrl}${req.originalUrl}`,
                                 sku: product.sku,
                                 price: product.price,
-                                availability: totalStock > 0 ? 'InStock' : 'OutOfStock'
+                                availability: totalStock > 0 ? 'InStock' : 'OutOfStock',
+                                type: 'product'
                             };
                         }
                     } catch (e) {
@@ -306,46 +309,73 @@ app.get('*all', async (req: any, res: any) => {
                             metaData = {
                                 title: `${listing.year} ${listing.make} ${listing.model}`,
                                 description: listing.description ? listing.description.substring(0, 160) : `Verified ${listing.make} ${listing.model} for sale in Kenya.`,
-                                image: listing.images && listing.images.length > 0 ? (listing.images[0].startsWith('http') ? listing.images[0] : `${baseUrl}${listing.images[0]}`) : `${baseUrl}/logo.png`,
-                                url: `${baseUrl}${req.originalUrl}`
+                                image: listing.images && listing.images.length > 0 ? (listing.images[0].startsWith('http') ? listing.images[0] : `${baseUrl}${listing.images[0]}`) : `${baseUrl}/og-image.jpg`,
+                                url: `${baseUrl}${req.originalUrl}`,
+                                type: 'product'
                             };
                         }
                     } catch (e) {
                         console.error('Error fetching listing for meta:', e);
                     }
+                } else {
+                    // Static Views Fallback
+                    const viewTitles: Record<string, { t: string, d: string }> = {
+                        'CATALOG': { t: 'Products Catalog', d: 'Browse over 10,000+ genuine Japanese spare parts.' },
+                        'ABOUT': { t: 'About Us', d: 'Masuma Autoparts East Africa - Official Japanese parts distributor.' },
+                        'CONTACT': { t: 'Contact Us', d: 'Get in touch with our Nairobi head office for genuine part inquiries.' },
+                        'MARKETPLACE': { t: 'Vehicle Marketplace', d: 'Buy and sell verified cars and motorcycles in Kenya.' },
+                        'IMPORT_CALCULATOR': { t: 'Import Duty Calculator', d: 'Calculate total taxes and duty for importing vehicles to Kenya.' },
+                        'WARRANTY': { t: 'Warranty Policy', d: 'Learn about our industry-leading 12-month warranty on all parts.' }
+                    };
+
+                    const viewData = viewParam ? viewTitles[viewParam as string] : null;
+                    metaData = {
+                        title: viewData ? viewData.t : 'Genuine Japanese Spare Parts Nairobi',
+                        description: viewData ? viewData.d : 'Official Masuma distributor in Kenya. Filters, Brakes, Suspension & Spark Plugs.',
+                        image: `${baseUrl}/og-image.jpg`,
+                        url: `${baseUrl}${req.originalUrl}`,
+                        type: 'website'
+                    };
                 }
 
                 if (metaData) {
-                    // 1. Replace Title
-                    html = html.replace(/<title>.*?<\/title>/, `<title>${metaData.title} | Masuma Africa</title>`);
+                    // Sanitize data
+                    const cleanTitle = (metaData.title || 'Masuma Africa').replace(/<[^>]*>/g, '').trim();
+                    const cleanDesc = (metaData.description || 'Genuine Japanese Autoparts').replace(/<[^>]*>/g, '').substring(0, 160).trim();
+                    const cleanImage = metaData.image || `${baseUrl}/og-image.jpg`;
+                    const cleanUrl = metaData.url || baseUrl;
+                    const ogType = metaData.type || 'website';
+
+                    // 1. Replace Title & Meta Description
+                    html = html.replace(/<title>.*?<\/title>/, `<title>${cleanTitle} | Masuma Africa</title>`);
+                    html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${cleanDesc}" />`);
                     
-                    // 2. Replace Description
-                    html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${metaData.description}" />`);
-                    
-                    // 3. Remove existing OG/Twitter tags to avoid duplicates
+                    // 2. Remove existing OG/Twitter/Canonical tags to avoid duplicates
                     html = html.replace(/<meta property="og:.*?" content=".*?"\s*\/?>/g, '');
                     html = html.replace(/<meta name="twitter:.*?" content=".*?"\s*\/?>/g, '');
+                    html = html.replace(/<link rel="canonical" href=".*?"\s*\/?>/g, '');
                     
-                    let ogTags = `
-    <meta property="og:title" content="${metaData.title}" />
-    <meta property="og:description" content="${metaData.description}" />
-    <meta property="og:image" content="${metaData.image}" />
-    <meta property="og:url" content="${metaData.url}" />
+                    let seoTags = `
+    <link rel="canonical" href="${cleanUrl}" />
+    <meta property="og:title" content="${cleanTitle}" />
+    <meta property="og:description" content="${cleanDesc}" />
+    <meta property="og:image" content="${cleanImage}" />
+    <meta property="og:url" content="${cleanUrl}" />
     <meta property="og:site_name" content="Masuma Africa" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content="${ogType}" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${metaData.title}" />
-    <meta name="twitter:description" content="${metaData.description}" />
-    <meta name="twitter:image" content="${metaData.image}" />
+    <meta name="twitter:title" content="${cleanTitle}" />
+    <meta name="twitter:description" content="${cleanDesc}" />
+    <meta name="twitter:image" content="${cleanImage}" />
 `;
 
                     if (productId && (metaData as any).sku) {
                         const productSchema = {
                             "@context": "https://schema.org/",
                             "@type": "Product",
-                            "name": metaData.title,
-                            "image": metaData.image,
-                            "description": metaData.description,
+                            "name": cleanTitle,
+                            "image": cleanImage,
+                            "description": cleanDesc,
                             "sku": (metaData as any).sku,
                             "brand": {
                                 "@type": "Brand",
@@ -353,17 +383,17 @@ app.get('*all', async (req: any, res: any) => {
                             },
                             "offers": {
                                 "@type": "Offer",
-                                "url": metaData.url,
+                                "url": cleanUrl,
                                 "priceCurrency": "KES",
                                 "price": (metaData as any).price,
                                 "availability": `https://schema.org/${(metaData as any).availability}`,
                                 "itemCondition": "https://schema.org/NewCondition"
                             }
                         };
-                        ogTags += `\n    <script type="application/ld+json">${JSON.stringify(productSchema)}</script>`;
+                        seoTags += `\n    <script type="application/ld+json">${JSON.stringify(productSchema)}</script>`;
                     }
 
-                    html = html.replace('</head>', `${ogTags}</head>`);
+                    html = html.replace('</head>', `${seoTags}</head>`);
                 }
 
                 return res.send(html);
