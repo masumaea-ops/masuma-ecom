@@ -85,15 +85,18 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
 
   const getYoutubeEmbedUrl = (url: string) => {
       if (!url) return '';
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      // Improved regex to handle watch, shorts, embed, and various other URL formats
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
       const match = url.match(regExp);
       const id = (match && match[2].length === 11) ? match[2] : null;
       if (!id) return '';
       
+      // Fix Error 153 (Video Player Configuration Error):
+      // This error often occurs in nested iframe environments (like preview frames)
+      // when the origin parameter is missing or mismatched with JS API enabled.
+      // We explicitly provide the origin and enable JS API for a more reliable handshake.
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      // Fix Error 153 by using standard youtube.com and providing the origin parameter
-      // This is required for the YouTube IFrame API to handshake correctly
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}&widgetid=1`;
   };
 
   const isYoutube = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
@@ -134,6 +137,8 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
                                         allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
                                         frameBorder="0"
                                         title="Background Video"
+                                        referrerPolicy="strict-origin-when-cross-origin"
+                                        sandbox="allow-scripts allow-same-origin allow-presentation"
                                     ></iframe>
                                 </div>
                            ) : slide.mediaType === 'video' && slide.videoUrl ? (

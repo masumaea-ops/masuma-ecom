@@ -89,15 +89,18 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   };
 
   const getYoutubeEmbedUrl = (url: string) => {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      // Improved regex to handle watch, shorts, embed, and various other URL formats
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
       const match = url.match(regExp);
       const id = (match && match[2].length === 11) ? match[2] : null;
       if (!id) return '';
       
+      // Fix Error 153 (Video Player Configuration Error):
+      // This error often occurs in nested iframe environments (like preview frames)
+      // when the origin parameter is missing or mismatched with JS API enabled.
+      // We explicitly provide the origin and enable JS API for a more reliable handshake.
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      // Fix Error 153 by using standard youtube.com and providing the origin parameter
-      // This is required for the YouTube IFrame API to handshake correctly
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}&widgetid=1`;
   };
 
   const handleSwitch = (p: Product) => {
@@ -190,6 +193,8 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                                     allowFullScreen
                                     loading="lazy"
                                     title={`${product.name} Video`}
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                    sandbox="allow-scripts allow-same-origin allow-presentation"
                                 ></iframe>
                             ) : (
                                 <video 
