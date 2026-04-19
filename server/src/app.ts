@@ -229,7 +229,7 @@ for (const p of possibleDistPaths) {
     if (fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html'))) {
         frontendPath = p;
         console.log(`📂 [SERVER] Frontend detected and serving from: ${p}`);
-        app.use(express.static(p) as any);
+        app.use(express.static(p, { index: false }) as any);
         break;
     }
 }
@@ -250,13 +250,14 @@ app.get('*all', async (req: any, res: any) => {
             try {
                 let html = fs.readFileSync(indexPath, 'utf8');
                 
-                const postId = req.query.post as string;
-                const productId = req.query.product as string;
-                const listingId = req.query.listing as string;
+                const sanitizeId = (val: any) => typeof val === 'string' ? val.replace(/[?/,!]$/g, '').trim() : '';
+                const postId = sanitizeId(req.query.post);
+                const productId = sanitizeId(req.query.product);
+                const listingId = sanitizeId(req.query.listing);
                 const viewParam = req.query.view as string;
 
                 let metaData: any = null;
-                const protocol = req.get('x-forwarded-proto') || req.protocol;
+                const protocol = req.get('x-forwarded-proto') || (req.get('host')?.includes('masuma.africa') ? 'https' : req.protocol);
                 const baseUrl = `${protocol}://${req.get('host')}`;
 
                 if (postId) {
@@ -347,13 +348,13 @@ app.get('*all', async (req: any, res: any) => {
                     const ogType = metaData.type || 'website';
 
                     // 1. Replace Title & Meta Description
-                    html = html.replace(/<title>.*?<\/title>/, `<title>${cleanTitle} | Masuma Africa</title>`);
-                    html = html.replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${cleanDesc}" />`);
+                    html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${cleanTitle} | Masuma Africa</title>`);
+                    html = html.replace(/<meta name="description" content=".*?"\s*\/?>/i, `<meta name="description" content="${cleanDesc}" />`);
                     
                     // 2. Remove existing OG/Twitter/Canonical tags to avoid duplicates
-                    html = html.replace(/<meta property="og:.*?" content=".*?"\s*\/?>/g, '');
-                    html = html.replace(/<meta name="twitter:.*?" content=".*?"\s*\/?>/g, '');
-                    html = html.replace(/<link rel="canonical" href=".*?"\s*\/?>/g, '');
+                    html = html.replace(/<meta property=["']og:.*?["'] content=["'].*?["']\s*\/?>/gi, '');
+                    html = html.replace(/<meta name=["']twitter:.*?["'] content=["'].*?["']\s*\/?>/gi, '');
+                    html = html.replace(/<link rel=["']canonical["'] href=["'].*?["']\s*\/?>/gi, '');
                     
                     let seoTags = `
     <link rel="canonical" href="${cleanUrl}" />
