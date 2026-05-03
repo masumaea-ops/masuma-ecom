@@ -53,6 +53,7 @@ import importCalculatorRoutes from './routes/import-calculator.routes';
 import fraudRoutes from './routes/fraud.routes';
 import importRequestRoutes from './routes/import-request.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import productFeedRoutes from './routes/product-feed.routes';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -143,6 +144,7 @@ app.use('/api/admin/stats', statsRoutes as any);
 app.use('/api/orders', orderRoutes as any);
 app.use('/api/mpesa', mpesaRoutes as any);
 app.use('/sitemap.xml', sitemapRoutes as any);
+app.use('/google-product-feed.xml', productFeedRoutes as any);
 app.use('/api/blog', blogRoutes as any);
 app.use('/api/users', userRoutes as any); 
 app.use('/api/audit-logs', auditRoutes as any); 
@@ -176,114 +178,16 @@ app.use('/api/analytics', analyticsRoutes as any);
 
 // 3.5 Technical SEO Routes
 app.get('/robots.txt', (req, res) => {
+    const protocol = req.get('x-forwarded-proto') || (req.get('host')?.includes('masuma.africa') ? 'https' : req.protocol);
+    const host = req.get('host');
     res.type('text/plain');
     res.send(`User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
 Disallow: /login
-Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml
-Sitemap: ${req.protocol}://${req.get('host')}/google-product-feed.xml`);
-});
-
-app.get('/sitemap.xml', async (req, res) => {
-    try {
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const productRepo = AppDataSource.getRepository(Product);
-        const postRepo = AppDataSource.getRepository(BlogPost);
-        
-        const products = await productRepo.find({ select: ['id', 'updatedAt'] });
-        const posts = await postRepo.find({ select: ['id', 'updatedAt'] });
-
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${baseUrl}/</loc><priority>1.0</priority></url>
-  <url><loc>${baseUrl}/?view=CATALOG</loc><priority>0.9</priority></url>
-  <url><loc>${baseUrl}/?view=ABOUT</loc><priority>0.7</priority></url>
-  <url><loc>${baseUrl}/?view=CONTACT</loc><priority>0.7</priority></url>
-  <url><loc>${baseUrl}/?view=BLOG</loc><priority>0.8</priority></url>`;
-
-        products.forEach(p => {
-            xml += `\n  <url><loc>${baseUrl}/?product=${p.id}</loc><lastmod>${p.updatedAt.toISOString().split('T')[0]}</lastmod><priority>0.8</priority></url>`;
-        });
-
-        posts.forEach(p => {
-            xml += `\n  <url><loc>${baseUrl}/?post=${p.id}</loc><lastmod>${p.updatedAt.toISOString().split('T')[0]}</lastmod><priority>0.7</priority></url>`;
-        });
-
-        xml += '\n</urlset>';
-        res.type('application/xml');
-        res.send(xml);
-    } catch (e) {
-        res.status(500).send('Error generating sitemap');
-    }
-});
-
-app.get('/google-product-feed.xml', async (req, res) => {
-    try {
-        const protocol = req.get('x-forwarded-proto') || (req.get('host')?.includes('masuma.africa') ? 'https' : req.protocol);
-        const baseUrl = `${protocol}://${req.get('host')}`;
-        const productRepo = AppDataSource.getRepository(Product);
-        
-        // Fetch products with stock data
-        const products = await productRepo.find({ 
-            relations: ['stock', 'category'],
-            select: ['id', 'name', 'description', 'price', 'sku', 'imageUrl']
-        });
-
-        const escapeXml = (unsafe: string) => {
-            return unsafe.replace(/[<>&'"]/g, (c) => {
-                switch (c) {
-                    case '<': return '&lt;';
-                    case '>': return '&gt;';
-                    case '&': return '&amp;';
-                    case '\'': return '&apos;';
-                    case '"': return '&quot;';
-                }
-                return c;
-            });
-        };
-
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
-  <channel>
-    <title>Masuma Autoparts East Africa</title>
-    <link>${baseUrl}</link>
-    <description>Genuine Japanese precision automotive parts in Nairobi, Kenya.</description>`;
-
-        products.forEach(p => {
-            const totalStock = (p.stock || []).reduce((acc, s) => acc + s.quantity, 0);
-            const availability = totalStock > 0 ? 'in_stock' : 'out_of_stock';
-            const imageUrl = p.imageUrl ? (p.imageUrl.startsWith('http') ? p.imageUrl : `${baseUrl}${p.imageUrl}`) : `${baseUrl}/og-image.jpg`;
-            const productLink = `${baseUrl}/?product=${p.id}`;
-            const cleanDesc = p.description.replace(/<[^>]*>/g, '').substring(0, 5000);
-
-            xml += `
-    <item>
-      <g:id>${escapeXml(p.sku)}</g:id>
-      <g:title>${escapeXml(p.name)}</g:title>
-      <g:description>${escapeXml(cleanDesc)}</g:description>
-      <g:link>${escapeXml(productLink)}</g:link>
-      <g:image_link>${escapeXml(imageUrl)}</g:image_link>
-      <g:condition>new</g:condition>
-      <g:availability>${availability}</g:availability>
-      <g:price>${p.price.toFixed(2)} KES</g:price>
-      <g:brand>Masuma</g:brand>
-      <g:google_product_category>Vehicles &amp; Parts &gt; Vehicle Parts &amp; Accessories</g:google_product_category>
-      <g:product_type>${escapeXml(p.category?.name || 'Automotive Parts')}</g:product_type>
-    </item>`;
-        });
-
-        xml += `
-  </channel>
-</rss>`;
-
-        res.type('application/xml');
-        res.send(xml);
-    } catch (e) {
-        console.error('Error generating Google Product Feed:', e);
-        res.status(500).send('Error generating product feed');
-    }
+Sitemap: ${protocol}://${host}/sitemap.xml
+Sitemap: ${protocol}://${host}/google-product-feed.xml`);
 });
 
 // 4. FRONTEND SERVING
