@@ -182,7 +182,8 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 Disallow: /login
-Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`);
+Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml
+Sitemap: ${req.protocol}://${req.get('host')}/google-product-feed.xml`);
 });
 
 app.get('/sitemap.xml', async (req, res) => {
@@ -215,6 +216,73 @@ app.get('/sitemap.xml', async (req, res) => {
         res.send(xml);
     } catch (e) {
         res.status(500).send('Error generating sitemap');
+    }
+});
+
+app.get('/google-product-feed.xml', async (req, res) => {
+    try {
+        const protocol = req.get('x-forwarded-proto') || (req.get('host')?.includes('masuma.africa') ? 'https' : req.protocol);
+        const baseUrl = `${protocol}://${req.get('host')}`;
+        const productRepo = AppDataSource.getRepository(Product);
+        
+        // Fetch products with stock data
+        const products = await productRepo.find({ 
+            relations: ['stock', 'category'],
+            select: ['id', 'name', 'description', 'price', 'sku', 'imageUrl']
+        });
+
+        const escapeXml = (unsafe: string) => {
+            return unsafe.replace(/[<>&'"]/g, (c) => {
+                switch (c) {
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '&': return '&amp;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                }
+                return c;
+            });
+        };
+
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
+  <channel>
+    <title>Masuma Autoparts East Africa</title>
+    <link>${baseUrl}</link>
+    <description>Genuine Japanese precision automotive parts in Nairobi, Kenya.</description>`;
+
+        products.forEach(p => {
+            const totalStock = (p.stock || []).reduce((acc, s) => acc + s.quantity, 0);
+            const availability = totalStock > 0 ? 'in_stock' : 'out_of_stock';
+            const imageUrl = p.imageUrl ? (p.imageUrl.startsWith('http') ? p.imageUrl : `${baseUrl}${p.imageUrl}`) : `${baseUrl}/og-image.jpg`;
+            const productLink = `${baseUrl}/?product=${p.id}`;
+            const cleanDesc = p.description.replace(/<[^>]*>/g, '').substring(0, 5000);
+
+            xml += `
+    <item>
+      <g:id>${escapeXml(p.sku)}</g:id>
+      <g:title>${escapeXml(p.name)}</g:title>
+      <g:description>${escapeXml(cleanDesc)}</g:description>
+      <g:link>${escapeXml(productLink)}</g:link>
+      <g:image_link>${escapeXml(imageUrl)}</g:image_link>
+      <g:condition>new</g:condition>
+      <g:availability>${availability}</g:availability>
+      <g:price>${p.price.toFixed(2)} KES</g:price>
+      <g:brand>Masuma</g:brand>
+      <g:google_product_category>Vehicles &amp; Parts &gt; Vehicle Parts &amp; Accessories</g:google_product_category>
+      <g:product_type>${escapeXml(p.category?.name || 'Automotive Parts')}</g:product_type>
+    </item>`;
+        });
+
+        xml += `
+  </channel>
+</rss>`;
+
+        res.type('application/xml');
+        res.send(xml);
+    } catch (e) {
+        console.error('Error generating Google Product Feed:', e);
+        res.status(500).send('Error generating product feed');
     }
 });
 
