@@ -43,11 +43,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
   }
 
   const discountedSubtotal = subtotal - discountAmount;
+  const vatAmount = discountedSubtotal * 0.16;
   const deliveryFee = 0; 
-  const total = discountedSubtotal + deliveryFee;
-  
-  const basePriceTotal = total / 1.16;
-  const vatTotal = total - basePriceTotal;
+  const total = discountedSubtotal + vatAmount + deliveryFee;
 
   useEffect(() => {
     if (step === 'processing') {
@@ -456,7 +454,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
 
                       <div className="space-y-3">
                           <div className="flex justify-between text-[11px] text-gray-400 font-black uppercase tracking-widest">
-                              <span>Subtotal</span>
+                              <span>Subtotal (Excl. VAT)</span>
                               <span className="text-masuma-dark"><Price amount={subtotal} /></span>
                           </div>
                           {appliedPromo && (
@@ -467,7 +465,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onSuccess, setView }) =>
                           )}
                           <div className="flex justify-between text-[11px] text-gray-400 font-black uppercase tracking-widest">
                               <span>VAT (16%)</span>
-                              <span className="text-masuma-dark"><Price amount={vatTotal} /></span>
+                              <span className="text-masuma-dark"><Price amount={vatAmount} /></span>
                           </div>
                           <div className="flex justify-between text-[11px] text-gray-400 font-black uppercase tracking-widest">
                               <span>Delivery Fee</span>

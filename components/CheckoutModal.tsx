@@ -25,7 +25,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
 
     if (!isOpen) return null;
 
-    const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const vatAmount = subtotal * 0.16;
+    const totalAmount = subtotal + vatAmount;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -87,9 +89,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="bg-gray-50 p-4 border border-gray-200 rounded text-center mb-4">
-                                <p className="text-xs text-gray-500 uppercase font-bold">Order Total</p>
-                                <p className="text-2xl font-bold text-masuma-dark"><Price amount={totalAmount} /></p>
+                            <div className="bg-gray-50 p-4 border border-gray-200 rounded mb-4">
+                                <div className="flex justify-between items-center mb-1">
+                                    <p className="text-[10px] text-gray-400 uppercase font-bold">Subtotal</p>
+                                    <p className="text-sm font-bold text-gray-600"><Price amount={subtotal} /></p>
+                                </div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <p className="text-[10px] text-gray-400 uppercase font-bold">VAT (16%)</p>
+                                    <p className="text-sm font-bold text-gray-600"><Price amount={vatAmount} /></p>
+                                </div>
+                                <div className="h-px bg-gray-200 w-full mb-2"></div>
+                                <div className="flex justify-between items-center text-center">
+                                    <p className="text-xs text-gray-500 uppercase font-black tracking-widest">Total Payable</p>
+                                    <p className="text-2xl font-black text-masuma-dark tracking-tighter"><Price amount={totalAmount} /></p>
+                                </div>
                             </div>
 
                             {error && (

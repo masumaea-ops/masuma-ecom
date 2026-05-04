@@ -307,7 +307,7 @@ const ProductList: React.FC<ProductListProps> = ({ addToCart, onProductClick }) 
                                 <span className="text-xl font-bold text-masuma-dark tracking-tighter">
                                     <Price amount={product.price} />
                                 </span>
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Incl. 16% VAT</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Excl. 16% VAT</span>
                             </div>
                             <button
                                 onClick={(e) => { 

@@ -112,8 +112,9 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
   };
 
   const activeMedia = media[activeMediaIndex];
-  const basePrice = product.price / 1.16;
-  const vatAmount = product.price - basePrice;
+  const basePrice = product.price;
+  const vatAmount = basePrice * 0.16;
+  const totalPrice = basePrice + vatAmount;
 
   return (
     <>
@@ -137,7 +138,7 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
             "@type": "Offer",
             "url": `${window.location.origin}/?product=${product.id}`,
             "priceCurrency": "KES",
-            "price": product.price,
+            "price": totalPrice,
             "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             "itemCondition": "https://schema.org/NewCondition"
           }
@@ -338,17 +339,17 @@ const QuickView: React.FC<QuickViewProps> = ({ product, isOpen, onClose, addToCa
                         
                         <div className="pt-8 border-t border-gray-50 space-y-6">
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Payable)</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><Calculator size={14}/> Total Price (Incl. VAT)</span>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-2xl lg:text-3xl font-bold text-masuma-orange tracking-tighter"><Price amount={product.price} /></span>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">incl. 16% VAT</span>
+                                    <span className="text-2xl lg:text-3xl font-bold text-masuma-orange tracking-tighter"><Price amount={totalPrice} /></span>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">KES</span>
                                 </div>
                             </div>
                             
                             <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
                                 <div className="grid grid-cols-2 divide-x divide-gray-200">
                                     <div className="p-6">
-                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">Base Price</span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-none block mb-2">Base Cost (Excl.)</span>
                                         <span className="text-lg font-bold text-masuma-dark"><Price amount={basePrice} /></span>
                                     </div>
                                     <div className="p-6">

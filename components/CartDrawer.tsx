@@ -13,9 +13,9 @@ interface CartDrawerProps {
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, removeFromCart, onCheckout, updateQuantity }) => {
-  const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const basePriceTotal = total / 1.16;
-  const vatTotal = total - basePriceTotal;
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const vatAmount = subtotal * 0.16;
+  const total = subtotal + vatAmount;
 
   return (
     <>
@@ -120,12 +120,12 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
               <div className="p-6 sm:p-8 border-t border-gray-100 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 pb-safe">
                 <div className="space-y-3 mb-8">
                   <div className="flex justify-between items-center text-xs text-gray-500 font-bold uppercase tracking-wider">
-                      <span>Order Subtotal</span>
-                      <span className="text-masuma-dark"><Price amount={basePriceTotal} /></span>
+                      <span>Subtotal (Excl. VAT)</span>
+                      <span className="text-masuma-dark"><Price amount={subtotal} /></span>
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-500 font-bold uppercase tracking-wider">
                       <span>VAT (16%)</span>
-                      <span className="text-masuma-dark"><Price amount={vatTotal} /></span>
+                      <span className="text-masuma-dark"><Price amount={vatAmount} /></span>
                   </div>
                   <div className="h-px bg-gray-100 w-full my-2"></div>
                   <div className="flex justify-between items-end">
@@ -136,7 +136,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cartItems, rem
                       <div className="text-right">
                            <div className="flex items-center gap-1.5 bg-green-50 px-2 py-1 rounded-sm border border-green-100">
                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                               <p className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Taxes Included</p>
+                               <p className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Taxes Calculated</p>
                            </div>
                       </div>
                   </div>
