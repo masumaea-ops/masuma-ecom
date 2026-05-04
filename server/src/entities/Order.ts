@@ -71,6 +71,9 @@ export class Order {
   @Column({ nullable: true })
   promoCodeUsed?: string;
 
+  @Column({ nullable: true, default: 'masuma.africa' })
+  siteSource?: string;
+
   @Column('decimal', { precision: 16, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
   discountAmount!: number;
 

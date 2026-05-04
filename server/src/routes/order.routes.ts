@@ -52,11 +52,15 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
         const { customerName, customerEmail, customerPhone, shippingAddress, items, paymentMethod, promoCodeUsed, discountAmount } = req.body;
         const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
         
+        const host = req.get('host') || 'masuma.africa';
+        const siteSource = host.includes('shop') ? 'shop.masuma.africa' : 'masuma.africa';
+        const prefix = host.includes('shop') ? 'S' : 'M';
+
         const discount = discountAmount || 0;
         const totalAmount = (subtotal - discount) * 1.16;
 
         const order = new Order();
-        order.orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+        order.orderNumber = `${prefix}ORD-${Date.now().toString().slice(-6)}`;
         order.customerName = customerName;
         order.customerEmail = (customerEmail && customerEmail.length > 0) ? customerEmail : undefined;
         order.customerPhone = customerPhone;
@@ -68,6 +72,7 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
         order.balance = parseFloat(totalAmount.toFixed(2));
         order.status = OrderStatus.PENDING;
         order.paymentMethod = paymentMethod || 'MANUAL';
+        order.siteSource = siteSource;
         
         order.items = items.map((i: any) => {
             const item = new OrderItem();

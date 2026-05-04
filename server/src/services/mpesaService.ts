@@ -54,7 +54,7 @@ export class MpesaService {
     }, 3300); 
   }
 
-  static async initiateStkPush(orderId: string, phoneNumber: string, amount: number) {
+  static async initiateStkPush(orderId: string, phoneNumber: string, amount: number, options: { callbackUrl?: string, siteSource?: string } = {}) {
     try {
         const token = await this.getAccessToken();
         const formattedPhone = this.formatPhoneNumber(phoneNumber);
@@ -62,9 +62,13 @@ export class MpesaService {
         
         const shortcode = await this.getSetting('MPESA_SHORTCODE', 'MPESA_SHORTCODE');
         const passkey = await this.getSetting('MPESA_PASSKEY', 'MPESA_PASSKEY');
-        const callbackUrl = await this.getSetting('MPESA_CALLBACK_URL', 'MPESA_CALLBACK_URL');
+        const settingCallbackUrl = await this.getSetting('MPESA_CALLBACK_URL', 'MPESA_CALLBACK_URL');
         const txType = await this.getSetting('MPESA_TRANSACTION_TYPE') || 'CustomerPayBillOnline'; 
         
+        // Use dynamic callback if provided, otherwise fallback to database setting
+        const callbackUrl = options.callbackUrl || settingCallbackUrl;
+        const siteSource = options.siteSource || 'masuma.africa';
+
         const env = process.env.MPESA_ENV || 'sandbox';
         const baseUrl = env === 'production' ? 'https://api.safaricom.co.ke' : 'https://sandbox.safaricom.co.ke';
 
@@ -85,10 +89,10 @@ export class MpesaService {
             PhoneNumber: formattedPhone,
             CallBackURL: callbackUrl,
             AccountReference: sanitizedRef, 
-            TransactionDesc: "Payment" 
+            TransactionDesc: `Purchase from ${siteSource}` 
         };
 
-        logger.info(`Sending STK Push [Ref: ${payload.AccountReference}] to ${formattedPhone}`);
+        logger.info(`Sending STK Push [Ref: ${payload.AccountReference}] [Source: ${siteSource}] to ${formattedPhone}`);
 
         const response = await axios.post(`${baseUrl}/mpesa/stkpush/v1/processrequest`, payload, {
             headers: { Authorization: `Bearer ${token}` }
@@ -96,13 +100,18 @@ export class MpesaService {
 
         const order = await this.orderRepo.findOneBy({ id: orderId });
         if (order) {
+            // Update order with site source
+            order.siteSource = siteSource;
+            await this.orderRepo.save(order);
+
             const tx = this.transactionRepo.create({
                 order: order,
                 merchantRequestID: response.data.MerchantRequestID,
                 checkoutRequestID: response.data.CheckoutRequestID,
                 amount: amount,
                 phoneNumber: formattedPhone,
-                status: 'PENDING'
+                status: 'PENDING',
+                siteSource: siteSource
             });
             await this.transactionRepo.save(tx);
         }

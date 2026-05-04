@@ -31,6 +31,9 @@ export class MpesaTransaction {
   @Column({ nullable: true })
   resultDesc?: string;
 
+  @Column({ nullable: true })
+  siteSource?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

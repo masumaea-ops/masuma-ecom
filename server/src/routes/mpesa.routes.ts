@@ -19,6 +19,8 @@ const mpesaOrderSchema = z.object({
   customerEmail: z.union([z.string().email(), z.string(), z.null(), z.undefined()]).optional(),
   customerPhone: z.string().min(10),
   shippingAddress: z.string().optional(),
+  promoCodeUsed: z.string().optional(),
+  discountAmount: z.number().optional(),
   items: z.array(z.object({ 
     productId: z.string(), 
     quantity: z.number().min(1), 
@@ -29,12 +31,21 @@ const mpesaOrderSchema = z.object({
 // POST /api/mpesa/pay - Integrated to fix 404
 router.post('/pay', validate(mpesaOrderSchema), async (req: any, res) => {
   try {
-    const { customerName, customerEmail, customerPhone, shippingAddress, items } = req.body;
+    const { customerName, customerEmail, customerPhone, shippingAddress, items, promoCodeUsed, discountAmount } = req.body;
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-    const totalAmount = Math.round(subtotal * 1.16); // Round for M-Pesa integers if needed, but M-Pesa accepts decimals in some cases. Safe to round or fix.
+    
+    const discount = discountAmount || 0;
+    const totalAmount = Math.round((subtotal - discount) * 1.16); 
+
+    const host = req.get('host') || 'masuma.africa';
+    const protocol = req.protocol || 'https';
+    const dynamicCallbackUrl = `${protocol}://${host}/api/mpesa/callback`;
+    const siteSource = host.includes('shop') ? 'shop.masuma.africa' : 'masuma.africa';
 
     const order = new Order();
-    order.orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+    // Prefix order number to avoid collision and identify source
+    const prefix = host.includes('shop') ? 'S' : 'M';
+    order.orderNumber = `${prefix}ORD-${Date.now().toString().slice(-6)}`;
     order.customerName = customerName;
     order.customerEmail = (customerEmail && customerEmail.trim() !== '') ? customerEmail : undefined;
     order.customerPhone = customerPhone;
@@ -43,6 +54,9 @@ router.post('/pay', validate(mpesaOrderSchema), async (req: any, res) => {
     order.amountPaid = 0; 
     order.balance = totalAmount;
     order.status = OrderStatus.PENDING;
+    order.siteSource = siteSource;
+    order.promoCodeUsed = promoCodeUsed;
+    order.discountAmount = discount;
     
     order.items = items.map((i: any) => {
       const item = new OrderItem();
@@ -55,7 +69,10 @@ router.post('/pay', validate(mpesaOrderSchema), async (req: any, res) => {
     await orderRepo.save(order);
     
     try {
-        const response = await MpesaService.initiateStkPush(order.id, customerPhone, totalAmount);
+        const response = await MpesaService.initiateStkPush(order.id, customerPhone, totalAmount, {
+            callbackUrl: dynamicCallbackUrl,
+            siteSource: siteSource
+        });
         res.status(201).json({ 
             message: 'STK Push initiated', 
             orderId: order.id,
@@ -63,7 +80,7 @@ router.post('/pay', validate(mpesaOrderSchema), async (req: any, res) => {
             checkoutId: response.CheckoutRequestID
         });
     } catch (mpesaError: any) {
-        logger.error('STK Push Error:', mpesaError.message);
+        logger.error(`STK Push Error [${siteSource}]:`, mpesaError.message);
         res.status(500).json({ 
             error: mpesaError.message || 'Payment Initiation Failed', 
             orderId: order.id 
