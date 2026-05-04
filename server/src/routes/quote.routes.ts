@@ -121,8 +121,8 @@ router.post('/', validate(createQuoteSchema), async (req, res) => {
 
         quote.items = quoteItems;
         quote.subtotal = quoteItems.reduce((acc: number, i: any) => acc + (Number(i.total) || 0), 0);
-        quote.tax = quote.subtotal * 0.16; // Approx
-        quote.total = quote.subtotal; // Usually inclusive in basic logic
+        quote.tax = quote.subtotal * 0.16;
+        quote.total = quote.subtotal + quote.tax;
         quote.status = QuoteStatus.DRAFT;
         
         await quoteRepo.save(quote);

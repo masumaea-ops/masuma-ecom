@@ -48,7 +48,8 @@ const createOrderSchema = z.object({
 router.post('/', validate(createOrderSchema), async (req, res) => {
     try {
         const { customerName, customerEmail, customerPhone, shippingAddress, items, paymentMethod } = req.body;
-        const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+        const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+        const totalAmount = subtotal * 1.16;
 
         const order = new Order();
         order.orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
@@ -56,9 +57,9 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
         order.customerEmail = (customerEmail && customerEmail.length > 0) ? customerEmail : undefined;
         order.customerPhone = customerPhone;
         order.shippingAddress = shippingAddress || '';
-        order.totalAmount = totalAmount;
+        order.totalAmount = parseFloat(totalAmount.toFixed(2));
         order.amountPaid = 0;
-        order.balance = totalAmount;
+        order.balance = parseFloat(totalAmount.toFixed(2));
         order.status = OrderStatus.PENDING;
         order.paymentMethod = paymentMethod || 'MANUAL';
         

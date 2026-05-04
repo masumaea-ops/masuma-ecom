@@ -244,6 +244,22 @@ const ProductManager: React.FC = () => {
       reader.readAsText(bulkFile);
   };
 
+  const handleBulkExport = async () => {
+    try {
+        const response = await apiClient.get('/products/bulk/export', { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Masuma_Product_Catalog_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+    } catch (error) {
+        console.error('Export failed', error);
+        alert('Failed to export product data.');
+    }
+  };
+
   const handleRollback = async (batchId: string) => {
       if (!confirm(`UNDO ACTION: This will delete all products created in session ${batchId}. This is used to fix incorrect mapping. Continue?`)) return;
       setIsImporting(true);
@@ -365,6 +381,9 @@ const ProductManager: React.FC = () => {
                 <button onClick={() => { setImportStep('upload'); setBulkFile(null); setDryRunReport(null); setIsBulkModalOpen(true); }} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded font-bold uppercase text-[10px] hover:bg-gray-50 flex items-center gap-2">
                     <Upload size={14} /> Bulk Import
                 </button>
+                <button onClick={handleBulkExport} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded font-bold uppercase text-[10px] hover:bg-gray-50 flex items-center gap-2">
+                    <Download size={14} /> Bulk Export
+                </button>
                 <button onClick={handleAddNew} className="bg-masuma-orange text-white px-4 py-2 rounded font-bold uppercase text-[10px] hover:bg-orange-600 flex items-center gap-2 shadow-md">
                     <Plus size={14} /> Add Product
                 </button>
@@ -427,7 +446,7 @@ const ProductManager: React.FC = () => {
                                 </div>
                                 <div className="grid grid-cols-3 gap-4">
                                     <div>
-                                        <label className="text-[10px] font-black uppercase text-gray-400 block mb-1">Retail (KES)</label>
+                                        <label className="text-[10px] font-black uppercase text-gray-400 block mb-1">Retail (Excl. VAT)</label>
                                         <input type="number" className="w-full p-3 border border-gray-300 rounded focus:border-masuma-orange outline-none font-bold text-sm shadow-inner" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                                     </div>
                                     <div>
@@ -669,7 +688,7 @@ const ProductManager: React.FC = () => {
                             </th>
                             <th className="px-6 py-3">Part Info</th>
                             <th className="px-6 py-3">SKU</th>
-                            <th className="px-6 py-4 text-right">Retail (KES)</th>
+                            <th className="px-6 py-4 text-right">Retail (Excl. VAT)</th>
                             <th className="px-6 py-3">Status</th>
                             <th className="px-6 py-3 text-right">Actions</th>
                         </tr>

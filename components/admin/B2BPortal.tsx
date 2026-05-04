@@ -123,13 +123,20 @@ const B2BPortal: React.FC = () => {
             const res = await apiClient.get('/products');
             const products = res.data.data || res.data || [];
             
-            const csvData = products.map((p: any) => ({
-                SKU: p.sku,
-                Name: p.name,
-                Category: p.category,
-                Retail_Price: p.price,
-                Your_Wholesale_Price: (p.price * (1 - userDiscount / 100)).toFixed(2)
-            }));
+            const csvData = products.map((p: any) => {
+                const retailExcl = Number(p.price);
+                const wholesaleExcl = retailExcl * (1 - userDiscount / 100);
+                return {
+                    SKU: p.sku,
+                    Name: p.name,
+                    Category: p.category?.name || 'General',
+                    Retail_Price_Excl_VAT: retailExcl.toFixed(2),
+                    Retail_Price_Incl_VAT: (retailExcl * 1.16).toFixed(2),
+                    Your_Wholesale_Excl_VAT: wholesaleExcl.toFixed(2),
+                    Your_Wholesale_Incl_VAT: (wholesaleExcl * 1.16).toFixed(2),
+                    VAT_Rate: '16%'
+                };
+            });
 
             const csv = Papa.unparse(csvData);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

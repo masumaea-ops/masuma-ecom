@@ -128,6 +128,56 @@ router.delete('/:id', authenticate, authorize(['ADMIN', 'MANAGER']), async (req,
     }
 });
 
+router.get('/bulk/export', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, res) => {
+    try {
+        const productRepo = AppDataSource.getRepository(Product);
+        const products = await productRepo.find({
+            relations: ['category', 'stock'],
+            order: { name: 'ASC' }
+        });
+
+        const escapeCsv = (field: any) => {
+            if (field === null || field === undefined) return '';
+            const stringValue = String(field);
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        };
+
+        const headers = ['SKU', 'Name', 'Category', 'Price', 'Cost Price', 'Description', 'OEM Numbers', 'Compatibility', 'Quantity', 'Image URL'];
+        
+        let csv = headers.join(',') + '\n';
+
+        products.forEach(p => {
+            // Get quantity from the primary branch or sum all branches?
+            // For template export, we'll sum quantities or pick the first branch's stock
+            const firstBranchStock = (p.stock && p.stock.length > 0) ? p.stock[0].quantity : 0;
+            
+            const row = [
+                p.sku,
+                p.name,
+                p.category?.name || 'General',
+                p.price,
+                p.costPrice || 0,
+                p.description || '',
+                p.oemNumbers ? p.oemNumbers.join(', ') : '',
+                p.compatibility ? p.compatibility.join(', ') : '',
+                firstBranchStock,
+                p.image || ''
+            ].map(escapeCsv).join(',');
+            csv += row + '\n';
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="Masuma_Product_Catalog_Export.csv"');
+        res.send(csv);
+    } catch (error) {
+        console.error('Export failed:', error);
+        res.status(500).json({ error: 'Failed to export products' });
+    }
+});
+
 const bulkImportSchema = z.object({
     branchId: z.string(),
     dryRun: z.boolean().optional().default(false),

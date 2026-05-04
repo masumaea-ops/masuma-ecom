@@ -30,7 +30,8 @@ const mpesaOrderSchema = z.object({
 router.post('/pay', validate(mpesaOrderSchema), async (req: any, res) => {
   try {
     const { customerName, customerEmail, customerPhone, shippingAddress, items } = req.body;
-    const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const totalAmount = Math.round(subtotal * 1.16); // Round for M-Pesa integers if needed, but M-Pesa accepts decimals in some cases. Safe to round or fix.
 
     const order = new Order();
     order.orderNumber = `ORD-${Date.now().toString().slice(-6)}`;

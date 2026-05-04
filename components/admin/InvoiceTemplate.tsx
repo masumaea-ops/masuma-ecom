@@ -79,8 +79,10 @@ const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(({ data
   const itemSum = items.reduce((acc: number, item: any) => acc + (Number(item.price || item.unitPrice) * Number(item.qty || item.quantity)), 0);
   
   // Tax is calculated on the FINAL Total (Payable)
-  const tax = Number(total) * 0.16;
-  const net = Number(total) - tax;
+  // Since prices are EXCLUSIVE of VAT, the final total is (Net * 1.16)
+  // Thus Net = Total / 1.16 and Tax = Total - Net
+  const net = Number(total) / 1.16;
+  const tax = Number(total) - net;
 
   const getTitle = () => {
       switch(type) {

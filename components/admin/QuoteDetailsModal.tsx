@@ -132,8 +132,12 @@ const QuoteDetailsModal: React.FC<QuoteDetailsModalProps> = ({ quote, isOpen, on
                                 <p className="text-xs text-gray-500">{quote.customerEmail} | {quote.customerPhone}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs font-bold text-gray-500 uppercase">Quote Value</p>
-                                <p className="font-bold text-masuma-orange text-lg">KES {calculateGrandTotal().toLocaleString()}</p>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Quote Summary</p>
+                                <div className="text-xs text-gray-500">
+                                    <p>Subtotal: {calculateGrandTotal().toLocaleString()}</p>
+                                    <p>VAT (16%): {(calculateGrandTotal() * 0.16).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                                </div>
+                                <p className="font-bold text-masuma-orange text-lg mt-1 tracking-tight">Total: KES {(calculateGrandTotal() * 1.16).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                             </div>
                         </div>
                         

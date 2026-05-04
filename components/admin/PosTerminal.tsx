@@ -85,7 +85,9 @@ const PosTerminal: React.FC = () => {
         }
     }
     
-    const finalTotal = Math.max(0, subTotal - discountAmount);
+    const taxableAmount = Math.max(0, subTotal - discountAmount);
+    const taxAmount = taxableAmount * 0.16;
+    const finalTotal = taxableAmount + taxAmount;
 
     // Polling Logic for M-Pesa
     useEffect(() => {
@@ -600,12 +602,13 @@ const PosTerminal: React.FC = () => {
                     {/* Compact Totals */}
                     <div className="flex justify-between items-end border-b border-gray-200 pb-2">
                         <div className="text-[10px] text-gray-500">
-                            <div>Sub: {subTotal.toLocaleString()}</div>
-                            {discountAmount > 0 && <div className="text-green-600 font-bold">Disc: -{discountAmount.toLocaleString()}</div>}
+                            <div>Subtotal: {subTotal.toLocaleString()}</div>
+                            {discountAmount > 0 && <div className="text-red-500">Discount: -{discountAmount.toLocaleString()}</div>}
+                            <div className="text-masuma-dark font-bold">VAT (16%): {taxAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
                         </div>
                         <div className="text-right">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase mr-2">Total</span>
-                            <span className="text-xl font-bold text-masuma-dark tracking-tight">KES {finalTotal.toLocaleString()}</span>
+                            <span className="text-[10px] text-gray-500 font-bold uppercase mr-2">Payable</span>
+                            <span className="text-xl font-bold text-masuma-dark tracking-tight">KES {finalTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
 

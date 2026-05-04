@@ -60,8 +60,8 @@ export class SaleService {
         }
       }
 
-      // Calculate Tax (Inclusive VAT 16%)
-      // Net Amount should be based on the Final Total paid (after discount)
+      // Calculate Tax (Assuming totalAmount is Inclusive at this point)
+      // Net Amount is the base cost: Total / 1.16
       const taxRate = 0.16;
       const netAmount = data.totalAmount / (1 + taxRate);
       const taxAmount = data.totalAmount - netAmount;

@@ -42,6 +42,8 @@ router.get('/sales', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, 
                 customer: sale.customerName || 'Walk-in',
                 paymentMethod: sale.paymentMethod,
                 itemsCount: sale.itemsCount || (sale.itemsSnapshot ? (sale.itemsSnapshot as any[]).length : 0),
+                netAmount: Number(sale.netAmount || (sale.totalAmount / 1.16)),
+                taxAmount: Number(sale.taxAmount || (sale.totalAmount - (sale.totalAmount / 1.16))),
                 totalAmount: Number(sale.totalAmount),
                 cashier: sale.cashier?.fullName || 'System',
                 kraStatus: sale.kraControlCode ? 'Signed' : 'Pending'
@@ -53,18 +55,24 @@ router.get('/sales', authenticate, authorize(['ADMIN', 'MANAGER']), async (req, 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="sales_report_${Date.now()}.csv"`);
         
-        res.write('Receipt Number,Date,Customer,Payment Method,Items Count,Total Amount (KES),Cashier,KRA Status\n');
+        res.write('Receipt Number,Date,Customer,Payment Method,Items Count,Net Amount,VAT (16%),Total Amount (KES),Cashier,KRA Status\n');
 
         const stream = await query.stream();
 
         for await (const sale of stream) {
+            const total = Number(sale.sale_totalAmount);
+            const net = Number(sale.sale_netAmount || (total / 1.16));
+            const tax = Number(sale.sale_taxAmount || (total - net));
+
             const row = [
                 sale.sale_receiptNumber,
                 new Date(sale.sale_createdAt).toLocaleString(),
                 sale.customer_name || 'Walk-in',
                 sale.sale_paymentMethod,
                 sale.sale_itemsSnapshot ? JSON.parse(sale.sale_itemsSnapshot).length : 0,
-                sale.sale_totalAmount,
+                net.toFixed(2),
+                tax.toFixed(2),
+                total.toFixed(2),
                 sale.cashier_fullName || 'System',
                 sale.sale_kraControlCode ? 'Signed' : 'Pending'
             ].map(escapeCsv).join(',');
@@ -98,8 +106,10 @@ router.get('/inventory', authenticate, authorize(['ADMIN', 'MANAGER']), async (r
                 category: item.product.category?.name || 'Uncategorized',
                 branch: item.branch.name,
                 quantity: item.quantity,
-                unitPrice: Number(item.product.price),
-                totalValue: Number(item.quantity) * Number(item.product.price),
+                unitPriceExclVAT: Number(item.product.price),
+                vatAmount: Number(item.product.price) * 0.16,
+                unitPriceInclVAT: Number(item.product.price) * 1.16,
+                totalValueExclVAT: Number(item.quantity) * Number(item.product.price),
                 status: item.quantity <= item.lowStockThreshold ? 'LOW STOCK' : 'OK'
             }));
             return res.json(jsonData);
@@ -109,14 +119,16 @@ router.get('/inventory', authenticate, authorize(['ADMIN', 'MANAGER']), async (r
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="inventory_valuation_${Date.now()}.csv"`);
         
-        res.write('Product Name,SKU,Category,Branch,Quantity,Unit Price,Total Value,Status\n');
+        res.write('Product Name,SKU,Category,Branch,Quantity,Unit Price (Excl),VAT,Unit Price (Incl),Total Value (Excl),Status\n');
 
         const stockStream = await query.stream();
 
         for await (const item of stockStream) {
             const qty = item.stock_quantity;
-            const price = item.product_price;
-            const value = qty * price;
+            const priceExcl = Number(item.product_price);
+            const vat = priceExcl * 0.16;
+            const priceIncl = priceExcl + vat;
+            const valueExcl = qty * priceExcl;
             const status = qty <= item.stock_lowStockThreshold ? 'LOW STOCK' : 'OK';
 
             const row = [
@@ -125,8 +137,10 @@ router.get('/inventory', authenticate, authorize(['ADMIN', 'MANAGER']), async (r
                 item.category_name,
                 item.branch_name,
                 qty,
-                price,
-                value,
+                priceExcl.toFixed(2),
+                vat.toFixed(2),
+                priceIncl.toFixed(2),
+                valueExcl.toFixed(2),
                 status
             ].map(escapeCsv).join(',');
 
