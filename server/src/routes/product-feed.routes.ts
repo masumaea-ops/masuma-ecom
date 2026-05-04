@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
       <g:image_link>${escapeXml(imageUrl)}</g:image_link>
       <g:condition>new</g:condition>
       <g:availability>${availability}</g:availability>
-      <g:price>${p.price.toFixed(2)} KES</g:price>
+      <g:price>${(p.price * 1.16).toFixed(2)} KES</g:price>
       <g:brand>Masuma</g:brand>
       <g:google_product_category>Vehicles &amp; Parts &gt; Vehicle Parts &amp; Accessories</g:google_product_category>
       <g:product_type>${escapeXml(p.category?.name || 'Automotive Parts')}</g:product_type>

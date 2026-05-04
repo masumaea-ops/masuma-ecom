@@ -132,7 +132,7 @@ router.get('/bulk/export', authenticate, authorize(['ADMIN', 'MANAGER']), async 
     try {
         const productRepo = AppDataSource.getRepository(Product);
         const products = await productRepo.find({
-            relations: ['category', 'stock'],
+            relations: ['category', 'stock', 'oemNumbers', 'vehicles'],
             order: { name: 'ASC' }
         });
 
@@ -161,10 +161,10 @@ router.get('/bulk/export', authenticate, authorize(['ADMIN', 'MANAGER']), async 
                 p.price,
                 p.costPrice || 0,
                 p.description || '',
-                p.oemNumbers ? p.oemNumbers.join(', ') : '',
-                p.compatibility ? p.compatibility.join(', ') : '',
+                p.oemNumbers ? p.oemNumbers.map(o => o.code).join('; ') : '',
+                p.vehicles ? p.vehicles.map(v => `${v.make} ${v.model}`).join('; ') : '',
                 firstBranchStock,
-                p.image || ''
+                p.imageUrl || ''
             ].map(escapeCsv).join(',');
             csv += row + '\n';
         });
