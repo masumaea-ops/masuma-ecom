@@ -48,6 +48,7 @@ import financeRoutes from './routes/finance.routes';
 import notificationRoutes from './routes/notification.routes';
 import newsletterRoutes from './routes/newsletter.routes';
 import marketplaceRoutes from './routes/marketplace.routes';
+import promoRoutes from './routes/promo.routes';
 import sitemapRoutes from './routes/sitemap.routes';
 import importCalculatorRoutes from './routes/import-calculator.routes';
 import fraudRoutes from './routes/fraud.routes';
@@ -170,6 +171,7 @@ app.use('/api/newsletter', rateLimit({
   max: 10, // 10 signups per hour
   message: { error: 'Too many subscription attempts. Please try again later.' }
 }) as any, newsletterRoutes as any);
+app.use('/api/promo', promoRoutes as any);
 app.use('/api/marketplace', marketplaceRoutes as any);
 app.use('/api/import-calculator', importCalculatorRoutes as any);
 app.use('/api/fraud', fraudRoutes as any);

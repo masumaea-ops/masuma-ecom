@@ -68,6 +68,12 @@ export class Order {
   @ManyToOne(() => Quote, { nullable: true })
   sourceQuote?: Quote;
 
+  @Column({ nullable: true })
+  promoCodeUsed?: string;
+
+  @Column('decimal', { precision: 16, scale: 2, default: 0, transformer: new ColumnNumericTransformer() })
+  discountAmount!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 

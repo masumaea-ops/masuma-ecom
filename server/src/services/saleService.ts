@@ -6,6 +6,7 @@ import { User } from '../entities/User';
 import { Branch } from '../entities/Branch';
 import { Customer } from '../entities/Customer';
 import { Order } from '../entities/Order';
+import { PromoCode } from '../entities/PromoCode';
 import { EtimsService } from './etimsService';
 
 interface SaleItemDto {
@@ -157,6 +158,20 @@ export class SaleService {
     });
 
     if (!fullOrder) throw new Error("Order not found");
+
+    // Increment Promo Usage if applicable
+    if (fullOrder.promoCodeUsed) {
+        try {
+            const promoRepo = AppDataSource.getRepository(PromoCode);
+            const promo = await promoRepo.findOneBy({ code: fullOrder.promoCodeUsed });
+            if (promo) {
+                promo.currentUsage += 1;
+                await promoRepo.save(promo);
+            }
+        } catch (e) {
+            console.error("Failed to increment promo usage", e);
+        }
+    }
 
     const saleItems: SaleItemDto[] = fullOrder.items.map(item => ({
         productId: item.product.id,

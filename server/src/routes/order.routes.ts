@@ -42,14 +42,18 @@ const createOrderSchema = z.object({
         quantity: z.coerce.number(),
         price: z.coerce.number()
     })),
-    paymentMethod: z.string().optional()
+    paymentMethod: z.string().optional(),
+    promoCodeUsed: z.string().optional(),
+    discountAmount: z.number().optional()
 });
 
 router.post('/', validate(createOrderSchema), async (req, res) => {
     try {
-        const { customerName, customerEmail, customerPhone, shippingAddress, items, paymentMethod } = req.body;
+        const { customerName, customerEmail, customerPhone, shippingAddress, items, paymentMethod, promoCodeUsed, discountAmount } = req.body;
         const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-        const totalAmount = subtotal * 1.16;
+        
+        const discount = discountAmount || 0;
+        const totalAmount = (subtotal - discount) * 1.16;
 
         const order = new Order();
         order.orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
@@ -58,6 +62,8 @@ router.post('/', validate(createOrderSchema), async (req, res) => {
         order.customerPhone = customerPhone;
         order.shippingAddress = shippingAddress || '';
         order.totalAmount = parseFloat(totalAmount.toFixed(2));
+        order.discountAmount = discount;
+        order.promoCodeUsed = promoCodeUsed;
         order.amountPaid = 0;
         order.balance = parseFloat(totalAmount.toFixed(2));
         order.status = OrderStatus.PENDING;
